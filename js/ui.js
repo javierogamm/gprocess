@@ -430,114 +430,71 @@ colorBtn.addEventListener("click", async () => {
         });
     },
 
-    /* ========================================================
-       MOSTRAR PROPIEDADES DE NODO
-    ======================================================== */
-    showNodeProperties(id) {
-        this.currentNodeId = id;
-        this.currentConnId = null;
-    
-        const nodo = Engine.getNode(id);
-        if (!nodo) return;
-    
-        // 🔸 Determinar si hay selección múltiple
-        const multiple = Interactions.selectedNodes.size > 1;
-        const groupPanel = document.getElementById("propsGroup");
-    
-        // ------------------------------------------------------------
-        // 🌈 Modo selección múltiple
-        // ------------------------------------------------------------
-        if (multiple) {
-            this.propsEmpty.style.display = "none";
-            this.propsEditor.style.display = "none";
-            if (this.propsConn) this.propsConn.style.display = "none";
-    
-            let panel = groupPanel;
-            if (!panel) {
-                panel = document.createElement("div");
-                panel.id = "propsGroup";
-                panel.style.padding = "10px";
-                panel.innerHTML = `
-                    <h3>Selección múltiple</h3>
-                    <label>Color común</label>
-                    <input type="color" id="groupColor" style="width:100%;height:36px;margin-bottom:8px;">
-                    <label>Tamaño</label>
-                    <input type="range" id="groupSize" min="40" max="400" value="100" style="width:100%;margin-bottom:8px;">
-                    <button id="groupDelete" class="btn" style="background:#dc2626;color:white;">🗑️ Eliminar todos</button>
-                `;
-                document.getElementById("rightPanel").appendChild(panel);
-    
-                // 🎨 Color
-                panel.querySelector("#groupColor").addEventListener("input", (e) => {
-                    const color = e.target.value;
-                    Interactions.selectedNodes.forEach(id => {
-                        const n = Engine.getNode(id);
-                        if (!n) return;
-                        n.color = color;
-                        Renderer.updateNodeColor(id, color);
-                    });
-                });
-    
-                // 📏 Redimensionar
-                panel.querySelector("#groupSize").addEventListener("input", (e) => {
-                    const factor = parseFloat(e.target.value) / 100;
-                    Interactions.selectedNodes.forEach(id => {
-                        const n = Engine.getNode(id);
-                        const div = document.getElementById(id);
-                        if (!n || !div) return;
-                        n.width = Math.max(40, n.width * factor);
-                        n.height = Math.max(25, n.height * factor);
-                        div.style.width = n.width + "px";
-                        div.style.height = n.height + "px";
-                        Renderer.renderShapeSVG(div, n);
-                    });
-                    Renderer.redrawConnections();
-                });
-    
-                // 🗑️ Eliminar
-                panel.querySelector("#groupDelete").addEventListener("click", () => {
-                    Interactions.selectedNodes.forEach(id => Engine.deleteNode(id));
-                    Interactions.selectedNodes.clear();
-                    Renderer.redrawConnections();
-                    this.clear();
-                });
-            }
-    
-            panel.style.display = "block";
-            return;
+   /* ========================================================
+   MOSTRAR PROPIEDADES DE NODO
+======================================================== */
+showNodeProperties(id) {
+    this.currentNodeId = id;
+    this.currentConnId = null;
+
+    const nodo = Engine.getNode(id);
+    if (!nodo) return;
+
+    // 🔁 NUEVO: salir explícitamente del modo "grupo"
+    if (this.propsEditor) {
+        const allChildren = Array.from(this.propsEditor.children);
+        allChildren.forEach(el => {
+            // Quita el display inline que puso showGroupProperties
+            el.style.display = "";
+        });
+
+        const header = this.propsEditor.querySelector("h3");
+        if (header) {
+            header.textContent = "Propiedades del nodo";
+            header.style.display = "block";
         }
-    
-        // ------------------------------------------------------------
-        // 🧩 Modo nodo individual
-        // ------------------------------------------------------------
-        if (groupPanel) groupPanel.style.display = "none";
-    
-        this.propsEmpty.style.display = "none";
-        this.propsEditor.style.display = "block";
-        if (this.propsConn) this.propsConn.style.display = "none";
-    
-        const tipoSelect = document.getElementById("propTipo");
-        if (tipoSelect) tipoSelect.value = nodo.tipo || "formulario";
-    
-        this.inputTitulo.value = nodo.titulo || "";
-        const descDiv = document.getElementById("propDescripcion");
-        if (descDiv) descDiv.innerHTML = nodo.descripcion || "";
-    
-        this.inputTareaManual.checked = !!nodo.tareaManual;
-        this.inputAsignadoA.value = nodo.asignadoA || "";
-    
-        if (this.inputColor)
-            this.inputColor.value = nodo.color || getDefaultColorByType(nodo.tipo);
-        if (this.inputStrokeColor)
-            this.inputStrokeColor.value = nodo.strokeColor || "#4a7f84";
-        if (this.inputTextColorTitulo)
-            this.inputTextColorTitulo.value = nodo.colorTitulo || "#111827";
-        if (this.inputTextColorDescripcion)
-            this.inputTextColorDescripcion.value = nodo.colorDescripcion || "#333333";
     }
+
+    // Ocultar botones exclusivos de grupo si existen
+    const btnAlignGroup = document.getElementById("btnAlignGroup");
+    if (btnAlignGroup) btnAlignGroup.style.display = "none";
+
+    const btnDeleteGroup = document.getElementById("btnDeleteGroup");
+    if (btnDeleteGroup) btnDeleteGroup.style.display = "none";
+
+    // 🚫 FORZAR modo nodo individual SIEMPRE en esta función
+    const groupPanel = document.getElementById("propsGroup");
+    if (groupPanel) groupPanel.style.display = "none";
+
+    this.propsEmpty.style.display = "none";
+    this.propsEditor.style.display = "block";
+    if (this.propsConn) this.propsConn.style.display = "none";
+
+    const tipoSelect = document.getElementById("propTipo");
+    if (tipoSelect) tipoSelect.value = nodo.tipo || "formulario";
+
+    this.inputTitulo.value = nodo.titulo || "";
+
+    const descDiv = document.getElementById("propDescripcion");
+    if (descDiv) descDiv.innerHTML = nodo.descripcion || "";
+
+    this.inputTareaManual.checked = !!nodo.tareaManual;
+    this.inputAsignadoA.value = nodo.asignadoA || "";
+
+    if (this.inputColor)
+        this.inputColor.value = nodo.color || getDefaultColorByType(nodo.tipo);
+
+    if (this.inputStrokeColor)
+        this.inputStrokeColor.value = nodo.strokeColor || "#4a7f84";
+
+    if (this.inputTextColorTitulo)
+        this.inputTextColorTitulo.value = nodo.colorTitulo || "#111827";
+
+    if (this.inputTextColorDescripcion)
+        this.inputTextColorDescripcion.value = nodo.colorDescripcion || "#333333";
+},
+
     
-    
-    ,
 /* ========================================================
    MOSTRAR PANEL DE PROPIEDADES DE GRUPO (selección múltiple)
 ======================================================== */
@@ -550,11 +507,21 @@ showGroupProperties() {
     this.propsEditor.style.display = "block";
     if (this.propsConn) this.propsConn.style.display = "none";
 
-    // 🧹 Ocultar todo lo que no sea color, tamaño o eliminar
+    // 🧹 Ocultar todo lo que no sea lo que queremos mostrar
     const allChildren = Array.from(this.propsEditor.children);
     allChildren.forEach(el => {
         el.style.display = "none";
     });
+
+    // 🔺 MOSTRAR SELECTOR DE TIPO PARA APLICAR A TODOS
+    const tipoSelect = document.getElementById("propTipo");
+    if (tipoSelect) {
+        tipoSelect.style.display = "block";
+        const labelTipo = tipoSelect.previousElementSibling;
+        if (labelTipo && labelTipo.tagName.toLowerCase() === "label") {
+            labelTipo.style.display = "block";
+        }
+    }
 
     // 🎨 Mostrar color del nodo
     if (this.inputColor) {
@@ -569,24 +536,25 @@ showGroupProperties() {
         const labelResize = this.inputResize.previousElementSibling;
         if (labelResize) labelResize.style.display = "block";
     }
-            // 🧭 Botón de alineación
-        let btnAlinear = document.getElementById("btnAlignGroup");
-        if (!btnAlinear) {
-            btnAlinear = document.createElement("button");
-            btnAlinear.id = "btnAlignGroup";
-            btnAlinear.className = "btn";
-            btnAlinear.textContent = "🧭 Alinear selección";
-            btnAlinear.style.background = "#2563eb";
-            btnAlinear.style.color = "white";
-            btnAlinear.style.width = "100%";
-            btnAlinear.style.marginTop = "6px";
-            btnAlinear.addEventListener("click", () => {
-                Engine.alignSelectedNodes();
-            });
-            this.propsEditor.appendChild(btnAlinear);
-        } else {
-            btnAlinear.style.display = "block";
-        }
+
+    // 🧭 Botón de alineación
+    let btnAlinear = document.getElementById("btnAlignGroup");
+    if (!btnAlinear) {
+        btnAlinear = document.createElement("button");
+        btnAlinear.id = "btnAlignGroup";
+        btnAlinear.className = "btn";
+        btnAlinear.textContent = "🧭 Alinear selección";
+        btnAlinear.style.background = "#2563eb";
+        btnAlinear.style.color = "white";
+        btnAlinear.style.width = "100%";
+        btnAlinear.style.marginTop = "6px";
+        btnAlinear.addEventListener("click", () => {
+            Engine.alignSelectedNodes();
+        });
+        this.propsEditor.appendChild(btnAlinear);
+    } else {
+        btnAlinear.style.display = "block";
+    }
 
     // 🗑️ Botón eliminar selección
     let btnEliminar = document.getElementById("btnDeleteGroup");
@@ -611,7 +579,7 @@ showGroupProperties() {
         btnEliminar.style.display = "block";
     }
 
-    // 🔖 Título opcional del panel
+    // 🔖 Título del panel
     const header = this.propsEditor.querySelector("h3");
     if (header) {
         header.textContent = `Propiedades de grupo (${Interactions.selectedNodes.size})`;
@@ -704,12 +672,39 @@ const tipoSelect = document.getElementById("propTipo");
 if (tipoSelect) {
     tipoSelect.addEventListener("change", (e) => {
         const newTipo = e.target.value;
+
+        // 🟣 MODO GRUPO: varios nodos seleccionados
+        if (Interactions.selectedNodes && Interactions.selectedNodes.size > 1) {
+
+            Interactions.selectedNodes.forEach(id => {
+                const nodo = Engine.getNode(id);
+                if (!nodo) return;
+
+                nodo.tipo = newTipo;
+
+                // Redibujar cada nodo con la nueva forma
+                Renderer.deleteNodeVisual(nodo.id);
+                Renderer.renderNode(nodo);
+
+                // Volver a marcarlo como seleccionado múltiple
+                const div = document.getElementById(nodo.id);
+                if (div) div.classList.add("selected-multi");
+            });
+
+            Renderer.updateConnections();
+            Engine.saveHistory();
+
+            // Mantener el panel de grupo
+            UI.showGroupProperties();
+            return;
+        }
+
+        // 🟢 MODO NODO ÚNICO (comportamiento anterior)
         if (!UI.currentNodeId) return;
 
         const nodo = Engine.getNode(UI.currentNodeId);
         if (!nodo) return;
 
-        // Aplicar directamente el nuevo tipo
         nodo.tipo = newTipo;
 
         // 🔁 Redibujar nodo con la nueva forma
@@ -717,11 +712,11 @@ if (tipoSelect) {
         Renderer.renderNode(nodo);
         Renderer.updateConnections();
 
-        // Guardar en historial y mantener selección
         Engine.saveHistory();
         Engine.selectNode(nodo.id);
     });
 }
+
 
 function getDefaultColorByType(tipo) {
     switch (tipo) {
