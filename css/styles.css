@@ -16,15 +16,18 @@ body {
 
 /* PANEL IZQUIERDO */
 #leftPanel {
-    width: 220px;
+    width: 180px;
     background: #1f2937;
     color: white;
     padding: 15px;
     box-sizing: border-box;
+    overflow-y: auto;     /* 🔥 Scroll vertical */
+    overflow-x: hidden;   /* ✅ Sin scroll horizontal */
+    max-height: 100vh;    /* ✅ Límite para no salirse de pantalla */
 }
 
 #leftPanel h2 {
-    font-size: 18px;
+    font-size: 14px;
     margin-top: 0;
 }
 
@@ -36,7 +39,7 @@ body {
     border: none;
     color: white;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     border-radius: 5px;
 }
 
@@ -46,11 +49,14 @@ body {
 
 /* PANEL DERECHO */
 #rightPanel {
-    width: 300px;
+    width: 180px;
     background: #ffffff;
     border-left: 2px solid #ccc;
     padding: 15px;
     box-sizing: border-box;
+    overflow-y: auto;     /* 🔥 Scroll vertical */
+    overflow-x: hidden;   /* ✅ Sin scroll horizontal */
+    max-height: 100vh;    /* ✅ Límite para no salirse de pantalla */
 }
 
 #rightPanel h3 {
@@ -60,7 +66,7 @@ body {
 label {
     font-weight: bold;
     display: block;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 input {
@@ -127,13 +133,13 @@ input {
     position: absolute;
     font-weight: bold; 
     font-family: "Segoe UI", sans-serif;
-    top: 28px;
-    left: 12px;
+    top: 10px;
+        left: 12px;
     right: 12px;
     z-index: 2;
 
     background: transparent;
-    font-size: 15px;
+    font-size: 12px;
     font-weight: 600;
     display: flex;             /* <-- centrado */
     justify-content: center;   /* <-- centrado horizontal */
@@ -147,7 +153,10 @@ input {
     line-height: 1.2;
     outline: none;
 }
-
+/* Ajuste especial para nodos de tipo "Circuito de resolución" */
+.node.circuito .node-content {
+    top: 25px !important;
+}
 
 /* ============================================
    HANDLES DE CONEXIÓN
@@ -238,7 +247,7 @@ input {
     position: absolute;
     left: 12px;
     right: 12px;
-    top: calc(40px + 16px);
+    top: calc(20px + 16px);
     font-family: "Segoe UI", sans-serif;
     font-size: 12px;
     font-weight: 500;
@@ -488,4 +497,31 @@ input {
 
 .json-buttons-row button:hover {
     background: #4b5563;
+}
+/* ============================================================
+   AJUSTE GLOBAL DE FUENTE PARA EL PANEL DERECHO (UI)
+============================================================ */
+#rightPanel,
+#rightPanel input,
+#rightPanel select,
+#rightPanel button,
+#rightPanel label,
+#rightPanel textarea,
+#rightPanel h3 {
+    font-size: 13px !important;     /* 🔹 más pequeño (puedes bajar a 12 si quieres aún más compacto) */
+    line-height: 1.2;
+}
+
+#rightPanel label {
+    margin-bottom: 3px;
+}
+
+#rightPanel input[type="color"] {
+    height: 28px !important;
+}
+
+#rightPanel h3 {
+    font-size: 14px;
+    margin-top: 8px;
+    margin-bottom: 6px;
 }

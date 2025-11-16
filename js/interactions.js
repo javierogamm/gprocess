@@ -243,69 +243,71 @@ startReconnectExisting(conn, endType) {
     /* ========================================================
        COMPLETAR CONEXIÓN AL SOLTAR
     ======================================================== */
-    tryCompleteConnection(e) {
+    /* ========================================================
+   COMPLETAR CONEXIÓN AL SOLTAR (VERSIÓN CORREGIDA)
+======================================================== */
+tryCompleteConnection(e) {
+    if (!this.connecting) return;
 
-        if (!this.connecting) return;
+    // 🔹 Buscar el elemento bajo el puntero, ignorando el SVG temporal
+    let target = document.elementFromPoint(e.clientX, e.clientY);
 
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        const nodeDiv = target.closest(".node");
-        
-        if (nodeDiv) {
-        
-            const toId = nodeDiv.id;
-                    if (toId !== this.connectStartNode) {
+    // Si el puntero está sobre el SVG o un handle, subir hasta el nodo
+    if (target && !target.classList.contains("node")) {
+        target = target.closest(".node");
+    }
 
-                        const endPos = this.findClosestHandleToPoint(
-                            nodeDiv,
-                            e.clientX,
-                            e.clientY
-                        );
+    const nodeDiv = target;
+    if (nodeDiv && nodeDiv.classList.contains("node")) {
 
-                if (endPos) {
-                    Engine.createConnection(
-                        this.connectStartNode,
-                        toId,
-                        this.connectStartPos,
-                        endPos
-                    );
-                }
+        const toId = nodeDiv.id;
+        if (toId !== this.connectStartNode) {
+
+            // Buscar el handle de destino más cercano al punto de suelta
+            const endPos = this.findClosestHandleToPoint(nodeDiv, e.clientX, e.clientY);
+
+            if (endPos) {
+                // Crear conexión en Engine
+                Engine.createConnection(
+                    this.connectStartNode,
+                    toId,
+                    this.connectStartPos,
+                    endPos
+                );
+
+                // 🔥 Redibujar conexiones reales
+                Renderer.redrawConnections();
+                Engine.saveHistory();
             }
         }
+    }
 
-        this.connecting = false;
-        this.connectStartNode = null;
-        Renderer.clearTempLine();
-    },
+    // 🔚 Limpieza final
+    this.connecting = false;
+    this.connectStartNode = null;
+    Renderer.clearTempLine();
+},
 
+/* ========================================================
+   DETERMINAR HANDLE DESTINO MÁS CERCANO (restaurado)
+======================================================== */
+findClosestHandleToPoint(nodeDiv, x, y) {
+    const handles = nodeDiv.querySelectorAll(".handle");
+    let closest = null;
+    let bestDist = Infinity;
 
-
-    /* ========================================================
-       DETERMINAR HANDLE DESTINO MÁS CERCANO
-    ======================================================== */
-    findClosestHandleToPoint(nodeDiv, x, y) {
-
-        const handles = nodeDiv.querySelectorAll(".handle");
-
-        let closest = null;
-        let bestDist = Infinity;
-
-        handles.forEach(h => {
-            const r = h.getBoundingClientRect();
-            const hx = r.left + r.width / 2;
-            const hy = r.top + r.height / 2;
-
-            const dist = Math.hypot(hx - x, hy - y);
-
-            if (dist < bestDist) {
-                bestDist = dist;
-                closest = h.dataset.position;
-            }
-        });
-
-        return closest;
-    },
-
-
+    handles.forEach(h => {
+        const r = h.getBoundingClientRect();
+        const hx = r.left + r.width / 2;
+        const hy = r.top + r.height / 2;
+        const dist = Math.hypot(hx - x, hy - y);
+        if (dist < bestDist) {
+            bestDist = dist;
+            closest = h.dataset.position;
+        }
+    });
+    return closest;
+},
 /* ========================================================
    MOUSE MOVE → mover nodo / línea existente / línea nueva
 ======================================================== */

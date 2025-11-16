@@ -36,7 +36,145 @@ const UI = {
         this.inputDescripcion = document.getElementById("propDescripcion");
         this.inputTareaManual = document.getElementById("propTareaManual");
         this.inputAsignadoA = document.getElementById("propAsignadoA");
+/* ========================================================
+   CONTROL DE COLOR DE NODO 🎨
+======================================================== */
+const colorLabel = document.createElement("label");
+colorLabel.innerText = "Color del nodo";
 
+const colorInput = document.createElement("input");
+colorInput.type = "color";
+colorInput.id = "propColor";
+colorInput.style.width = "100%";
+colorInput.style.height = "36px";
+colorInput.style.marginTop = "4px";
+colorInput.style.marginBottom = "10px";
+colorInput.style.cursor = "pointer";
+colorInput.style.borderRadius = "6px";
+colorInput.style.border = "1px solid #ccc";
+
+const colorBtn = document.createElement("button");
+colorBtn.id = "btnColorPicker";
+colorBtn.textContent = "Seleccionar desde pantalla";
+colorBtn.className = "btn";
+colorBtn.style.marginBottom = "10px";
+
+// Añadir al panel de propiedades del nodo
+this.propsEditor.appendChild(colorLabel);
+this.propsEditor.appendChild(colorInput);
+this.propsEditor.appendChild(colorBtn);
+
+/* ========================================================
+   CONTROL DE COLOR DEL BORDE 🎨
+======================================================== */
+const strokeLabel = document.createElement("label");
+strokeLabel.innerText = "Color del borde";
+
+const strokeInput = document.createElement("input");
+strokeInput.type = "color";
+strokeInput.id = "propStrokeColor";
+strokeInput.style.width = "100%";
+strokeInput.style.height = "36px";
+strokeInput.style.marginTop = "4px";
+strokeInput.style.marginBottom = "10px";
+strokeInput.style.cursor = "pointer";
+strokeInput.style.borderRadius = "6px";
+strokeInput.style.border = "1px solid #ccc";
+
+// Añadir al panel
+this.propsEditor.appendChild(strokeLabel);
+this.propsEditor.appendChild(strokeInput);
+
+// Guardar referencia
+this.inputStrokeColor = strokeInput;
+
+// Evento: cambiar color de borde
+strokeInput.addEventListener("input", () => {
+    if (!this.currentNodeId) return;
+    const id = this.currentNodeId;
+    const nodo = Engine.getNode(id);
+    if (!nodo) return;
+
+    nodo.strokeColor = strokeInput.value;
+    Renderer.updateNodeColor(id, nodo.color || "#b9e6e8", strokeInput.value);
+});
+/* ========================================================
+   CONTROL DE COLOR DE TEXTO DEL TÍTULO Y DESCRIPCIÓN
+======================================================== */
+const textTitleLabel = document.createElement("label");
+textTitleLabel.innerText = "Color del título";
+const textTitleInput = document.createElement("input");
+textTitleInput.type = "color";
+textTitleInput.id = "propTextColorTitulo";
+textTitleInput.style.width = "100%";
+textTitleInput.style.height = "32px";
+textTitleInput.style.marginBottom = "8px";
+
+const textDescLabel = document.createElement("label");
+textDescLabel.innerText = "Color de la descripción";
+const textDescInput = document.createElement("input");
+textDescInput.type = "color";
+textDescInput.id = "propTextColorDescripcion";
+textDescInput.style.width = "100%";
+textDescInput.style.height = "32px";
+textDescInput.style.marginBottom = "12px";
+
+this.propsEditor.appendChild(textTitleLabel);
+this.propsEditor.appendChild(textTitleInput);
+this.propsEditor.appendChild(textDescLabel);
+this.propsEditor.appendChild(textDescInput);
+
+this.inputTextColorTitulo = textTitleInput;
+this.inputTextColorDescripcion = textDescInput;
+
+// Eventos para aplicar color de texto en vivo
+textTitleInput.addEventListener("input", () => {
+    if (!this.currentNodeId) return;
+    Renderer.updateNodeTextColor(this.currentNodeId, "titulo", textTitleInput.value);
+});
+
+textDescInput.addEventListener("input", () => {
+    if (!this.currentNodeId) return;
+    Renderer.updateNodeTextColor(this.currentNodeId, "descripcion", textDescInput.value);
+});
+
+// Guardar referencias
+this.inputColor = colorInput;
+this.btnColorPicker = colorBtn;
+
+// Evento: cambiar color desde el input
+colorInput.addEventListener("input", () => {
+    if (!this.currentNodeId) return;
+    const id = this.currentNodeId;
+    const nodo = Engine.getNode(id);
+    if (!nodo) return;
+
+    nodo.color = colorInput.value;
+    Renderer.updateNodeColor(id, nodo.color);
+});
+
+// Evento: usar cuentagotas del navegador
+colorBtn.addEventListener("click", async () => {
+    if (!this.currentNodeId) return;
+    const id = this.currentNodeId;
+    const nodo = Engine.getNode(id);
+    if (!nodo) return;
+
+    if (!window.EyeDropper) {
+        alert("Tu navegador no soporta el selector de color EyeDropper.");
+        return;
+    }
+
+    try {
+        const picker = new EyeDropper();
+        const result = await picker.open();
+        nodo.color = result.sRGBHex;
+        colorInput.value = result.sRGBHex;
+        Renderer.updateNodeColor(id, result.sRGBHex);
+    } catch (err) {
+        console.warn("Cuentagotas cancelado:", err);
+    }
+});
         /* ========================================================
            EVENTOS PARA NODOS
         ======================================================== */
@@ -275,6 +413,14 @@ const UI = {
     
         this.inputTareaManual.checked = !!nodo.tareaManual;
         this.inputAsignadoA.value = nodo.asignadoA || "";
+        // 🎨 Mostrar color actual del nodo
+        if (this.inputColor) {
+            this.inputColor.value = nodo.color || getDefaultColorByType(nodo.tipo);
+}
+        // 🎨 Mostrar color actual del borde
+        if (this.inputStrokeColor) {
+            this.inputStrokeColor.value = nodo.strokeColor || "#4a7f84";
+        }
     },
     
 
@@ -348,6 +494,19 @@ if (tipoSelect) {
         Engine.saveHistory();
         Engine.selectNode(nodo.id);
     });
+}
+
+function getDefaultColorByType(tipo) {
+    switch (tipo) {
+        case "formulario": return "#b9e6e8";
+        case "documento": return "#b9e6e8";
+        case "decision": return "#b9e6e8";
+        case "circuito": return "#b9e6e8";
+        case "plazo": return "#b9e6e8";
+        case "libre": return "#b9e6e8";
+        case "operacion_externa": return "#b9e6e8";
+        default: return "#b9e6e8";
+    }
 }
 /* ============================================================
    ARRANQUE
