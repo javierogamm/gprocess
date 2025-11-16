@@ -50,8 +50,8 @@ fichaProyecto: {
         pregunta: "",
         x: 100,
         y: 100,
-        width: 200,
-        height: 100,
+        width: 120,
+        height: 50,
         salidas: [] // para decisiones
     };
 
@@ -60,10 +60,13 @@ fichaProyecto: {
         nodo.titulo = "Nota";
         nodo.esNota = true; // ⚠️ bandera para excluir en exportaciones
     }
-
+    if (tipo === "circuito") {
+        nodo.height = 100;
+    }
     this.data.nodos.push(nodo);
     Renderer.renderNode(nodo);
     this.saveHistory();
+
     return nodo;
 },
 
@@ -1191,3 +1194,50 @@ document.getElementById("btnIAJson").addEventListener("click", () => {
         "_blank"
     );
 });
+/* ============================================================
+   PAN CON BOTÓN DERECHO / RUEDA / CTRL + CLICK IZQUIERDO
+============================================================ */
+(function() {
+
+    const area = document.getElementById("canvasArea");
+    if (!area) return;
+
+    let panning = false;
+    let startX = 0;
+    let startY = 0;
+    let scrollLeft = 0;
+    let scrollTop = 0;
+
+    area.addEventListener("mousedown", (e) => {
+        const isRight = e.button === 2;
+        const isMiddle = e.button === 1;
+        const isCtrlLeft = (e.button === 0 && e.ctrlKey);
+
+        if (isRight || isMiddle || isCtrlLeft) {
+            e.preventDefault();
+            panning = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            scrollLeft = area.scrollLeft;
+            scrollTop = area.scrollTop;
+            area.style.cursor = "grabbing"; // 🖐️ cambio visual
+        }
+    });
+
+    window.addEventListener("mousemove", (e) => {
+        if (!panning) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        area.scrollLeft = scrollLeft - dx;
+        area.scrollTop = scrollTop - dy;
+    });
+
+    window.addEventListener("mouseup", () => {
+        if (panning) area.style.cursor = "default";
+        panning = false;
+    });
+
+    // Evitar menú contextual con clic derecho
+    area.addEventListener("contextmenu", (e) => e.preventDefault());
+
+})();
