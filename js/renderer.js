@@ -783,43 +783,75 @@ hideConnectionHandles() {
     /* =======================================================
        PATH ORTOGONAL
     ======================================================== */
-    generateOrthogonalPath(start, end, fromSide, toSide) {
-
-        const OFFSET = 35;
-        const x1 = start.x, y1 = start.y;
-        const x2 = end.x,   y2 = end.y;
-
-        let p1x = x1, p1y = y1;
-        let p2x = x2, p2y = y2;
-
-        if (fromSide === "top")    p1y = y1 - OFFSET;  
-        if (fromSide === "bottom") p1y = y1 + OFFSET; 
-        if (fromSide === "left")   p1x = x1 - OFFSET;
-        if (fromSide === "right")  p1x = x1 + OFFSET;
-
-        if (toSide === "top")      p2y = y2 - OFFSET;
-        if (toSide === "bottom")   p2y = y2 + OFFSET;
-        if (toSide === "left")     p2x = x2 - OFFSET;
-        if (toSide === "right")    p2x = x2 + OFFSET;
-
-        if (p1x === p2x)
-            return `M ${x1},${y1} L ${p1x},${p1y} L ${p2x},${p2y} L ${x2},${y2}`;
-
-        if (p1y === p2y)
-            return `M ${x1},${y1} L ${p1x},${p1y} L ${p2x},${p2y} L ${x2},${y2}`;
-
-        let midX, midY;
-
-        if (fromSide === "top" || fromSide === "bottom") {
-            midX = p1x;
-            midY = p2y;
-        } else {
-            midX = p2x;
-            midY = p1y;
+    generateOrthogonalPath(from, to, fromPos, toPos) {
+        const minGap = 10; // 🔹 Evita codos demasiado cortos
+    
+        let x1 = from.x, y1 = from.y;
+        let x2 = to.x,   y2 = to.y;
+    
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+    
+        let path = "";
+    
+        switch (fromPos) {
+            case "right":
+                switch (toPos) {
+                    case "left":
+                        if (Math.abs(x2 - x1) < minGap) {
+                            // 🔹 Si están muy juntos horizontalmente → línea casi recta
+                            path = `M ${x1} ${y1} L ${x2} ${y2}`;
+                        } else {
+                            const mid = (x1 + x2) / 2;
+                            path = `M ${x1} ${y1} L ${mid} ${y1} L ${mid} ${y2} L ${x2} ${y2}`;
+                        }
+                        break;
+                    case "top":
+                    case "bottom":
+                        path = `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`;
+                        break;
+                    default:
+                        path = `M ${x1} ${y1} L ${x2} ${y2}`;
+                }
+                break;
+    
+            case "left":
+                switch (toPos) {
+                    case "right":
+                        if (Math.abs(x2 - x1) < minGap) {
+                            path = `M ${x1} ${y1} L ${x2} ${y2}`;
+                        } else {
+                            const mid = (x1 + x2) / 2;
+                            path = `M ${x1} ${y1} L ${mid} ${y1} L ${mid} ${y2} L ${x2} ${y2}`;
+                        }
+                        break;
+                    case "top":
+                    case "bottom":
+                        path = `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`;
+                        break;
+                    default:
+                        path = `M ${x1} ${y1} L ${x2} ${y2}`;
+                }
+                break;
+    
+            case "top":
+            case "bottom":
+                // 🔹 General vertical-to-anything
+                if (Math.abs(y2 - y1) < minGap) {
+                    path = `M ${x1} ${y1} L ${x2} ${y2}`;
+                } else {
+                    const mid = (y1 + y2) / 2;
+                    path = `M ${x1} ${y1} L ${x1} ${mid} L ${x2} ${mid} L ${x2} ${y2}`;
+                }
+                break;
+    
+            default:
+                path = `M ${x1} ${y1} L ${x2} ${y2}`;
         }
-
-        return `M ${x1},${y1} L ${p1x},${p1y} L ${midX},${midY} L ${p2x},${p2y} L ${x2},${y2}`;
-    },
+    
+        return path;
+    }
+,    
 
     redrawConnections() {
         this.svg.innerHTML = "";

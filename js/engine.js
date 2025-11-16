@@ -285,7 +285,9 @@ updateConnections() {
             fromPos: fromPos,
             toPos: toPos,
             condicionNombre: "",
-            condicionValor: ""
+            condicionValor: "",
+            cambioEstado: "" // ✅ nuevo campo
+
         };
 
         this.data.conexiones.push(conn);
@@ -303,6 +305,12 @@ updateConnections() {
         conn.condicionNombre = nombre;
         conn.condicionValor = valor;
         Renderer.redrawConnections();
+        this.saveHistory();
+    },
+    updateConnectionCambioEstado(connId, nuevoEstado) {
+        const conn = this.getConnection(connId);
+        if (!conn) return;
+        conn.cambioEstado = nuevoEstado;
         this.saveHistory();
     },
 
@@ -653,39 +661,75 @@ Engine.exportFlujoCSV = function() {
 
     const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].join("\n");
 
-    // --- 3️⃣ Crear CONDICIONES ---
-    const headerConds = [
-        "Nombre Tarea", "Id Bloque", "Bloque",
-        "Nombre tesauro", "Condición", "Valor",
-        "Acción", "Estado/Tarea"
-    ];
+            // --- 3️⃣ Crear CONDICIONES (formato oficial de condiciones de flujo) ---
+            const headerConds = [
+                "Nombre Entidad",
+                "Nombre Actividad",
+                "Nombre Procedimiento",
+                "Nombre Tarea",
+                "Eliminar bloques existentes",
+                "Id Bloque",
+                "Bloque",
+                "Nombre tesauro",
+                "Condición",
+                "Valor",
+                "Acción",
+                "Estado/Tarea"
+            ];
 
-    const condRows = [];
-    this.data.conexiones.forEach((c) => {
-        const fromNode = this.data.nodos.find(n => n.id === c.from);
-        const toNode = this.data.nodos.find(n => n.id === c.to);
-        if (!fromNode || !toNode) return;
+            const condRows = [];
 
-        const nombreOrigen = cleanText(fromNode.titulo || "");
-        const nombreDestino = cleanText(toNode.titulo || "");
+            this.data.conexiones.forEach((c) => {
+                const fromNode = this.data.nodos.find(n => n.id === c.from);
+                const toNode = this.data.nodos.find(n => n.id === c.to);
+                if (!fromNode || !toNode) return;
 
-        // Si hay condición → “Sólo si”, si no → “En todo caso”
-        const bloque = (c.condicionNombre || c.condicionValor) ? "Sólo si" : "En todo caso";
-        const idBloque = bloque === "Sólo si" ? (condRows.filter(r => r[0] === nombreOrigen).length) : "";
+                const nombreOrigen = cleanText(fromNode.titulo || "");
+                const nombreDestino = cleanText(toNode.titulo || "");
 
-        condRows.push([
-            nombreOrigen,
-            idBloque,
-            bloque,
-            cleanText(c.condicionNombre || ""),
-            (c.condicionNombre || c.condicionValor) ? "Es igual a" : "",
-            cleanText(c.condicionValor || ""),
-            "Lanzar tarea",
-            nombreDestino
-        ]);
-    });
+                // Determinar bloque condicional
+                const bloque = (c.condicionNombre || c.condicionValor) ? "Sólo si" : "En todo caso";
+                const idBloque = bloque === "Sólo si"
+                    ? (condRows.filter(r => r[3] === nombreOrigen && r[6] === "Sólo si").length + 1)
+                    : "";
 
-    const csvConds = [headerConds.join(";"), ...condRows.map(r => r.join(";"))].join("\n");
+                // 🟩 1️⃣ Fila normal → Lanzar tarea
+                condRows.push([
+                    "", // Nombre Entidad
+                    this.fichaProyecto.actividad || "", // Nombre Actividad
+                    this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
+                    nombreOrigen, // Nombre Tarea (origen)
+                    "", // Eliminar bloques existentes
+                    idBloque, // Id Bloque
+                    bloque, // Bloque ("Sólo si" / "En todo caso")
+                    cleanText(c.condicionNombre || ""), // Nombre tesauro
+                    (c.condicionNombre || c.condicionValor) ? "Es igual a" : "", // Condición
+                    cleanText(c.condicionValor || ""), // Valor
+                    "Lanzar tarea", // Acción
+                    nombreDestino // Estado/Tarea (tarea destino)
+                ]);
+
+                // 🟨 2️⃣ Si hay cambio de estado → segunda fila
+                if (c.cambioEstado && c.cambioEstado.trim() !== "") {
+                    condRows.push([
+                        "", // Nombre Entidad
+                        this.fichaProyecto.actividad || "", // Nombre Actividad
+                        this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
+                        nombreOrigen, // Nombre Tarea (origen)
+                        "", // Eliminar bloques existentes
+                        idBloque, // mismo bloque
+                        bloque,
+                        cleanText(c.condicionNombre || ""),
+                        (c.condicionNombre || c.condicionValor) ? "Es igual a" : "",
+                        cleanText(c.condicionValor || ""),
+                        "Cambiar estado", // ✅ Acción alternativa
+                        cleanText(c.cambioEstado) // ✅ Estado/Tarea = texto del nuevo estado
+                    ]);
+                }
+            });
+
+            const csvConds = [headerConds.join(";"), ...condRows.map(r => r.join(";"))].join("\n");
+            downloadCSV(csvConds, "Condiciones.csv");
 
     // --- 4️⃣ Descargar ambos archivos ---
     downloadCSV(csvTareas, "Tareas.csv");
@@ -911,21 +955,46 @@ Engine.showCSVPreview = function() {
         🧾 ${this.fichaProyecto.procedimiento || "Sin nombre de procedimiento"}
     </h2>
 
-    <h3>📋 Tareas</h3>        <table>
-            <thead>
-                <tr><th>#</th><th>Tipo</th><th>Nombre</th><th>Manual</th><th>Asignado A</th></tr>
-            </thead>
-            <tbody>${tareas}</tbody>
-        </table>
+    <h3>📋 Tareas</h3>        
+    <table>
+        <thead>
+            <tr><th>#</th><th>Tipo</th><th>Nombre</th><th>Manual</th><th>Asignado A</th></tr>
+        </thead>
+        <tbody>${tareas}</tbody>
+    </table>
 
-        <h3>🔗 Condiciones</h3>
-        <table>
-            <thead>
-                <tr><th>Tarea Origen</th><th>Bloque</th><th>Condición</th><th>Valor</th><th>Tarea Destino</th></tr>
-            </thead>
-            <tbody>${conexiones}</tbody>
-        </table>
-    `;
+    <h3>🔗 Condiciones</h3>
+    <table>
+        <thead>
+            <tr><th>Tarea Origen</th><th>Bloque</th><th>Condición</th><th>Valor</th><th>Tarea Destino</th></tr>
+        </thead>
+        <tbody>${conexiones}</tbody>
+    </table>
+
+    <h3>🟢 Cambios de estado</h3>
+    <table>
+        <thead>
+            <tr><th>Tarea Origen</th><th>Condición</th><th>Estado adquirido</th></tr>
+        </thead>
+        <tbody>
+            ${this.data.conexiones
+                .filter(c => c.cambioEstado && c.cambioEstado.trim() !== "")
+                .map(c => {
+                    const from = this.getNode(c.from);
+                    const condTxt = [c.condicionNombre, c.condicionValor]
+                        .filter(Boolean).join(" ");
+                    return `
+                        <tr>
+                            <td>${from?.titulo || ""}</td>
+                            <td>${condTxt || "En todo caso"}</td>
+                            <td>${c.cambioEstado}</td>
+                        </tr>
+                    `;
+                }).join("")}
+        </tbody>
+    </table>
+`;
+
 
     modal.classList.remove("hidden");
 };

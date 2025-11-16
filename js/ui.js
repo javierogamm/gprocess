@@ -424,24 +424,51 @@ colorBtn.addEventListener("click", async () => {
     },
     
 
-    /* ========================================================
-       MOSTRAR PROPIEDADES DE CONEXIÓN
-    ======================================================== */
-    showConnectionProperties(connId) {
-        this.currentConnId = connId;
-        this.currentNodeId = null;
+/* ========================================================
+   MOSTRAR PROPIEDADES DE CONEXIÓN
+======================================================== */
+showConnectionProperties(connId) {
+    this.currentConnId = connId;
+    this.currentNodeId = null;
 
-        const conn = Engine.getConnection(connId);
-        if (!conn) return;
+    const conn = Engine.getConnection(connId);
+    if (!conn) return;
 
-        this.propsEmpty.style.display = "none";
-        this.propsEditor.style.display = "none";
-        this.propsConn.style.display = "block";
+    // Mostrar/ocultar paneles correctos
+    this.propsEmpty.style.display = "none";
+    this.propsEditor.style.display = "none";
+    this.propsConn.style.display = "block";
 
-        this.inputCondNombre.value = conn.condicionNombre || "";
-        this.inputCondValor.value  = conn.condicionValor  || "";
-    },
+    // Rellenar los campos existentes
+    this.inputCondNombre.value = conn.condicionNombre || "";
+    this.inputCondValor.value  = conn.condicionValor  || "";
 
+    // 🧹 Elimina posibles duplicados del campo “Nuevo estado”
+    const oldLbl = this.propsConn.querySelector("label[data-type='lblCambio']");
+    const oldInput = this.propsConn.querySelector("input[data-type='inputCambio']");
+    if (oldLbl) oldLbl.remove();
+    if (oldInput) oldInput.remove();
+
+    // 🔹 Campo "Nuevo estado"
+    const lblCambio = document.createElement("label");
+    lblCambio.textContent = "Nuevo estado";
+    lblCambio.setAttribute("data-type", "lblCambio");
+    lblCambio.style.marginTop = "10px";
+
+    const inputCambio = document.createElement("input");
+    inputCambio.type = "text";
+    inputCambio.setAttribute("data-type", "inputCambio");
+    inputCambio.placeholder = "Introduce el nuevo estado…";
+    inputCambio.value = conn.cambioEstado || "";
+
+    inputCambio.addEventListener("input", () => {
+        Engine.updateConnectionCambioEstado(conn.id, inputCambio.value);
+    });
+
+    // Añadir al panel de conexión
+    this.propsConn.insertBefore(lblCambio, this.propsConn.querySelector("#btnDeleteConnection"));
+    this.propsConn.insertBefore(inputCambio, this.propsConn.querySelector("#btnDeleteConnection"));
+},
     /* ========================================================
        LIMPIAR UI
     ======================================================== */
