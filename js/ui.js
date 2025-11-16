@@ -365,6 +365,28 @@ colorBtn.addEventListener("click", async () => {
 
            
         });
+
+// ========================================================
+// IMPORTAR DIAGRAMA DESDE TEXTO
+// ========================================================
+const btnImportar = document.getElementById("btnImportarTexto");
+const txtImportar = document.getElementById("txtImportar");
+
+if (btnImportar && txtImportar) {
+    btnImportar.addEventListener("click", () => {
+        const texto = txtImportar.value.trim();
+        if (!texto) {
+            alert("Pega antes el texto del flujo.");
+            return;
+        }
+
+        ImportText.import(texto);
+        txtImportar.value = "";
+
+        alert("Diagrama importado correctamente.");
+    });
+}
+
     },
 
     /* ========================================================

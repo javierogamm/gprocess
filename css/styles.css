@@ -330,7 +330,7 @@ input {
 #projectTitle {
     position: absolute;
     top: 20px;              /* separación superior */
-    left: 50%;
+    left: 20%;
     transform: translateX(-50%);
     font-size: 32px;
     font-weight: bold;

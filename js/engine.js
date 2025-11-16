@@ -40,35 +40,68 @@ fichaProyecto: {
        CREAR UN NODO
     ============================================================ */
     createNode(tipo) {
-    const nodo = {
-        id: "n" + this.generateId(),
-        tipo: tipo,
-        titulo: tipo.toUpperCase(),
-        tareaManual: false,   // NUEVO
-        asignadoA: "",
-        annex: "",
-        pregunta: "",
-        x: 100,
-        y: 100,
-        width: 120,
-        height: 50,
-        salidas: [] // para decisiones
-    };
-
-    // 🎨 Personalización especial para el tipo "notas"
-    if (tipo === "notas") {
-        nodo.titulo = "Nota";
-        nodo.esNota = true; // ⚠️ bandera para excluir en exportaciones
-    }
-    if (tipo === "circuito") {
-        nodo.height = 100;
-    }
-    this.data.nodos.push(nodo);
-    Renderer.renderNode(nodo);
-    this.saveHistory();
-
-    return nodo;
-},
+        // 🔹 Posición inicial por defecto
+        let x = 100;
+        let y = 100;
+    
+        // 🔥 Intentar centrar en lo que se ve ahora mismo
+        const area = document.getElementById("canvasArea");
+        if (area && Renderer && Renderer.container) {
+            const rectArea   = area.getBoundingClientRect();
+            const rectCanvas = Renderer.container.getBoundingClientRect();
+    
+            // Centro visible en pantalla
+            const centerScreenX = rectArea.left + rectArea.width  / 2;
+            const centerScreenY = rectArea.top  + rectArea.height / 2;
+    
+            // Tamaño base del nodo (los mismos que ya usabas)
+            const baseWidth  = 120;
+            const baseHeight = 50;
+    
+            // Pasar a coordenadas del canvas y centrar el nodo
+            let nx = centerScreenX - rectCanvas.left - baseWidth  / 2;
+            let ny = centerScreenY - rectCanvas.top  - baseHeight / 2;
+    
+            // 🧲 Encajar a la rejilla (si existe)
+            const grid = (window.Interactions && Interactions.GRID_SIZE) ? Interactions.GRID_SIZE : 20;
+            nx = Math.round(nx / grid) * grid;
+            ny = Math.round(ny / grid) * grid;
+    
+            x = nx;
+            y = ny;
+        }
+    
+        const nodo = {
+            id: "n" + this.generateId(),
+            tipo: tipo,
+            titulo: tipo.toUpperCase(),
+            tareaManual: false,   // NUEVO
+            asignadoA: "",
+            annex: "",
+            pregunta: "",
+            x: x,
+            y: y,
+            width: 120,
+            height: 50,
+            salidas: [] // para decisiones
+        };
+    
+        // 🎨 Personalización especial para el tipo "notas"
+        if (tipo === "notas") {
+            nodo.titulo = "Nota";
+            nodo.esNota = true; // ⚠️ bandera para excluir en exportaciones
+        }
+        if (tipo === "circuito") {
+            nodo.height = 100;
+        }
+    
+        this.data.nodos.push(nodo);
+        Renderer.renderNode(nodo);
+        this.saveHistory();
+    
+        return nodo;
+    },
+    
 
     /* ============================================================
    EXPORTAR TODO EL DIAGRAMA A JSON
@@ -448,7 +481,7 @@ resizeSelectedNodes(scaleFactor) {
     this.saveHistory();
 },
 
-    
+ 
     /* ============================================================
        BORRAR NODO (y sus conexiones)
     ============================================================ */
