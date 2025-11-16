@@ -614,26 +614,44 @@ Engine.exportFlujoCSV = function() {
         return a.y - b.y;
     });
 
-// --- 2️⃣ Crear TAREAS ---
-const headerTareas = ["Id", "Tipo Tarea", "Nombre Tarea", "¿Tarea Manual?", "Asignado A"];
-
-const tareasRows = sortedNodes.map((n, i) => {
-    let tipoTarea = n.tipo.toLowerCase();
-
-    if (tipoTarea === "circuito") tipoTarea = "Circuito de Resolución";
-    else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
-    else tipoTarea = capitalizeFirst(tipoTarea);
-
-    return [
-        i + 1,
-        tipoTarea,
-        cleanText(n.titulo || ""),
-        n.tareaManual ? "Sí" : "No",
-        cleanText(n.asignadoA || "")  // 🔥 nuevo campo
+    // --- 2️⃣ Crear TAREAS (formato ampliado oficial) ---
+    const headerTareas = [
+        "Nombre Entidad","Nombre Actividad","Nombre Procedimiento","Sobrescribir",
+        "Tipo Tarea","Nombre Tarea","Días Alerta","Tipo de días","Prioritario",
+        "Descripción Tarea","Asignado a Usuario - Nombre","Asignado a Grupo - Nombre",
+        "Asignado a responsables exp","Asignado a unidad gestora","Asignado a Usuario - Abre Tarea",
+        "Asignado a Usuario - Abre Exp","Permite reasignar","Inicio Inmediato","Condición inicio inmediato",
+        "Nombre tesauro","Condición tesauro","Valor tesauro","Inicio manual","Acceso temporal Expediente",
+        "Plazo Trámite","Plazo Justificante","Tipo documental","Tipo Circuito Resolución","Nombre Circuito Resolución",
+        "Órgano Circuito Resolución","Cambiar estado","Nombre Nuevo Estado","Generar plantilla","Formato plantilla",
+        "Cargar documento","Circuito documento","Titulo documento","Tipo documental documento","Texto plantilla",
+        "Eliminar","Finalizar en plazo","Plazo - Número de días","Plazo - Tipo de días"
     ];
-});
 
-const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].join("\n");
+    const tareasRows = sortedNodes.map((n) => {
+        let tipoTarea = n.tipo.toLowerCase();
+        if (tipoTarea === "circuito") tipoTarea = "Circuito de Resolución";
+        else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
+        else tipoTarea = capitalizeFirst(tipoTarea);
+
+        return [
+            "", // Nombre Entidad
+            this.fichaProyecto.actividad || "", // Nombre Actividad
+            this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
+            "", // Sobrescribir
+            tipoTarea, // Tipo Tarea
+            cleanText(n.titulo || ""), // Nombre Tarea
+            "", "", "", // Días Alerta, Tipo de días, Prioritario
+            cleanHTML(n.descripcion || ""), // ✅ Descripción Tarea (limpia HTML)
+            "", "", "", // Asignado a Usuario - Nombre, Grupo, responsables exp
+            cleanText(n.asignadoA || ""), // Asignado a unidad gestora
+            "", "", "", "", "", "", "", "", // campos intermedios vacíos
+            n.tareaManual ? "Sí" : "No", // ✅ Inicio manual (Sí/No)
+            "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+        ];
+    });
+
+    const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].join("\n");
 
     // --- 3️⃣ Crear CONDICIONES ---
     const headerConds = [
@@ -643,7 +661,7 @@ const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].
     ];
 
     const condRows = [];
-    this.data.conexiones.forEach((c, idx) => {
+    this.data.conexiones.forEach((c) => {
         const fromNode = this.data.nodos.find(n => n.id === c.from);
         const toNode = this.data.nodos.find(n => n.id === c.to);
         if (!fromNode || !toNode) return;
@@ -679,14 +697,25 @@ const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].
     function cleanText(t) {
         return (t || "").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
     }
+
+    function cleanHTML(html) {
+        if (!html) return "";
+        return html
+            .replace(/<\/?[^>]+(>|$)/g, "") // elimina todas las etiquetas HTML
+            .replace(/\s+/g, " ")           // elimina espacios duplicados
+            .trim();
+    }
+
     function capitalizeFirst(txt) {
         if (!txt) return "";
         return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
     }
+
     function downloadCSV(content, name) {
-// 🔥 Añadimos BOM UTF-8 para compatibilidad total con Excel
-const bom = "\uFEFF";
-const blob = new Blob([bom + content], { type: "text/csv;charset=utf-8;" });        const url = URL.createObjectURL(blob);
+        // 🔥 Añadimos BOM UTF-8 para compatibilidad total con Excel
+        const bom = "\uFEFF";
+        const blob = new Blob([bom + content], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = name;
@@ -694,6 +723,8 @@ const blob = new Blob([bom + content], { type: "text/csv;charset=utf-8;" });    
         URL.revokeObjectURL(url);
     }
 };
+
+
 /* ============================================================
    IMPORTAR FLUJO DESDE CSV NORMALIZADO (Tareas.csv + Condiciones.csv)
 ============================================================ */

@@ -1,6 +1,8 @@
 /* ============================================
    ESTILOS GENERALES DE LA INTERFAZ
 ============================================ */
+
+
 .node {
     width: var(--w, auto);
     height: var(--h, auto);
