@@ -201,8 +201,17 @@ const Interactions = {
         if (this.selectionRect) this.selectionRect.remove();
         this.selectionRect = null;
         this.isSelecting = false;
-    },
     
+        if (this.selectedNodes.size > 1) {
+            Engine.selectedNodeId = null;
+            Engine.selectedConnectionId = null;
+            UI.showGroupProperties(); // 👈 mostrará solo color + slider + eliminar
+        } else if (this.selectedNodes.size === 1) {
+            const unico = Array.from(this.selectedNodes)[0];
+            Engine.selectNode(unico);
+        }
+    },
+        
 /* ========================================================
    INICIAR RECONEXIÓN DE UNA LÍNEA EXISTENTE
 ======================================================== */

@@ -510,10 +510,45 @@ if (nodo.tipo === "operacion_externa") {
     
         shape.appendChild(svg);
     }
-    
-      
-    
-    ,
+        ,
+/* ============================================================
+   HELPERS PARA TRAMOS Y CÁLCULO LIMPIO DE ETIQUETAS
+============================================================ */
+
+// --- convierte "M x y L x y ..." a [{x,y},...]
+parsePoints(d) {
+    const nums = d.match(/-?\d+(\.\d+)?/g) || [];
+    const pts = [];
+    for (let i = 0; i < nums.length; i += 2) {
+        pts.push({ x: parseFloat(nums[i]), y: parseFloat(nums[i+1]) });
+    }
+    return pts;
+},
+
+// --- true si A->B y B->C están en el mismo eje (colineales ortogonales)
+_colineales(a, b, c) {
+    return (a.x === b.x && b.x === c.x) || (a.y === b.y && b.y === c.y);
+},
+
+// --- fusiona segmentos consecutivos colineales → devuelve tramos reales {p1,p2}
+_toSegments(pts) {
+    if (pts.length < 2) return [];
+    const simp = [ pts[0] ];
+    for (let i = 1; i < pts.length - 1; i++) {
+        const a = simp[simp.length - 1];
+        const b = pts[i];
+        const c = pts[i + 1];
+        if (this._colineales(a, b, c)) continue;
+        simp.push(b);
+    }
+    simp.push(pts[pts.length - 1]);
+
+    const segs = [];
+    for (let i = 0; i < simp.length - 1; i++) {
+        segs.push({ p1: simp[i], p2: simp[i+1] });
+    }
+    return segs;
+},
 
     /* =======================================================
        ACTUALIZAR LABEL DEL NODO
@@ -584,7 +619,14 @@ redrawConnectionsDynamic(conn, fixedX, fixedY, mx, my, movingEnd) {
             y: rect.top + rect.height / 2 - canvasRect.top
         };
     },
-
+    parsePoints(d) {
+        const nums = d.match(/-?\d+(\.\d+)?/g);
+        const pts = [];
+        for (let i = 0; i < nums.length; i += 2) {
+            pts.push({ x: parseFloat(nums[i]), y: parseFloat(nums[i+1]) });
+        }
+        return pts;
+    },
     /* =======================================================
        DIBUJAR CONEXIÓN
     ======================================================== */
@@ -687,58 +729,69 @@ redrawConnectionsDynamic(conn, fixedX, fixedY, mx, my, movingEnd) {
     
         this.svg.appendChild(path);
     
-        // =============================
-        // 🏷️ ETIQUETA SOBRE LA LÍNEA
-        // =============================
-        if (conn.condicionNombre || conn.condicionValor) {
-            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            label.classList.add("connection-label");
-    
-            // Texto
-            const texto = conn.condicionNombre
-                ? `${conn.condicionNombre}: ${conn.condicionValor || ""}`
-                : conn.condicionValor || "";
-    
-            label.textContent = texto;
-    
-            const from = this.getHandleCoordinates(conn.from, conn.fromPos);
-            const to   = this.getHandleCoordinates(conn.to, conn.toPos);
-    
-            const LABEL_OFFSET = 35;
-            let p1x = from.x, p1y = from.y;
-            let p2x = to.x,   p2y = to.y;
-    
-            if (conn.fromPos === "top")    p1y = from.y - LABEL_OFFSET;
-            if (conn.fromPos === "bottom") p1y = from.y + LABEL_OFFSET;
-            if (conn.fromPos === "left")   p1x = from.x - LABEL_OFFSET;
-            if (conn.fromPos === "right")  p1x = from.x + LABEL_OFFSET;
-    
-            if (conn.toPos === "top")      p2y = to.y - LABEL_OFFSET;
-            if (conn.toPos === "bottom")   p2y = to.y + LABEL_OFFSET;
-            if (conn.toPos === "left")     p2x = to.x - LABEL_OFFSET;
-            if (conn.toPos === "right")    p2x = to.x + LABEL_OFFSET;
-    
-            let midX, midY;
-            if (Math.abs(p1y - p2y) < 25) {
-                midX = (p1x + p2x) / 2;
-                midY = p1y;
-            } else {
-                midX = (p1x + p2x) / 2;
-                midY = Math.max(p1y, p2y) - LABEL_OFFSET / 2;
-            }
-    
-            label.setAttribute("x", midX);
-            label.setAttribute("y", midY);
-            label.setAttribute("text-anchor", "middle");
-            label.setAttribute("dominant-baseline", "middle");
-    
-            label.setAttribute("fill", "#ffffff");
-            label.setAttribute("stroke", "#000000");
-            label.setAttribute("stroke-width", "2");
-            label.setAttribute("paint-order", "stroke fill");
-    
-            this.svg.appendChild(label);
-        }
+// =============================
+// 🏷️ ETIQUETA SEGÚN REGLAS (0, 1 o 2+ codos)
+// =============================
+if (conn.condicionNombre || conn.condicionValor) {
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.classList.add("connection-label");
+
+    const texto = conn.condicionNombre
+        ? `${conn.condicionNombre}: ${conn.condicionValor || ""}`
+        : (conn.condicionValor || "");
+    label.textContent = texto;
+
+    // 1) puntos del path y tramos "reales"
+    const pts = Renderer.parsePoints(d);
+    const segs = Renderer._toSegments(pts); // [{p1,p2}, ...]
+
+    if (!segs.length) return;
+
+    // 2) seleccionar tramo según tus reglas
+    const elbows = Math.max(0, segs.length - 1);
+    let seg;
+
+    if (elbows === 0) {
+        // 0 codos → tramo único
+        seg = segs[0];
+    } else if (elbows === 1) {
+        // 1 codo → tramo final (más cercano al destino)
+        seg = segs[segs.length - 1];
+    } else {
+        // 2+ codos → tramo entre los dos primeros codos
+        seg = segs[1];
+    }
+
+    // 3) punto medio del tramo elegido
+    const midX = (seg.p1.x + seg.p2.x) / 2;
+    const midY = (seg.p1.y + seg.p2.y) / 2;
+
+    // 4) SIEMPRE horizontal
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("dominant-baseline", "middle");
+
+    // pequeño desplazamiento para legibilidad
+    if (Math.abs(seg.p1.y - seg.p2.y) < Math.abs(seg.p1.x - seg.p2.x)) {
+        // tramo horizontal
+        label.setAttribute("x", midX);
+        label.setAttribute("y", midY - 6);
+    } else {
+        // tramo vertical
+        label.setAttribute("x", midX - 6);
+        label.setAttribute("y", midY);
+    }
+
+    label.setAttribute("fill", "#ffffff");
+    label.setAttribute("stroke", "#000000");
+    label.setAttribute("stroke-width", "2");
+    label.setAttribute("paint-order", "stroke fill");
+
+    label.dataset.connId = conn.id;
+
+    this.svg.appendChild(label);
+}
+
     }
     ,
     /* ============================================================
@@ -784,73 +837,64 @@ hideConnectionHandles() {
        PATH ORTOGONAL
     ======================================================== */
     generateOrthogonalPath(from, to, fromPos, toPos) {
-        const minGap = 10; // 🔹 Evita codos demasiado cortos
+        const offset = 30; // separación desde el nodo
+        const p = [];
     
-        let x1 = from.x, y1 = from.y;
-        let x2 = to.x,   y2 = to.y;
+        // 1️⃣ punto inicial
+        p.push({ x: from.x, y: from.y });
     
-        const midX = (x1 + x2) / 2;
-        const midY = (y1 + y2) / 2;
-    
-        let path = "";
-    
+        // 2️⃣ salir recto del nodo origen
         switch (fromPos) {
-            case "right":
-                switch (toPos) {
-                    case "left":
-                        if (Math.abs(x2 - x1) < minGap) {
-                            // 🔹 Si están muy juntos horizontalmente → línea casi recta
-                            path = `M ${x1} ${y1} L ${x2} ${y2}`;
-                        } else {
-                            const mid = (x1 + x2) / 2;
-                            path = `M ${x1} ${y1} L ${mid} ${y1} L ${mid} ${y2} L ${x2} ${y2}`;
-                        }
-                        break;
-                    case "top":
-                    case "bottom":
-                        path = `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`;
-                        break;
-                    default:
-                        path = `M ${x1} ${y1} L ${x2} ${y2}`;
-                }
-                break;
-    
-            case "left":
-                switch (toPos) {
-                    case "right":
-                        if (Math.abs(x2 - x1) < minGap) {
-                            path = `M ${x1} ${y1} L ${x2} ${y2}`;
-                        } else {
-                            const mid = (x1 + x2) / 2;
-                            path = `M ${x1} ${y1} L ${mid} ${y1} L ${mid} ${y2} L ${x2} ${y2}`;
-                        }
-                        break;
-                    case "top":
-                    case "bottom":
-                        path = `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`;
-                        break;
-                    default:
-                        path = `M ${x1} ${y1} L ${x2} ${y2}`;
-                }
-                break;
-    
-            case "top":
-            case "bottom":
-                // 🔹 General vertical-to-anything
-                if (Math.abs(y2 - y1) < minGap) {
-                    path = `M ${x1} ${y1} L ${x2} ${y2}`;
-                } else {
-                    const mid = (y1 + y2) / 2;
-                    path = `M ${x1} ${y1} L ${x1} ${mid} L ${x2} ${mid} L ${x2} ${y2}`;
-                }
-                break;
-    
-            default:
-                path = `M ${x1} ${y1} L ${x2} ${y2}`;
+            case "top":    p.push({ x: from.x, y: from.y - offset }); break;
+            case "bottom": p.push({ x: from.x, y: from.y + offset }); break;
+            case "left":   p.push({ x: from.x - offset, y: from.y }); break;
+            case "right":  p.push({ x: from.x + offset, y: from.y }); break;
         }
     
-        return path;
+        // 3️⃣ llegar recto al nodo destino
+        let approach = { x: to.x, y: to.y };
+        switch (toPos) {
+            case "top":    approach = { x: to.x, y: to.y - offset }; break;
+            case "bottom": approach = { x: to.x, y: to.y + offset }; break;
+            case "left":   approach = { x: to.x - offset, y: to.y }; break;
+            case "right":  approach = { x: to.x + offset, y: to.y }; break;
+        }
+    
+        // 4️⃣ añadir punto intermedio — sólo cambia un eje por vez
+        const last = p[p.length - 1];
+    
+        // calculamos primer codo horizontal o vertical según distancia
+        if (Math.abs(to.x - last.x) > Math.abs(to.y - last.y)) {
+            // más ancho que alto → primero horizontal, luego vertical
+            p.push({ x: approach.x, y: last.y });
+        } else {
+            // más alto que ancho → primero vertical, luego horizontal
+            p.push({ x: last.x, y: approach.y });
+        }
+    
+        // 5️⃣ añadir llegada y destino
+        p.push(approach);
+        p.push({ x: to.x, y: to.y });
+    
+        // 6️⃣ construir path SVG asegurando ortogonalidad
+        let d = `M ${p[0].x} ${p[0].y}`;
+        for (let i = 1; i < p.length; i++) {
+            const prev = p[i - 1], cur = p[i];
+            // 🔒 forzamos un eje constante
+            if (prev.x !== cur.x && prev.y !== cur.y) {
+                // elige mantener el eje más cercano al anterior
+                if (Math.abs(prev.x - cur.x) > Math.abs(prev.y - cur.y)) {
+                    cur.y = prev.y;
+                } else {
+                    cur.x = prev.x;
+                }
+            }
+            d += ` L ${cur.x} ${cur.y}`;
+        }
+    
+        return d;
     }
+    
 ,    
 
     redrawConnections() {
@@ -1001,5 +1045,216 @@ Renderer.updateNodeTextColor = function(id, tipoTexto, color) {
 
     Engine.saveHistory();
 };
+/* ============================================================
+   EDICIÓN DE LÍNEAS: MOVER TRAMOS RECTOS + CREAR CODO AUTOMÁTICO
+============================================================ */
+Renderer.LineEditor = {
+    activeConn: null,
+    handles: [],
+    isDragging: false,
+    dragIndex: null,
+    segments: [],
+
+    show(conn) {
+        this.clear();
+        if (!conn) return;
+        this.activeConn = conn;
+    
+        const pathEl = Renderer.svg.querySelector(`#${conn.id}`);
+        if (!pathEl) return;
+    
+        const pts = this._extractPoints(pathEl.getAttribute("d"));
+        if (pts.length < 3) return; // nada que mover si solo hay 2 puntos
+    
+        this.segments = [];
+        for (let i = 0; i < pts.length - 1; i++) {
+            // ❌ Saltar el primer y último tramo (conectan con nodos)
+            if (i === 0 || i === pts.length - 2) continue;
+    
+            const p1 = pts[i];
+            const p2 = pts[i + 1];
+            const isHorizontal = Math.abs(p1.y - p2.y) < Math.abs(p1.x - p2.x);
+    
+            const cx = (p1.x + p2.x) / 2;
+            const cy = (p1.y + p2.y) / 2;
+    
+            const h = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            h.classList.add("line-segment-handle");
+            h.setAttribute("cx", cx);
+            h.setAttribute("cy", cy);
+            h.setAttribute("r", "7");
+            h.setAttribute("fill", "#2563eb");
+            h.setAttribute("stroke", "#fff");
+            h.setAttribute("stroke-width", "2");
+            h.style.cursor = isHorizontal ? "ns-resize" : "ew-resize";
+            h.dataset.index = i;
+            h.dataset.axis = isHorizontal ? "y" : "x";
+    
+            h.addEventListener("mousedown", (e) => this.startDrag(e, i, isHorizontal));
+            Renderer.svg.appendChild(h);
+            this.handles.push(h);
+    
+            this.segments.push({ i1: i, i2: i + 1, horizontal: isHorizontal });
+        }
+    },
+        clear() {
+        Renderer.svg.querySelectorAll(".line-segment-handle").forEach(h => h.remove());
+        this.handles = [];
+        this.activeConn = null;
+        this.isDragging = false;
+        this.dragIndex = null;
+    },
+
+    _extractPoints(d) {
+        const coords = d.match(/-?\d+(\.\d+)?/g);
+        const pts = [];
+        if (coords) {
+            for (let i = 0; i < coords.length; i += 2)
+                pts.push({ x: parseFloat(coords[i]), y: parseFloat(coords[i + 1]) });
+        }
+        return pts;
+    },
+
+    startDrag(e, segIndex, isHorizontal) {
+        e.stopPropagation();
+        this.isDragging = true;
+        this.dragIndex = segIndex;
+    
+        const conn = this.activeConn;
+        const pathEl = Renderer.svg.querySelector(`#${conn.id}`);
+        if (!pathEl) return;
+    
+        let pts = this._extractPoints(pathEl.getAttribute("d"));
+        const seg = this.segments.find(s => s.i1 === segIndex || s.i2 === segIndex + 1);
+        if (!seg) return;
+    
+        const svgRect = Renderer.svg.getBoundingClientRect();
+        const axis = isHorizontal ? "y" : "x";
+    
+        const onMove = (ev) => {
+            if (!this.isDragging) return;
+    
+            // Coordenadas del ratón en el SVG
+            const x = ev.clientX - svgRect.left;
+            const y = ev.clientY - svgRect.top;
+    
+            // Desplazamos ambos puntos del tramo (manteniendo ortogonalidad)
+            if (axis === "y") {
+                const deltaY = y - (pts[seg.i1].y + pts[seg.i2].y) / 2;
+                pts[seg.i1].y += deltaY;
+                pts[seg.i2].y += deltaY;
+            } else {
+                const deltaX = x - (pts[seg.i1].x + pts[seg.i2].x) / 2;
+                pts[seg.i1].x += deltaX;
+                pts[seg.i2].x += deltaX;
+            }
+    
+            // 🔹 Reforzar ortogonalidad automática (solo tramos internos)
+            pts = this._ensureOrthogonality(pts, seg.i1, seg.i2);
+    
+            // Redibujar la línea
+            let d = `M ${pts[0].x},${pts[0].y}`;
+            for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x},${pts[i].y}`;
+            pathEl.setAttribute("d", d);
+
+            // 🏷️ Mover también la etiqueta correcta (solo la de esta conexión)
+            const label = Renderer.svg.querySelector(`text.connection-label[data-conn-id="${conn.id}"]`);
+            if (label) {
+                const pathLength = pathEl.getTotalLength();
+                const mid = pathEl.getPointAtLength(pathLength / 2);
+                label.setAttribute("x", mid.x + 8);
+                label.setAttribute("y", mid.y - 4);
+            }
+
+// Actualizar posición de los handles
+this.updateHandles(pts);        };
+    
+        const onUp = () => {
+            this.isDragging = false;
+            this.dragIndex = null;
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+    
+            Engine.saveHistory();
+            Renderer.LineEditor.show(conn); // 🔄 refrescar handles después del movimiento
+        };
+    
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+    },
+    
+
+    /* ============================================================
+       Mantener ortogonalidad: inserta un codo si se rompe
+    ============================================================ */
+    _ensureOrthogonality(pts, i1, i2) {
+        const fixed = [...pts];
+        const before = i1 - 1 >= 0 ? fixed[i1 - 1] : null;
+        const after  = i2 + 1 < fixed.length ? fixed[i2 + 1] : null;
+
+        // Verificar ángulos antes y después
+        const horizontal = Math.abs(fixed[i1].y - fixed[i2].y) < Math.abs(fixed[i1].x - fixed[i2].x);
+
+        // 🔹 Si se rompe antes
+        if (before) {
+            const prevDir = Math.abs(before.x - fixed[i1].x) > Math.abs(before.y - fixed[i1].y) ? "H" : "V";
+            if ((horizontal && prevDir === "H") || (!horizontal && prevDir === "V")) {
+                // Necesitamos insertar codo
+                const mid = horizontal
+                    ? { x: before.x, y: fixed[i1].y }
+                    : { x: fixed[i1].x, y: before.y };
+                fixed.splice(i1, 0, mid);
+                i1++;
+                i2++;
+            }
+        }
+
+        // 🔹 Si se rompe después
+        if (after) {
+            const nextDir = Math.abs(after.x - fixed[i2].x) > Math.abs(after.y - fixed[i2].y) ? "H" : "V";
+            if ((horizontal && nextDir === "H") || (!horizontal && nextDir === "V")) {
+                const mid = horizontal
+                    ? { x: after.x, y: fixed[i2].y }
+                    : { x: fixed[i2].x, y: after.y };
+                fixed.splice(i2 + 1, 0, mid);
+            }
+        }
+
+        return fixed;
+    },
+
+    updateHandles(pts) {
+        this.handles.forEach((h) => {
+            const i = parseInt(h.dataset.index);
+            if (i >= pts.length - 1) return;
+            const p1 = pts[i];
+            const p2 = pts[i + 1];
+            const cx = (p1.x + p2.x) / 2;
+            const cy = (p1.y + p2.y) / 2;
+            h.setAttribute("cx", cx);
+            h.setAttribute("cy", cy);
+        });
+    }
+};
+
+/* ============================================================
+   MOSTRAR HANDLES AL SELECCIONAR LÍNEA
+============================================================ */
+const _oldSelectConnection = Engine.selectConnection;
+Engine.selectConnection = function(connId) {
+    _oldSelectConnection.call(Engine, connId);
+    const conn = Engine.getConnection(connId);
+    if (conn) Renderer.LineEditor.show(conn);
+    else Renderer.LineEditor.clear();
+};
+
+/* ============================================================
+   LIMPIAR HANDLES AL HACER CLIC FUERA
+============================================================ */
+document.addEventListener("click", (e) => {
+    if (!e.target.closest(".connection-line") && !e.target.classList.contains("line-segment-handle")) {
+        Renderer.LineEditor.clear();
+    }
+});
 
 window.addEventListener("DOMContentLoaded", () => Renderer.init());

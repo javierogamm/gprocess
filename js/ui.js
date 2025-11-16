@@ -98,6 +98,39 @@ strokeInput.addEventListener("input", () => {
     nodo.strokeColor = strokeInput.value;
     Renderer.updateNodeColor(id, nodo.color || "#b9e6e8", strokeInput.value);
 });
+
+/* ========================================================
+   CONTROL GLOBAL DE REDIMENSIONAR VARIOS NODOS
+======================================================== */
+const resizeLabel = document.createElement("label");
+resizeLabel.innerText = "Redimensionar selección";
+
+const resizeSlider = document.createElement("input");
+resizeSlider.type = "range";
+resizeSlider.id = "propResize";
+resizeSlider.min = "50";
+resizeSlider.max = "200";
+resizeSlider.value = "100";
+resizeSlider.step = "5";
+resizeSlider.style.width = "100%";
+resizeSlider.style.marginTop = "4px";
+resizeSlider.style.marginBottom = "10px";
+resizeSlider.style.cursor = "pointer";
+
+this.propsEditor.appendChild(resizeLabel);
+this.propsEditor.appendChild(resizeSlider);
+
+// Guardar referencia
+this.inputResize = resizeSlider;
+
+// Evento: al mover el slider → redimensiona todos los seleccionados
+resizeSlider.addEventListener("input", () => {
+    const scalePercent = parseInt(resizeSlider.value, 10) / 100;
+    if (Interactions.selectedNodes.size > 0) {
+        Engine.resizeSelectedNodes(scalePercent);
+    }
+});
+
 /* ========================================================
    CONTROL DE COLOR DE TEXTO DEL TÍTULO Y DESCRIPCIÓN
 ======================================================== */
@@ -142,17 +175,33 @@ textDescInput.addEventListener("input", () => {
 this.inputColor = colorInput;
 this.btnColorPicker = colorBtn;
 
-// Evento: cambiar color desde el input
+// 🎨 Evento: cambiar color (soporta selección múltiple)
 colorInput.addEventListener("input", () => {
-    if (!this.currentNodeId) return;
-    const id = this.currentNodeId;
-    const nodo = Engine.getNode(id);
-    if (!nodo) return;
+    const nuevoColor = colorInput.value;
 
-    nodo.color = colorInput.value;
-    Renderer.updateNodeColor(id, nodo.color);
+    // 🟢 Si hay varios nodos seleccionados → aplicar a todos
+    if (Interactions.selectedNodes && Interactions.selectedNodes.size > 1) {
+        Interactions.selectedNodes.forEach(id => {
+            const nodo = Engine.getNode(id);
+            if (!nodo) return;
+            nodo.color = nuevoColor;
+            Renderer.updateNodeColor(id, nuevoColor, nodo.strokeColor || "#4a7f84");
+        });
+        Engine.saveHistory();
+        return;
+    }
+
+    // 🔵 Si hay un solo nodo activo
+    if (this.currentNodeId) {
+        const id = this.currentNodeId;
+        const nodo = Engine.getNode(id);
+        if (!nodo) return;
+
+        nodo.color = nuevoColor;
+        Renderer.updateNodeColor(id, nuevoColor, nodo.strokeColor || "#4a7f84");
+        Engine.saveHistory();
+    }
 });
-
 // Evento: usar cuentagotas del navegador
 colorBtn.addEventListener("click", async () => {
     if (!this.currentNodeId) return;
@@ -391,38 +440,188 @@ colorBtn.addEventListener("click", async () => {
         const nodo = Engine.getNode(id);
         if (!nodo) return;
     
-        // Mostrar/ocultar paneles correctamente
+        // 🔸 Determinar si hay selección múltiple
+        const multiple = Interactions.selectedNodes.size > 1;
+        const groupPanel = document.getElementById("propsGroup");
+    
+        // ------------------------------------------------------------
+        // 🌈 Modo selección múltiple
+        // ------------------------------------------------------------
+        if (multiple) {
+            this.propsEmpty.style.display = "none";
+            this.propsEditor.style.display = "none";
+            if (this.propsConn) this.propsConn.style.display = "none";
+    
+            let panel = groupPanel;
+            if (!panel) {
+                panel = document.createElement("div");
+                panel.id = "propsGroup";
+                panel.style.padding = "10px";
+                panel.innerHTML = `
+                    <h3>Selección múltiple</h3>
+                    <label>Color común</label>
+                    <input type="color" id="groupColor" style="width:100%;height:36px;margin-bottom:8px;">
+                    <label>Tamaño</label>
+                    <input type="range" id="groupSize" min="40" max="400" value="100" style="width:100%;margin-bottom:8px;">
+                    <button id="groupDelete" class="btn" style="background:#dc2626;color:white;">🗑️ Eliminar todos</button>
+                `;
+                document.getElementById("rightPanel").appendChild(panel);
+    
+                // 🎨 Color
+                panel.querySelector("#groupColor").addEventListener("input", (e) => {
+                    const color = e.target.value;
+                    Interactions.selectedNodes.forEach(id => {
+                        const n = Engine.getNode(id);
+                        if (!n) return;
+                        n.color = color;
+                        Renderer.updateNodeColor(id, color);
+                    });
+                });
+    
+                // 📏 Redimensionar
+                panel.querySelector("#groupSize").addEventListener("input", (e) => {
+                    const factor = parseFloat(e.target.value) / 100;
+                    Interactions.selectedNodes.forEach(id => {
+                        const n = Engine.getNode(id);
+                        const div = document.getElementById(id);
+                        if (!n || !div) return;
+                        n.width = Math.max(40, n.width * factor);
+                        n.height = Math.max(25, n.height * factor);
+                        div.style.width = n.width + "px";
+                        div.style.height = n.height + "px";
+                        Renderer.renderShapeSVG(div, n);
+                    });
+                    Renderer.redrawConnections();
+                });
+    
+                // 🗑️ Eliminar
+                panel.querySelector("#groupDelete").addEventListener("click", () => {
+                    Interactions.selectedNodes.forEach(id => Engine.deleteNode(id));
+                    Interactions.selectedNodes.clear();
+                    Renderer.redrawConnections();
+                    this.clear();
+                });
+            }
+    
+            panel.style.display = "block";
+            return;
+        }
+    
+        // ------------------------------------------------------------
+        // 🧩 Modo nodo individual
+        // ------------------------------------------------------------
+        if (groupPanel) groupPanel.style.display = "none";
+    
         this.propsEmpty.style.display = "none";
         this.propsEditor.style.display = "block";
         if (this.propsConn) this.propsConn.style.display = "none";
     
-        // Asignar valores
-        this.inputTitulo.value = nodo.titulo || "";
-
-        // Mostrar tipo actual del nodo
         const tipoSelect = document.getElementById("propTipo");
-        if (tipoSelect) {
-            tipoSelect.value = nodo.tipo || "formulario";
-        }
+        if (tipoSelect) tipoSelect.value = nodo.tipo || "formulario";
     
-        // ✅ Campo descripción ahora es un DIV contenteditable (no input)
+        this.inputTitulo.value = nodo.titulo || "";
         const descDiv = document.getElementById("propDescripcion");
-        if (descDiv) {
-            descDiv.innerHTML = nodo.descripcion || ""; // Limpia y carga la del nodo actual
-        }
+        if (descDiv) descDiv.innerHTML = nodo.descripcion || "";
     
         this.inputTareaManual.checked = !!nodo.tareaManual;
         this.inputAsignadoA.value = nodo.asignadoA || "";
-        // 🎨 Mostrar color actual del nodo
-        if (this.inputColor) {
-            this.inputColor.value = nodo.color || getDefaultColorByType(nodo.tipo);
-}
-        // 🎨 Mostrar color actual del borde
-        if (this.inputStrokeColor) {
-            this.inputStrokeColor.value = nodo.strokeColor || "#4a7f84";
-        }
-    },
     
+        if (this.inputColor)
+            this.inputColor.value = nodo.color || getDefaultColorByType(nodo.tipo);
+        if (this.inputStrokeColor)
+            this.inputStrokeColor.value = nodo.strokeColor || "#4a7f84";
+        if (this.inputTextColorTitulo)
+            this.inputTextColorTitulo.value = nodo.colorTitulo || "#111827";
+        if (this.inputTextColorDescripcion)
+            this.inputTextColorDescripcion.value = nodo.colorDescripcion || "#333333";
+    }
+    
+    
+    ,
+/* ========================================================
+   MOSTRAR PANEL DE PROPIEDADES DE GRUPO (selección múltiple)
+======================================================== */
+showGroupProperties() {
+    this.currentNodeId = null;
+    this.currentConnId = null;
+
+    // Mostrar el panel principal y ocultar los otros
+    this.propsEmpty.style.display = "none";
+    this.propsEditor.style.display = "block";
+    if (this.propsConn) this.propsConn.style.display = "none";
+
+    // 🧹 Ocultar todo lo que no sea color, tamaño o eliminar
+    const allChildren = Array.from(this.propsEditor.children);
+    allChildren.forEach(el => {
+        el.style.display = "none";
+    });
+
+    // 🎨 Mostrar color del nodo
+    if (this.inputColor) {
+        this.inputColor.style.display = "block";
+        const labelColor = this.inputColor.previousElementSibling;
+        if (labelColor) labelColor.style.display = "block";
+    }
+
+    // 📏 Mostrar slider de tamaño
+    if (this.inputResize) {
+        this.inputResize.style.display = "block";
+        const labelResize = this.inputResize.previousElementSibling;
+        if (labelResize) labelResize.style.display = "block";
+    }
+            // 🧭 Botón de alineación
+        let btnAlinear = document.getElementById("btnAlignGroup");
+        if (!btnAlinear) {
+            btnAlinear = document.createElement("button");
+            btnAlinear.id = "btnAlignGroup";
+            btnAlinear.className = "btn";
+            btnAlinear.textContent = "🧭 Alinear selección";
+            btnAlinear.style.background = "#2563eb";
+            btnAlinear.style.color = "white";
+            btnAlinear.style.width = "100%";
+            btnAlinear.style.marginTop = "6px";
+            btnAlinear.addEventListener("click", () => {
+                Engine.alignSelectedNodes();
+            });
+            this.propsEditor.appendChild(btnAlinear);
+        } else {
+            btnAlinear.style.display = "block";
+        }
+
+    // 🗑️ Botón eliminar selección
+    let btnEliminar = document.getElementById("btnDeleteGroup");
+    if (!btnEliminar) {
+        btnEliminar = document.createElement("button");
+        btnEliminar.id = "btnDeleteGroup";
+        btnEliminar.className = "btn";
+        btnEliminar.textContent = "🗑️ Eliminar selección";
+        btnEliminar.style.background = "#dc2626";
+        btnEliminar.style.color = "white";
+        btnEliminar.style.width = "100%";
+        btnEliminar.style.marginTop = "10px";
+        btnEliminar.addEventListener("click", () => {
+            if (Interactions.selectedNodes.size === 0) return;
+            if (!confirm(`¿Eliminar ${Interactions.selectedNodes.size} nodos seleccionados?`)) return;
+            Array.from(Interactions.selectedNodes).forEach(id => Engine.deleteNode(id));
+            Interactions.selectedNodes.clear();
+            UI.clear();
+        });
+        this.propsEditor.appendChild(btnEliminar);
+    } else {
+        btnEliminar.style.display = "block";
+    }
+
+    // 🔖 Título opcional del panel
+    const header = this.propsEditor.querySelector("h3");
+    if (header) {
+        header.textContent = `Propiedades de grupo (${Interactions.selectedNodes.size})`;
+        header.style.display = "block";
+    }
+
+    // 🔄 Reset slider
+    if (this.inputResize) this.inputResize.value = "100";
+}
+,
 
 /* ========================================================
    MOSTRAR PROPIEDADES DE CONEXIÓN
@@ -479,6 +678,7 @@ showConnectionProperties(connId) {
         this.propsEmpty.style.display = "block";
         this.propsEditor.style.display = "none";
         this.propsConn.style.display = "none";
+        if (this.inputResize) this.inputResize.value = "100";
     }
 };
 /* ============================================================

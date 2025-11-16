@@ -241,13 +241,86 @@ updateConnections() {
     getConnection(id) {
         return this.data.conexiones.find(c => c.id === id);
     },
+/* ============================================================
+   ALINEAR NODOS SELECCIONADOS (X o Y)
+============================================================ */
+/* ============================================================
+   ALINEAR NODOS SELECCIONADOS (por CENTRO en eje X o Y)
+============================================================ */
+alignSelectedNodes() {
+    const selected = Array.from(Interactions.selectedNodes || []);
+    if (selected.length < 2) return;
 
+    const nodos = selected.map(id => Engine.getNode(id)).filter(Boolean);
+    if (nodos.length < 2) return;
+
+    // 🔹 Calcular centro de cada nodo
+    const centros = nodos.map(n => ({
+        id: n.id,
+        cx: n.x + (n.width || 200) / 2,
+        cy: n.y + (n.height || 80) / 2,
+        width: n.width || 200,
+        height: n.height || 80
+    }));
+
+    const xs = centros.map(c => c.cx);
+    const ys = centros.map(c => c.cy);
+    const rangoX = Math.max(...xs) - Math.min(...xs);
+    const rangoY = Math.max(...ys) - Math.min(...ys);
+
+    // 🔸 Determinar eje de alineación dominante (el que tenga menos dispersión)
+    const eje = rangoX > rangoY ? "y" : "x";
+
+    // 🔸 Calcular posición media del eje
+    const valorMedio = eje === "x"
+        ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length)
+        : Math.round(ys.reduce((a, b) => a + b, 0) / ys.length);
+
+    // 🔹 Aplicar alineación usando centros
+    const tolerancia = 9999; // sin límite: los mueve todos a línea exacta
+
+    centros.forEach(c => {
+        const n = Engine.getNode(c.id);
+        if (!n) return;
+
+        if (eje === "x") {
+            // Alinear verticalmente (misma X central)
+            const nuevoX = valorMedio - (n.width || 200) / 2;
+            n.x = Math.round(nuevoX);
+        } else {
+            // Alinear horizontalmente (misma Y central)
+            const nuevoY = valorMedio - (n.height || 80) / 2;
+            n.y = Math.round(nuevoY);
+        }
+
+        // Actualizar posición visual
+        const div = document.getElementById(n.id);
+        if (div) {
+            div.style.left = n.x + "px";
+            div.style.top = n.y + "px";
+        }
+    });
+
+    Renderer.redrawConnections();
+    Engine.saveHistory();
+
+    console.log(`🧭 Alineados ${nodos.length} nodos al centro por eje ${eje.toUpperCase()}`);
+}
+
+,
     /* ============================================================
        SELECCIÓN DE ELEMENTOS
     ============================================================ */
     selectNode(id) {
         this.selectedNodeId = id;
         this.selectedConnectionId = null;
+    
+        // 🧩 Si hay más de un nodo seleccionado → mostrar panel de grupo
+        if (Interactions.selectedNodes && Interactions.selectedNodes.size > 1) {
+            UI.showGroupProperties();
+            return;
+        }
+    
         UI.showNodeProperties(id);
     },
 
@@ -345,6 +418,36 @@ updateConnections() {
     
         this.saveHistory();
     },
+
+    /* ============================================================
+   REDIMENSIONAR VARIOS NODOS A LA VEZ
+============================================================ */
+resizeSelectedNodes(scaleFactor) {
+    const selected = Array.from(Interactions.selectedNodes);
+    if (selected.length === 0) return;
+
+    // Redimensionar cada nodo proporcionalmente
+    selected.forEach(id => {
+        const nodo = this.getNode(id);
+        if (!nodo) return;
+
+        nodo.width = Math.max(60, nodo.width * scaleFactor);
+        nodo.height = Math.max(40, nodo.height * scaleFactor);
+
+        // Actualizar visual
+        const div = document.getElementById(id);
+        if (div) {
+            div.style.width = nodo.width + "px";
+            div.style.height = nodo.height + "px";
+        }
+
+        Renderer.renderShapeSVG(div, nodo);
+    });
+
+    Renderer.updateConnections();
+    this.saveHistory();
+},
+
     
     /* ============================================================
        BORRAR NODO (y sus conexiones)
@@ -995,7 +1098,33 @@ Engine.showCSVPreview = function() {
     </table>
 `;
 
+// === NUEVO BLOQUE: AGRUPAR POR "Asignado a" ===
+const agrupado = {};
+this.data.nodos.forEach(n => {
+    const grupo = n.asignadoA?.trim() || "Sin asignar";
+    if (!agrupado[grupo]) agrupado[grupo] = [];
+    agrupado[grupo].push(n.titulo || "(Sin título)");
+});
 
+let htmlAsignados = `
+    <h3>🧑‍💼 Agrupación por Asignado A</h3>
+    <table>
+        <thead>
+            <tr><th>Unidad / Persona</th><th>Tareas asignadas</th></tr>
+        </thead>
+        <tbody>
+`;
+for (const [grupo, tareas] of Object.entries(agrupado)) {
+    htmlAsignados += `
+        <tr>
+            <td><strong>${grupo}</strong> (${tareas.length})</td>
+            <td>${tareas.join("<br>")}</td>
+        </tr>
+    `;
+}
+htmlAsignados += `</tbody></table>`;
+
+content.innerHTML += htmlAsignados;
     modal.classList.remove("hidden");
 };
 
