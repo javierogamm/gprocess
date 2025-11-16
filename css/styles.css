@@ -16,7 +16,7 @@ body {
 
 /* PANEL IZQUIERDO */
 #leftPanel {
-    width: 120px;
+    width: 180px;
     background: #1f2937;
     color: white;
     padding: 15px;
@@ -24,10 +24,11 @@ body {
     overflow-y: auto;     /* 🔥 Scroll vertical */
     overflow-x: hidden;   /* ✅ Sin scroll horizontal */
     max-height: 100vh;    /* ✅ Límite para no salirse de pantalla */
+    position: relative; /* ✅ NECESARIO para que el resizer funcione */
 }
 
 #leftPanel h2 {
-    font-size: 12px;
+    font-size: 14px;
     margin-top: 0;
 }
 
@@ -49,7 +50,7 @@ body {
 
 /* PANEL DERECHO */
 #rightPanel {
-    width: 100px;
+    width: 180px;
     background: #ffffff;
     border-left: 2px solid #ccc;
     padding: 15px;
@@ -57,6 +58,7 @@ body {
     overflow-y: auto;     /* 🔥 Scroll vertical */
     overflow-x: hidden;   /* ✅ Sin scroll horizontal */
     max-height: 100vh;    /* ✅ Límite para no salirse de pantalla */
+    position: relative; /* ✅ NECESARIO para que el resizer funcione */
 }
 
 #rightPanel h3 {
@@ -525,4 +527,28 @@ input {
     margin-top: 8px;
     margin-bottom: 6px;
 }
+/* ============================================================
+   PANELES LATERALES REDIMENSIONABLES
+============================================================ */
+.panel-resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: transparent;
+    cursor: ew-resize;
+    z-index: 9999;
+}
 
+/* Bordes de cada panel */
+#leftPanel .panel-resizer {
+    right: 0;
+}
+#rightPanel .panel-resizer {
+    left: 0;
+}
+
+/* Sutil feedback visual al pasar el ratón */
+.panel-resizer:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
