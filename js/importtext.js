@@ -401,9 +401,40 @@ const ImportText = {
             });
         });
 
+       /* ===========================================================
+           AJUSTE FINAL: CENTRAR TODO EL DIAGRAMA DENTRO DEL CANVAS
+           Evita que queden nodos fuera del área visible (izquierda o derecha)
+        ============================================================ */
+        const minX = Math.min(...Engine.data.nodos.map(n => n.x));
+        const minY = Math.min(...Engine.data.nodos.map(n => n.y));
+        const maxX = Math.max(...Engine.data.nodos.map(n => n.x + (n.width || 200)));
+        const maxY = Math.max(...Engine.data.nodos.map(n => n.y + (n.height || 100)));
+
+        // Definir márgenes seguros (un poco más alto/bajo)
+        const margin = 120;
+        const offsetX = (minX < margin) ? (margin - minX) : 0;
+        const offsetY = (minY < margin) ? (margin - minY) : 0;
+
+        // Si hay nodos demasiado anchos a la derecha, los centramos visualmente
+        const canvasWidth = document.getElementById("nodesContainer").offsetWidth || 1600;
+        const excesoDerecha = (maxX + margin) - canvasWidth;
+        const ajusteX = excesoDerecha > 0 ? -excesoDerecha / 2 : 0;
+
+        // 🔧 Mover todos los nodos al área visible
+        Engine.data.nodos.forEach(n => {
+            n.x += offsetX + ajusteX;
+            n.y += offsetY;
+
+            const div = document.getElementById(n.id);
+            if (div) {
+                div.style.left = n.x + "px";
+                div.style.top  = n.y + "px";
+            }
+        });
+
+        // 🧭 Recalcular conexiones y guardar
         Renderer.redrawConnections();
         Engine.saveHistory();
-
 
     }
 };

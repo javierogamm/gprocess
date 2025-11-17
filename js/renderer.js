@@ -510,8 +510,34 @@ if (nodo.tipo === "operacion_externa") {
     
         shape.appendChild(svg);
     }
+
         ,
+
 /* ============================================================
+   RESALTAR CONEXIONES DE UN NODO SELECCIONADO (VERSIÓN AJUSTADA)
+============================================================ */
+highlightConnectionsForNode(nodeId) {
+    // 🔹 Limpiar cualquier resaltado previo
+    document.querySelectorAll(".connection-line").forEach(p => {
+        p.classList.remove("highlighted-conn");
+    });
+
+    if (!nodeId) return;
+
+    // 🔹 Resaltar las conexiones que salen o entran en ese nodo
+    Engine.data.conexiones.forEach(conn => {
+        if (conn.from === nodeId || conn.to === nodeId) {
+            const path = document.getElementById(`c${conn.id}`);
+            if (path) {
+                path.classList.add("highlighted-conn");
+                console.log("🔶 resaltando conexión:", conn.id);
+            }
+        }
+    });
+},
+
+
+        /* ============================================================
    HELPERS PARA TRAMOS Y CÁLCULO LIMPIO DE ETIQUETAS
 ============================================================ */
 

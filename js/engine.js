@@ -773,27 +773,38 @@ Engine.exportFlujoCSV = function() {
     ];
 
     const tareasRows = sortedNodes.map((n) => {
-        let tipoTarea = n.tipo.toLowerCase();
-        if (tipoTarea === "circuito") tipoTarea = "Circuito de Resolución";
-        else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
-        else tipoTarea = capitalizeFirst(tipoTarea);
+    let tipoTarea = n.tipo.toLowerCase();
+    if (tipoTarea === "circuito") tipoTarea = "Circuito de Resolución";
+    else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
+    else tipoTarea = capitalizeFirst(tipoTarea);
 
-        return [
-            "", // Nombre Entidad
-            this.fichaProyecto.actividad || "", // Nombre Actividad
-            this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
-            "", // Sobrescribir
-            tipoTarea, // Tipo Tarea
-            cleanText(n.titulo || ""), // Nombre Tarea
-            "", "", "", // Días Alerta, Tipo de días, Prioritario
-            cleanHTML(n.descripcion || ""), // ✅ Descripción Tarea (limpia HTML)
-            "", "", "", // Asignado a Usuario - Nombre, Grupo, responsables exp
-            cleanText(n.asignadoA || ""), // Asignado a unidad gestora
-            "", "", "", "", "", "", "", "", // campos intermedios vacíos
-            n.tareaManual ? "Sí" : "No", // ✅ Inicio manual (Sí/No)
-            "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
-        ];
-    });
+    // ✅ Lógica corregida
+    const asignado = (n.asignadoA || "").trim();
+    const esUnidadGestora = asignado.toLowerCase() === "unidad gestora";
+    const asignadoGrupo = esUnidadGestora ? "" : asignado;
+    const asignadoUG = esUnidadGestora ? "Sí" : "No";
+
+   return [
+    "", // Nombre Entidad
+    this.fichaProyecto.actividad || "", // Actividad
+    this.fichaProyecto.procedimiento || "", // Procedimiento
+    "", // Sobrescribir
+    tipoTarea, // Tipo Tarea
+    cleanText(n.titulo || ""), // Nombre Tarea
+    "", "", "No", // Días Alerta, Tipo de días, ✅ Prioritario = No
+    cleanHTML(n.descripcion || ""), // Descripción
+    "", // Asignado a Usuario - Nombre
+    asignadoGrupo, // ✅ L - Asignado a Grupo - Nombre
+    "No", // ✅ Asignado a responsables exp
+    asignadoUG, // ✅ N - Asignado a unidad gestora (Sí / No)
+    "No", // Asignado a Usuario - Abre Tarea
+    "No", // Asignado a Usuario - Abre Exp
+    "Sí", // ✅ Permite reasignar siempre Sí
+    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+];
+
+});
+
 
     const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].join("\n");
 
@@ -1186,7 +1197,7 @@ Engine.exportToDOCX = async function() {
 
     const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, PageBreak, AlignmentType } = docxLib;
 
-// --- 1️⃣ CAPTURAR ZONA COMPLETA DEL DIAGRAMA (nodos + conexiones) ---
+// --- 1️⃣ CAPTURAR ÁREA COMPLETA DEL DIAGRAMA SIN CORTAR NI DESPLAZAR ---
 const containerNodes = document.getElementById("nodesContainer");
 const svgConnections = document.getElementById("svgConnections");
 const nodes = this.data.nodos;
@@ -1196,56 +1207,67 @@ if (!nodes.length) {
     return;
 }
 
-// Calcular tamaño real ocupado por los nodos
-let maxRight = 0, maxBottom = 0;
+// ============================================================
+// 🧭 Calcular el área total ocupada (solo para ajustar tamaño)
+// ============================================================
+let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 nodes.forEach(n => {
-    const right = n.x + n.width;
-    const bottom = n.y + n.height;
-    if (right > maxRight) maxRight = right;
-    if (bottom > maxBottom) maxBottom = bottom;
+    if (n.x < minX) minX = n.x;
+    if (n.y < minY) minY = n.y;
+    if (n.x + n.width > maxX) maxX = n.x + n.width;
+    if (n.y + n.height > maxY) maxY = n.y + n.height;
 });
 
-// Crear un contenedor temporal que combine SVG + Nodos
+// 🔹 Márgenes visuales (solo expansión del área)
+const marginX = 300;
+const marginY = 300;
+const areaWidth = (maxX - minX) + marginX * 2;
+const areaHeight = (maxY - minY) + marginY * 2;
+
+// ============================================================
+// 🖼️ Crear un contenedor temporal que mantenga coordenadas absolutas
+// ============================================================
 const wrapper = document.createElement("div");
 wrapper.style.position = "absolute";
 wrapper.style.left = "-9999px";
 wrapper.style.top = "0";
-wrapper.style.width = (maxRight + 100) + "px";
-wrapper.style.height = (maxBottom + 100) + "px";
+wrapper.style.width = areaWidth + "px";
+wrapper.style.height = areaHeight + "px";
 wrapper.style.background = "#f3f4f6";
 wrapper.style.overflow = "visible";
 
-// Clonar el SVG de conexiones (manteniendo sus estilos)
+// Clonar el SVG y nodos SIN alterar su posición
 const svgClone = svgConnections.cloneNode(true);
 svgClone.style.position = "absolute";
 svgClone.style.left = "0";
 svgClone.style.top = "0";
-svgClone.style.width = "100%";
-svgClone.style.height = "100%";
-svgClone.style.overflow = "visible";
 
-// Clonar el contenedor de nodos
 const nodesClone = containerNodes.cloneNode(true);
 nodesClone.style.position = "absolute";
 nodesClone.style.left = "0";
 nodesClone.style.top = "0";
 
-// Añadir ambos al wrapper
 wrapper.appendChild(svgClone);
 wrapper.appendChild(nodesClone);
 document.body.appendChild(wrapper);
 
-// Capturar con html2canvas todo el wrapper
+// ============================================================
+// 📸 Captura con html2canvas toda la zona (sin desplazar)
+// ============================================================
 const canvasFull = await html2canvas(wrapper, {
     backgroundColor: "#f3f4f6",
-    scale: 1,
-    useCORS: true
+    scale: 1.25, // un poco más de resolución
+    useCORS: true,
+    x: minX - marginX,
+    y: minY - marginY,
+    width: areaWidth,
+    height: areaHeight
 });
 
-// Limpiar el wrapper temporal
+// Limpiar wrapper temporal
 document.body.removeChild(wrapper);
 
-// Convertir a bytes para docx
+// Convertir imagen a bytes
 const imgData = canvasFull.toDataURL("image/png");
 const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
 
@@ -1382,6 +1404,42 @@ const doc = new Document({
                     width: { size: 100, type: WidthType.PERCENTAGE }
                 }),
                 new Paragraph({
+                    text: "Agrupación por 'Asignado a'",
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { before: 400, after: 200 }
+                }),
+                (() => {
+                    // Agrupar por asignadoA
+                    const agrupado = {};
+                    this.data.nodos.forEach(n => {
+                        const grupo = n.asignadoA?.trim() || "Sin asignar";
+                        if (!agrupado[grupo]) agrupado[grupo] = [];
+                        agrupado[grupo].push(n.titulo || "(Sin título)");
+                    });
+
+                    const filas = Object.entries(agrupado).map(([grupo, tareas]) =>
+                        new TableRow({
+                            children: [
+                                new TableCell({ children: [new Paragraph(grupo + ` (${tareas.length})`)] }),
+                                new TableCell({ children: [new Paragraph(tareas.join(", "))] })
+                            ]
+                        })
+                    );
+
+                    return new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new TableRow({
+                                children: ["Unidad / Persona", "Tareas asignadas"].map(h =>
+                                    new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
+                                )
+                            }),
+                            ...filas
+                        ]
+                    });
+                })()
+                ,
+                new Paragraph({
                     text: "Condiciones",
                     heading: HeadingLevel.HEADING_1,
                     spacing: { after: 200 }
@@ -1389,6 +1447,37 @@ const doc = new Document({
                 new Table({
                     rows: connRows,
                     width: { size: 100, type: WidthType.PERCENTAGE }
+                })
+                ,
+                new Paragraph({
+                    text: "Cambios de estado",
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { before: 400, after: 200 }
+                }),
+                new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [
+                        new TableRow({
+                            children: ["Tarea origen", "Condición", "Estado adquirido"].map(h =>
+                                new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
+                            )
+                        }),
+                        ...this.data.conexiones
+                            .filter(c => c.cambioEstado && c.cambioEstado.trim() !== "")
+                            .map(c => {
+                                const from = this.getNode(c.from);
+                                const condTxt = [c.condicionNombre, c.condicionValor]
+                                    .filter(Boolean)
+                                    .join(" ");
+                                return new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph(from?.titulo || "")] }),
+                                        new TableCell({ children: [new Paragraph(condTxt || "En todo caso")] }),
+                                        new TableCell({ children: [new Paragraph(c.cambioEstado)] })
+                                    ]
+                                });
+                            })
+                    ]
                 })
             ]
         }

@@ -55,6 +55,7 @@ const Interactions = {
                 UI.showGroupProperties();
             } else if (Interactions.selectedNodes.size === 1) {
                 Engine.selectNode(nodo.id);
+                Renderer.highlightConnectionsForNode(nodo.id);
             }
             return;
         }
@@ -519,7 +520,25 @@ tryCompleteReconnect(e) {
 }
 ,
 
+/* ============================================================
+   RESALTAR CONEXIONES DE UN NODO SELECCIONADO
+============================================================ */
+highlightConnectionsForNode(nodeId) {
+    // Limpiar cualquier resaltado previo
+    document.querySelectorAll(".connection-path").forEach(p => {
+        p.classList.remove("highlighted-conn");
+    });
 
+    if (!nodeId) return;
+
+    // Resaltar las conexiones que salen o entran en el nodo
+    Engine.data.conexiones.forEach(conn => {
+        if (conn.from === nodeId || conn.to === nodeId) {
+            const path = document.getElementById(`conn-${conn.id}`);
+            if (path) path.classList.add("highlighted-conn");
+        }
+    });
+},
 };
 
 // ============================================================
@@ -542,10 +561,12 @@ if (area) {
             Engine.selectedNodeId = null;
             Engine.selectedConnectionId = null;
             UI.clear();
-
+// 🔸 Limpiar también los resaltados de conexiones
+document.querySelectorAll(".connection-path").forEach(p => p.classList.remove("highlighted-conn"));
             Interactions.startSelection(e);
         }
     });
+    
 }
 /* ============================================================
    LISTENERS GLOBALES

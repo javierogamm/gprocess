@@ -96,12 +96,12 @@ input {
 
 #nodesContainer {
     position: relative;
-    width: 100%;
-    height: 100%;
-    z-index: 20;             /* LOS NODOS POR ENCIMA DEL SVG */
-    pointer-events: none;    /* ✅ deja pasar clics hacia el SVG */
+    min-width: 8000px;     /* 🔥 ancho ampliado del canvas lógico */
+    min-height: 4000px;    /* 🔥 alto ampliado para subárboles grandes */
+    z-index: 20;
+    pointer-events: none;
+    overflow: visible;     /* 🔥 permite que los loops se vean aunque salgan del marco */
 }
-
 .node {
     position: absolute;
     cursor: move;
@@ -553,4 +553,16 @@ input {
 /* Sutil feedback visual al pasar el ratón */
 .panel-resizer:hover {
     background: rgba(0, 0, 0, 0.08);
+}
+.connection-path.highlighted-conn {
+  stroke: #ff7b00 !important;
+  stroke-width: 4px !important;
+  filter: drop-shadow(0 0 6px rgba(255, 140, 0, 0.8));
+  transition: stroke 0.2s ease;
+}
+.connection-line.highlighted-conn {
+  stroke: #ff7b00 !important;
+  stroke-width: 4px !important;
+  filter: drop-shadow(0 0 6px rgba(255, 140, 0, 0.8));
+  transition: stroke 0.2s ease;
 }
