@@ -456,12 +456,17 @@ if (btnImportar && txtImportar) {
    MOSTRAR PROPIEDADES DE NODO
 ======================================================== */
 showNodeProperties(id) {
+
     this.currentNodeId = id;
     this.currentConnId = null;
 
     const nodo = Engine.getNode(id);
     if (!nodo) return;
-
+    // Ocultar campo AsignadoA (grupo)
+    const labelAsignadoGroup = document.getElementById("lblAsignadoGroup");
+    const inputAsignadoGroup = document.getElementById("inputAsignadoGroup");
+    if (labelAsignadoGroup) labelAsignadoGroup.style.display = "none";
+    if (inputAsignadoGroup) inputAsignadoGroup.style.display = "none";
     // 🔁 NUEVO: salir explícitamente del modo "grupo"
     if (this.propsEditor) {
         const allChildren = Array.from(this.propsEditor.children);
@@ -544,12 +549,79 @@ showGroupProperties() {
             labelTipo.style.display = "block";
         }
     }
+  /* ========================================================
+       CAMPO "Asignado A" PARA SELECCIÓN MÚLTIPLE
+    ======================================================== */
 
+    // Crear si no existe
+    let labelAsignadoGroup = document.getElementById("lblAsignadoGroup");
+    let inputAsignadoGroup = document.getElementById("inputAsignadoGroup");
+
+    if (!labelAsignadoGroup) {
+        labelAsignadoGroup = document.createElement("label");
+        labelAsignadoGroup.id = "lblAsignadoGroup";
+        labelAsignadoGroup.textContent = "Asignado A (grupo)";
+        this.propsEditor.appendChild(labelAsignadoGroup);
+    }
+
+    if (!inputAsignadoGroup) {
+        inputAsignadoGroup = document.createElement("input");
+        inputAsignadoGroup.type = "text";
+        inputAsignadoGroup.id = "inputAsignadoGroup";
+        inputAsignadoGroup.className = "input";
+        inputAsignadoGroup.placeholder = "Asignado…";
+        inputAsignadoGroup.style.width = "100%";
+        inputAsignadoGroup.style.marginBottom = "10px";
+
+        // Evento → aplicar a todos
+        inputAsignadoGroup.addEventListener("input", () => {
+            const nuevo = inputAsignadoGroup.value.trim();
+            Interactions.selectedNodes.forEach(id => {
+                const nodo = Engine.getNode(id);
+                if (nodo) {
+                    nodo.asignadoA = nuevo;
+                }
+            });
+            Engine.saveHistory();
+        });
+
+        this.propsEditor.appendChild(inputAsignadoGroup);
+    }
+
+    // Mostrar ambos en modo grupo
+    labelAsignadoGroup.style.display = "block";
+    inputAsignadoGroup.style.display = "block";
     // 🎨 Mostrar color del nodo
     if (this.inputColor) {
         this.inputColor.style.display = "block";
         const labelColor = this.inputColor.previousElementSibling;
         if (labelColor) labelColor.style.display = "block";
+    }
+
+        // ============================================================
+    // MOSTRAR VALOR SI TODOS LOS NODOS COINCIDEN
+    // ============================================================
+    if (Interactions.selectedNodes.size > 0) {
+
+        let primerValor = null;
+        let todosIguales = true;
+
+        Interactions.selectedNodes.forEach(id => {
+            const nodo = Engine.getNode(id);
+            if (!nodo) return;
+
+            if (primerValor === null) {
+                primerValor = nodo.asignadoA || "";
+            } else {
+                if ((nodo.asignadoA || "") !== primerValor) {
+                    todosIguales = false;
+                }
+            }
+        });
+
+        // Si todos tienen el mismo valor → mostrarlo
+        // Si no → dejar campo vacío
+        inputAsignadoGroup.value = todosIguales ? (primerValor || "") : "";
     }
 
     // 📏 Mostrar slider de tamaño
@@ -669,6 +741,10 @@ showConnectionProperties(connId) {
         this.propsEditor.style.display = "none";
         this.propsConn.style.display = "none";
         if (this.inputResize) this.inputResize.value = "100";
+        const labelAsignadoGroup = document.getElementById("lblAsignadoGroup");
+        const inputAsignadoGroup = document.getElementById("inputAsignadoGroup");
+        if (labelAsignadoGroup) labelAsignadoGroup.style.display = "none";
+        if (inputAsignadoGroup) inputAsignadoGroup.style.display = "none";
     }
 };
 /* ============================================================

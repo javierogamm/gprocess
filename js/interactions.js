@@ -51,6 +51,11 @@ const Interactions = {
                 Interactions.selectedNodes.add(nodo.id);
                 div.classList.add("selected-multi");
             }
+            if (Interactions.selectedNodes.size > 1) {
+                UI.showGroupProperties();
+            } else if (Interactions.selectedNodes.size === 1) {
+                Engine.selectNode(nodo.id);
+            }
             return;
         }
     
