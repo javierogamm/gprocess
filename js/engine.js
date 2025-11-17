@@ -1452,7 +1452,7 @@ document.getElementById("btnPasteJSON").addEventListener("click", async () => {
 ============================================================ */
 document.getElementById("btnIAJson").addEventListener("click", () => {
     window.open(
-        "https://chat.openai.com/g/g-6918f6f366d081918def86bc27f3c2b4-creador-json-gestiona-process",
+        "https://chatgpt.com/g/g-6918f6f366d081918def86bc27f3c2b4-creador-json-gestiona-process",
         "_blank"
     );
 });
