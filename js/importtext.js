@@ -161,7 +161,22 @@ import(texto) {
     // Re-render para que se vean los títulos recién puestos
     Renderer.clearAll();
     Engine.data.nodos.forEach(n => Renderer.renderNode(n));
+        // --- Helper robusto para extraer el título de "Lanzar tarea ..."
+        function extractTaskTitleFromAction(txt) {
+            // quita el prefijo
+            let rest = txt.replace(/^Lanzar tarea\s+/i, "").trim();
 
+            // si viene entre comillas, quita SOLO la 1ª y la última del mismo tipo
+            const pairs = { "'": "'", '"': '"', "“": "”", "‘": "’" };
+            const qStart = rest.charAt(0);
+            const qEnd   = pairs[qStart];
+            if (qEnd && rest.endsWith(qEnd)) {
+                rest = rest.slice(1, -1);
+            }
+
+            // deja apóstrofos internos tal cual (l'espera, d'informe, etc.)
+            return rest.trim();
+        }
     // ============================================================
     // SEGUNDA PASADA: CONEXIONES + CONDICIONES + CAMBIO DE ESTADO
     // ============================================================
@@ -216,52 +231,51 @@ import(texto) {
             return;
         }
 
-        // 2) Lanzar tarea
-        const lanzarMatch = txt.match(/^Lanzar tarea\s+'([^']+)'/i);
-        if (lanzarMatch) {
-            const destinoTitulo = lanzarMatch[1];
-            const destinoId = mapaNodos.get(destinoTitulo);
-            if (!destinoId) return;
+// 2) Lanzar tarea  (soporta comillas simples/dobles y apóstrofos internos)
+if (/^Lanzar tarea\s+/i.test(txt)) {
+    const destinoTitulo = extractTaskTitleFromAction(txt);
+    const destinoId = mapaNodos.get(destinoTitulo);
+    if (!destinoId) return;
 
-            let fromPos = "bottom";
-            let toPos   = "top";
+    let fromPos = "bottom";
+    let toPos   = "top";
 
-            if (condicionesPendientes.length > 0) {
-                if      (branchIndex === 0) fromPos = "right";
-                else if (branchIndex === 1) fromPos = "left";
-                else                        fromPos = "bottom";
-                branchIndex++;
-            }
+    if (condicionesPendientes.length > 0) {
+        if      (branchIndex === 0) fromPos = "right";
+        else if (branchIndex === 1) fromPos = "left";
+        else                        fromPos = "bottom";
+        branchIndex++;
+    }
 
-            Engine.createConnection(nodoActualId, destinoId, fromPos, toPos);
+    Engine.createConnection(nodoActualId, destinoId, fromPos, toPos);
 
-            // id de la última conexión creada
-            let connId = null;
-            if (Engine.data.conexiones.length > 0) {
-                connId = Engine.data.conexiones[Engine.data.conexiones.length - 1].id;
-            }
-            ultimaConexionId = connId;
+    // id de la última conexión creada
+    let connId = null;
+    if (Engine.data.conexiones.length > 0) {
+        connId = Engine.data.conexiones[Engine.data.conexiones.length - 1].id;
+    }
+    ultimaConexionId = connId;
 
-            // Registrar subárbol para usar como grafo
-            const p = Engine.getNode(nodoActualId);
-            if (p) {
-                p.outList = p.outList || [];
-                p.outList.push({ id: destinoId, connId });
-            }
+    // Registrar subárbol para usar como grafo
+    const p = Engine.getNode(nodoActualId);
+    if (p) {
+        p.outList = p.outList || [];
+        p.outList.push({ id: destinoId, connId });
+    }
 
-            // Volcar condiciones en la conexión
-            if (connId && condicionesPendientes.length > 0) {
-                condicionesPendientes.forEach(cond => {
-                    Engine.updateConnectionCondition(
-                        connId,
-                        cond.campo || "",
-                        cond.valor || cond.textoLibre || ""
-                    );
-                });
-            }
-            condicionesPendientes = [];
-            return;
-        }
+    // Volcar condiciones en la conexión
+    if (connId && condicionesPendientes.length > 0) {
+        condicionesPendientes.forEach(cond => {
+            Engine.updateConnectionCondition(
+                connId,
+                cond.campo || "",
+                cond.valor || cond.textoLibre || ""
+            );
+        });
+    }
+    condicionesPendientes = [];
+    return;
+}
 
         // 3) Cambiar estado
         const cambiarMatch = txt.match(/^Cambiar estado del expediente a\s+'([^']+)'/i);
