@@ -21,7 +21,7 @@ const UI = {
 
     currentNodeId: null,
     currentConnId: null,
-
+    inputAsignadoUsuario: null, // **NUEVO** segundo campo (usuario)
     /* ========================================================
        INICIALIZACIÓN
     ======================================================== */
@@ -36,6 +36,60 @@ const UI = {
         this.inputDescripcion = document.getElementById("propDescripcion");
         this.inputTareaManual = document.getElementById("propTareaManual");
         this.inputAsignadoA = document.getElementById("propAsignadoA");
+        /* ========================================================
+   RENOMBRAR EL CAMPO EXISTENTE → "Asignado a Grupo"
+   Y CREAR "Asignado a Usuario" (dinámico)
+======================================================== */
+(() => {
+    // 1) Renombrar la etiqueta anterior del input existente
+    const labelAsignadoA = this.inputAsignadoA ? this.inputAsignadoA.previousElementSibling : null;
+    if (labelAsignadoA && labelAsignadoA.tagName && labelAsignadoA.tagName.toLowerCase() === "label") {
+        labelAsignadoA.textContent = "Asignado a Grupo";
+    }
+    if (this.inputAsignadoA) {
+        this.inputAsignadoA.placeholder = "Grupo / Unidad gestora…";
+    }
+
+    // 2) Crear dinámicamente el nuevo campo "Asignado a Usuario"
+    let labelUsuario = document.getElementById("lblAsignadoUsuario");
+    let inputUsuario = document.getElementById("propAsignadoUsuario");
+
+    if (!labelUsuario) {
+        labelUsuario = document.createElement("label");
+        labelUsuario.id = "lblAsignadoUsuario";
+        labelUsuario.textContent = "Asignado a Usuario";
+        this.propsEditor.appendChild(labelUsuario);
+    }
+
+    if (!inputUsuario) {
+        inputUsuario = document.createElement("input");
+        inputUsuario.type = "text";
+        inputUsuario.id = "propAsignadoUsuario";
+        inputUsuario.className = "input";
+        inputUsuario.placeholder = "Usuario (p. ej. jgomez)…";
+        inputUsuario.style.width = "100%";
+        inputUsuario.style.marginBottom = "10px";
+        this.propsEditor.appendChild(inputUsuario);
+    }
+
+    this.inputAsignadoUsuario = inputUsuario;
+
+   this.inputAsignadoUsuario.addEventListener("input", () => {
+    if (!this.currentNodeId) return;
+
+    const nodo = Engine.getNode(this.currentNodeId);
+    if (!nodo) return;
+
+    // 💾 Guardar directamente en el nodo (igual que hace AsignadoA)
+    nodo.asignadoUsuario = this.inputAsignadoUsuario.value.trim();
+
+    // 🔁 Actualizar Engine e historial
+    Engine.updateNode(this.currentNodeId, { asignadoUsuario: nodo.asignadoUsuario });
+    Engine.saveHistory(); // 👈 ESTO FALTABA
+
+    console.log("💾 Guardado asignadoUsuario:", nodo.asignadoUsuario);
+});
+})();
 /* ========================================================
    CONTROL DE COLOR DE NODO 🎨
 ======================================================== */
@@ -287,15 +341,7 @@ colorBtn.addEventListener("click", async () => {
                 });
             }
         });
-        /* ========================================================
-           BOTÓN ELIMINAR NODO
-        ======================================================== */
-        const deleteBtn = document.getElementById("btnDeleteNode");
-        if (deleteBtn) {
-            deleteBtn.addEventListener("click", () => {
-                Engine.deleteSelected();
-            });
-        }
+   
 
         /* ========================================================
            BOTONES DESHACER / REHACER
@@ -306,46 +352,52 @@ colorBtn.addEventListener("click", async () => {
         if (btnUndo) btnUndo.addEventListener("click", () => Engine.undo());
         if (btnRedo) btnRedo.addEventListener("click", () => Engine.redo());
 
-        /* ========================================================
-        FICHA DEL PROYECTO – EVENTOS UI
-        ======================================================== */
-        const btnFicha = document.getElementById("btnFichaProyecto");
-        if (btnFicha) {
-            btnFicha.addEventListener("click", () => {
-                const panel = document.getElementById("fichaProyecto");
+/* ========================================================
+   FICHA DEL PROYECTO – EVENTOS UI
+======================================================== */
+const btnFicha = document.getElementById("btnFichaProyecto");
+if (btnFicha) {
+    btnFicha.addEventListener("click", () => {
+        const panel = document.getElementById("fichaProyecto");
 
-                document.getElementById("fpProcedimiento").value = Engine.fichaProyecto.procedimiento;
-                document.getElementById("fpActividad").value     = Engine.fichaProyecto.actividad;
-                document.getElementById("fpDescripcion").value   = Engine.fichaProyecto.descripcion;
+        // Rellenar los campos con la info actual del proyecto
+        document.getElementById("fpProcedimiento").value = Engine.fichaProyecto.procedimiento;
+        document.getElementById("fpActividad").value     = Engine.fichaProyecto.actividad;
+        document.getElementById("fpDescripcion").value   = Engine.fichaProyecto.descripcion;
 
-                panel.classList.remove("hidden");
-            });
-        }
+        // 👇 Nuevo: mostrar panel flotante (ya no modal centrado)
+        panel.classList.add("visible");
+    });
+}
 
-        const btnFpCerrar = document.getElementById("fpCerrar");
-        if (btnFpCerrar) {
-            btnFpCerrar.addEventListener("click", () => {
-                document.getElementById("fichaProyecto").classList.add("hidden");
-            });
-        }
+// 🔹 Botón cerrar
+const btnFpCerrar = document.getElementById("fpCerrar");
+if (btnFpCerrar) {
+    btnFpCerrar.addEventListener("click", () => {
+        const panel = document.getElementById("fichaProyecto");
+        panel.classList.remove("visible");
+    });
+}
 
-        const btnFpGuardar = document.getElementById("fpGuardar");
-        if (btnFpGuardar) {
-            btnFpGuardar.addEventListener("click", () => {
-                const newProc = document.getElementById("fpProcedimiento").value;
+// 💾 Botón guardar
+const btnFpGuardar = document.getElementById("fpGuardar");
+if (btnFpGuardar) {
+    btnFpGuardar.addEventListener("click", () => {
+        const newProc = document.getElementById("fpProcedimiento").value;
 
-                Engine.updateFichaProyecto({
-                    procedimiento: newProc,
-                    actividad:     document.getElementById("fpActividad").value,
-                    descripcion:   document.getElementById("fpDescripcion").value
-                });
+        Engine.updateFichaProyecto({
+            procedimiento: newProc,
+            actividad:     document.getElementById("fpActividad").value,
+            descripcion:   document.getElementById("fpDescripcion").value
+        });
 
-                // 🔥 ACTUALIZA EL TÍTULO EN TIEMPO REAL
-                document.getElementById("projectTitle").innerText = newProc.toUpperCase();
+        // 🔥 Actualiza título en vivo
+        document.getElementById("projectTitle").innerText = newProc.toUpperCase();
 
-                document.getElementById("fichaProyecto").classList.add("hidden");
-            });        
-
+        // 👇 Cerrar el panel flotante tras guardar
+        const panel = document.getElementById("fichaProyecto");
+        panel.classList.remove("visible");
+    });
 }
         /* ========================================================
            ATAJOS DE TECLADO (Ctrl+Z / Ctrl+Y / Supr)
@@ -362,7 +414,25 @@ colorBtn.addEventListener("click", async () => {
                 e.preventDefault();
                 Engine.redo();
             }
+    // Ctrl + A → Seleccionar todos los nodos
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+        e.preventDefault();
 
+        // Limpiar selección anterior
+        Interactions.selectedNodes.clear();
+
+        // Seleccionar todos los nodos existentes
+        Engine.data.nodos.forEach(nodo => {
+            Interactions.selectedNodes.add(nodo.id);
+            const div = document.getElementById(nodo.id);
+            if (div) div.classList.add("selected-multi");
+        });
+
+        // Refrescar el panel de grupo
+        UI.showGroupProperties();
+
+        console.log(`✅ Seleccionados ${Engine.data.nodos.length} nodos`);
+    }
            
         });
 
@@ -386,6 +456,54 @@ if (btnImportar && txtImportar) {
         alert("Diagrama importado correctamente.");
     });
 }
+     /* ========================================================
+           BOTÓN ELIMINAR NODO
+        ======================================================== */
+        const deleteBtn = document.getElementById("btnDeleteNode");
+        if (deleteBtn) {
+            deleteBtn.addEventListener("click", () => {
+                Engine.deleteSelected();
+            });
+        }
+   
+   /* ========================================================
+   DRAG & DROP PARA CREAR NODOS DESDE EL PANEL IZQUIERDO
+======================================================== */
+document.querySelectorAll("#leftPanel button[onclick^='Engine.createNode']").forEach(btn => {
+    btn.setAttribute("draggable", "true");
+
+    btn.addEventListener("dragstart", (e) => {
+        const code = btn.getAttribute("onclick");
+        const tipoMatch = code.match(/createNode\('([^']+)'\)/);
+        if (tipoMatch) {
+            e.dataTransfer.setData("nodo-tipo", tipoMatch[1]);
+            e.dataTransfer.effectAllowed = "copy";
+        }
+    });
+});
+
+const canvas = document.getElementById("canvasArea");
+
+// Permitir arrastrar sobre el canvas
+canvas.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+});
+
+// Crear nodo en la posición soltada
+canvas.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const tipo = e.dataTransfer.getData("nodo-tipo");
+    if (!tipo) return;
+
+    // Calcular posición relativa al contenedor
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left + canvas.scrollLeft;
+    const y = e.clientY - rect.top + canvas.scrollTop;
+
+    Engine.createNode(tipo, x, y);
+    
+});
 
     },
 
@@ -507,7 +625,8 @@ showNodeProperties(id) {
 
     this.inputTareaManual.checked = !!nodo.tareaManual;
     this.inputAsignadoA.value = nodo.asignadoA || "";
-
+    if (this.inputAsignadoUsuario)
+        this.inputAsignadoUsuario.value = nodo.asignadoUsuario || "";
     if (this.inputColor)
         this.inputColor.value = nodo.color || getDefaultColorByType(nodo.tipo);
 
@@ -560,7 +679,7 @@ showGroupProperties() {
     if (!labelAsignadoGroup) {
         labelAsignadoGroup = document.createElement("label");
         labelAsignadoGroup.id = "lblAsignadoGroup";
-        labelAsignadoGroup.textContent = "Asignado A (grupo)";
+        labelAsignadoGroup.textContent = "Asignado a Grupo (grupo)";            
         this.propsEditor.appendChild(labelAsignadoGroup);
     }
 

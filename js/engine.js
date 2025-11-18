@@ -39,69 +39,72 @@ fichaProyecto: {
     /* ============================================================
        CREAR UN NODO
     ============================================================ */
-    createNode(tipo) {
-        // 🔹 Posición inicial por defecto
-        let x = 100;
-        let y = 100;
-    
-        // 🔥 Intentar centrar en lo que se ve ahora mismo
+   createNode(tipo, x = null, y = null) {
+    // 🔹 Si no se pasan coordenadas (clic normal), centramos como antes
+    if (x === null || y === null) {
+        x = 100;
+        y = 100;
+
         const area = document.getElementById("canvasArea");
         if (area && Renderer && Renderer.container) {
             const rectArea   = area.getBoundingClientRect();
             const rectCanvas = Renderer.container.getBoundingClientRect();
-    
+
             // Centro visible en pantalla
             const centerScreenX = rectArea.left + rectArea.width  / 2;
             const centerScreenY = rectArea.top  + rectArea.height / 2;
-    
-            // Tamaño base del nodo (los mismos que ya usabas)
+
             const baseWidth  = 120;
             const baseHeight = 50;
-    
+
             // Pasar a coordenadas del canvas y centrar el nodo
             let nx = centerScreenX - rectCanvas.left - baseWidth  / 2;
             let ny = centerScreenY - rectCanvas.top  - baseHeight / 2;
-    
+
             // 🧲 Encajar a la rejilla (si existe)
             const grid = (window.Interactions && Interactions.GRID_SIZE) ? Interactions.GRID_SIZE : 20;
             nx = Math.round(nx / grid) * grid;
             ny = Math.round(ny / grid) * grid;
-    
+
             x = nx;
             y = ny;
         }
-    
-        const nodo = {
-            id: "n" + this.generateId(),
-            tipo: tipo,
-            titulo: tipo.toUpperCase(),
-            tareaManual: false,   // NUEVO
-            asignadoA: "",
-            annex: "",
-            pregunta: "",
-            x: x,
-            y: y,
-            width: 120,
-            height: 50,
-            salidas: [] // para decisiones
-        };
-    
-        // 🎨 Personalización especial para el tipo "notas"
-        if (tipo === "notas") {
-            nodo.titulo = "Nota";
-            nodo.esNota = true; // ⚠️ bandera para excluir en exportaciones
-        }
-        if (tipo === "circuito") {
-            nodo.height = 100;
-        }
-    
-        this.data.nodos.push(nodo);
-        Renderer.renderNode(nodo);
-        this.saveHistory();
-    
-        return nodo;
-    },
-    
+    }
+
+    // =======================================================
+    // CREACIÓN DEL NODO
+    // =======================================================
+    const nodo = {
+        id: "n" + this.generateId(),
+        tipo,
+        titulo: tipo.toUpperCase(),
+        tareaManual: false,
+        asignadoA: "",
+        annex: "",
+        pregunta: "",
+        x,
+        y,
+        width: 120,
+        height: 50,
+        salidas: []
+    };
+
+    // 🎨 Personalización especial para algunos tipos
+    if (tipo === "notas") {
+        nodo.titulo = "Nota";
+        nodo.esNota = true; // ⚠️ bandera para excluir en exportaciones
+    }
+    if (tipo === "circuito") {
+        nodo.height = 100;
+    }
+
+    this.data.nodos.push(nodo);
+    Renderer.renderNode(nodo);
+    this.saveHistory();
+
+    return nodo;
+},
+
 
     /* ============================================================
    EXPORTAR TODO EL DIAGRAMA A JSON
@@ -420,37 +423,38 @@ alignSelectedNodes() {
         this.saveHistory();
     },
 
-    updateNode(id, props) {
-        const nodo = this.getNode(id);
-        if (!nodo) return;
+   updateNode(id, props) {
+    const nodo = this.getNode(id);
+    if (!nodo) return;
     
-        // Solo estos dos afectan al contenido visual
-        let requiereActualizarTexto = false;
+    // Solo estos dos afectan al contenido visual
+    let requiereActualizarTexto = false;
     
-        if (props.titulo !== undefined) {
-            nodo.titulo = props.titulo;
-            requiereActualizarTexto = true;
-        }
-    
-        if (props.descripcion !== undefined) {
-            nodo.descripcion = props.descripcion;
-            requiereActualizarTexto = true;
-        }
-    
-        // 🔥 Esto NO afecta a la forma, altura ni texto
-        if (props.tareaManual !== undefined) {
-            nodo.tareaManual = props.tareaManual;
-        }
-        if (props.asignadoA !== undefined) {
-            nodo.asignadoA = props.asignadoA;
-        }
-        // Solo actualiza texto si es necesario
-        if (requiereActualizarTexto) {
-            Renderer.updateNodeLabel(id);
-        }
-    
-        this.saveHistory();
-    },
+    if (props.titulo !== undefined) {
+        nodo.titulo = props.titulo;
+        requiereActualizarTexto = true;
+    }
+
+    if (props.descripcion !== undefined) {
+        nodo.descripcion = props.descripcion;
+        requiereActualizarTexto = true;
+    }
+
+    // 🔥 Esto NO afecta a la forma, altura ni texto
+    if (props.tareaManual !== undefined) {
+        nodo.tareaManual = props.tareaManual;
+    }
+    if (props.asignadoA !== undefined) {
+        nodo.asignadoA = props.asignadoA;
+    }
+    // Solo actualiza texto si es necesario
+    if (requiereActualizarTexto) {
+        Renderer.updateNodeLabel(id);
+    }
+
+    this.saveHistory();
+},
+
 
     /* ============================================================
    REDIMENSIONAR VARIOS NODOS A LA VEZ
@@ -622,6 +626,7 @@ resizeSelectedNodes(scaleFactor) {
     }
 
 };
+
 /* ============================================================
    EXPORTAR DIAGRAMA A CSV / EXCEL
 ============================================================ */
@@ -774,110 +779,111 @@ Engine.exportFlujoCSV = function() {
     ];
 
     const tareasRows = sortedNodes.map((n) => {
-    let tipoTarea = n.tipo.toLowerCase();
-    if (tipoTarea === "circuito") tipoTarea = "Circuito de Resolución";
-    else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
-    else tipoTarea = capitalizeFirst(tipoTarea);
+        let tipoTarea = n.tipo.toLowerCase();
+        if (tipoTarea === "circuito") tipoTarea = "Circuito de Resolución";
+        else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
+        else tipoTarea = capitalizeFirst(tipoTarea);
 
-    // ✅ Lógica corregida
-    const asignado = (n.asignadoA || "").trim();
-    const esUnidadGestora = asignado.toLowerCase() === "unidad gestora";
-    const asignadoGrupo = esUnidadGestora ? "" : asignado;
-    const asignadoUG = esUnidadGestora ? "Sí" : "No";
+        // ✅ Lógica de grupo/unidad gestora (sin cambios)
+        const asignado = (n.asignadoA || "").trim();
+        const esUnidadGestora = asignado.toLowerCase() === "unidad gestora";
+        const asignadoGrupo = esUnidadGestora ? "" : asignado;
+        const asignadoUG = esUnidadGestora ? "Sí" : "No";
 
-   return [
-    "", // Nombre Entidad
-    this.fichaProyecto.actividad || "", // Actividad
-    this.fichaProyecto.procedimiento || "", // Procedimiento
-    "", // Sobrescribir
-    tipoTarea, // Tipo Tarea
-    cleanText(n.titulo || ""), // Nombre Tarea
-    "", "", "No", // Días Alerta, Tipo de días, ✅ Prioritario = No
-    cleanHTML(n.descripcion || ""), // Descripción
-    "", // Asignado a Usuario - Nombre
-    asignadoGrupo, // ✅ L - Asignado a Grupo - Nombre
-    "No", // ✅ Asignado a responsables exp
-    asignadoUG, // ✅ N - Asignado a unidad gestora (Sí / No)
-    "No", // Asignado a Usuario - Abre Tarea
-    "No", // Asignado a Usuario - Abre Exp
-    "Sí", // ✅ Permite reasignar siempre Sí
-    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
-];
+        // ✅ **NUEVO**: campo de usuario
+        const asignadoUsuario = (n.asignadoUsuario || "").trim();
 
-});
-
+        return [
+            "", // Nombre Entidad
+            this.fichaProyecto.actividad || "", // Actividad
+            this.fichaProyecto.procedimiento || "", // Procedimiento
+            "", // Sobrescribir
+            tipoTarea, // Tipo Tarea
+            cleanText(n.titulo || ""), // Nombre Tarea
+            "", "", "No", // Días Alerta, Tipo de días, ✅ Prioritario = No
+            cleanHTML(n.descripcion || ""), // Descripción
+            asignadoUsuario, // ✅ "Asignado a Usuario - Nombre" (rellenado con n.asignadoUsuario)
+            asignadoGrupo,   // ✅ "Asignado a Grupo - Nombre" (igual que antes)
+            "No",            // Asignado a responsables exp
+            asignadoUG,      // ✅ "Asignado a unidad gestora" (Sí / No)
+            "No", // Asignado a Usuario - Abre Tarea
+            "No", // Asignado a Usuario - Abre Exp
+            "Sí", // ✅ Permite reasignar siempre Sí
+            "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+        ];
+    });
 
     const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].join("\n");
 
-            // --- 3️⃣ Crear CONDICIONES (formato oficial de condiciones de flujo) ---
-            const headerConds = [
-                "Nombre Entidad",
-                "Nombre Actividad",
-                "Nombre Procedimiento",
-                "Nombre Tarea",
-                "Eliminar bloques existentes",
-                "Id Bloque",
-                "Bloque",
-                "Nombre tesauro",
-                "Condición",
-                "Valor",
-                "Acción",
-                "Estado/Tarea"
-            ];
+    // --- 3️⃣ Crear CONDICIONES (formato oficial de condiciones de flujo) ---
+    const headerConds = [
+        "Nombre Entidad",
+        "Nombre Actividad",
+        "Nombre Procedimiento",
+        "Nombre Tarea",
+        "Eliminar bloques existentes",
+        "Id Bloque",
+        "Bloque",
+        "Nombre tesauro",
+        "Condición",
+        "Valor",
+        "Acción",
+        "Estado/Tarea"
+    ];
 
-            const condRows = [];
+    const condRows = [];
 
-            this.data.conexiones.forEach((c) => {
-                const fromNode = this.data.nodos.find(n => n.id === c.from);
-                const toNode = this.data.nodos.find(n => n.id === c.to);
-                if (!fromNode || !toNode) return;
+    this.data.conexiones.forEach((c) => {
+        const fromNode = this.data.nodos.find(n => n.id === c.from);
+        const toNode = this.data.nodos.find(n => n.id === c.to);
+        if (!fromNode || !toNode) return;
 
-                const nombreOrigen = cleanText(fromNode.titulo || "");
-                const nombreDestino = cleanText(toNode.titulo || "");
+        const nombreOrigen = cleanText(fromNode.titulo || "");
+        const nombreDestino = cleanText(toNode.titulo || "");
 
-                // Determinar bloque condicional
-                const bloque = (c.condicionNombre || c.condicionValor) ? "Sólo si" : "En todo caso";
-                const idBloque = bloque === "Sólo si"
-                    ? (condRows.filter(r => r[3] === nombreOrigen && r[6] === "Sólo si").length + 1)
-                    : "";
+        // Determinar bloque condicional
+        const bloque = (c.condicionNombre || c.condicionValor) ? "Sólo si" : "En todo caso";
+        const idBloque = bloque === "Sólo si"
+            ? (condRows.filter(r => r[3] === nombreOrigen && r[6] === "Sólo si").length + 1)
+            : "";
 
-                // 🟩 1️⃣ Fila normal → Lanzar tarea
-                condRows.push([
-                    "", // Nombre Entidad
-                    this.fichaProyecto.actividad || "", // Nombre Actividad
-                    this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
-                    nombreOrigen, // Nombre Tarea (origen)
-                    "", // Eliminar bloques existentes
-                    idBloque, // Id Bloque
-                    bloque, // Bloque ("Sólo si" / "En todo caso")
-                    cleanText(c.condicionNombre || ""), // Nombre tesauro
-                    (c.condicionNombre || c.condicionValor) ? "Es igual a" : "", // Condición
-                    cleanText(c.condicionValor || ""), // Valor
-                    "Lanzar tarea", // Acción
-                    nombreDestino // Estado/Tarea (tarea destino)
-                ]);
+        // 🟩 1️⃣ Fila normal → Lanzar tarea
+        condRows.push([
+            "", // Nombre Entidad
+            this.fichaProyecto.actividad || "", // Nombre Actividad
+            this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
+            nombreOrigen, // Nombre Tarea (origen)
+            "", // Eliminar bloques existentes
+            idBloque, // Id Bloque
+            bloque, // Bloque ("Sólo si" / "En todo caso")
+            cleanText(c.condicionNombre || ""), // Nombre tesauro
+            (c.condicionNombre || c.condicionValor) ? "Es igual a" : "", // Condición
+            cleanText(c.condicionValor || ""), // Valor
+            "Lanzar tarea", // Acción
+            nombreDestino // Estado/Tarea (tarea destino)
+        ]);
 
-                // 🟨 2️⃣ Si hay cambio de estado → segunda fila
-                if (c.cambioEstado && c.cambioEstado.trim() !== "") {
-                    condRows.push([
-                        "", // Nombre Entidad
-                        this.fichaProyecto.actividad || "", // Nombre Actividad
-                        this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
-                        nombreOrigen, // Nombre Tarea (origen)
-                        "", // Eliminar bloques existentes
-                        idBloque, // mismo bloque
-                        bloque,
-                        cleanText(c.condicionNombre || ""),
-                        (c.condicionNombre || c.condicionValor) ? "Es igual a" : "",
-                        cleanText(c.condicionValor || ""),
-                        "Cambiar estado", // ✅ Acción alternativa
-                        cleanText(c.cambioEstado) // ✅ Estado/Tarea = texto del nuevo estado
-                    ]);
-                }
-            });
+        // 🟨 2️⃣ Si hay cambio de estado → segunda fila
+        if (c.cambioEstado && c.cambioEstado.trim() !== "") {
+            condRows.push([
+                "", // Nombre Entidad
+                this.fichaProyecto.actividad || "", // Nombre Actividad
+                this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
+                nombreOrigen, // Nombre Tarea (origen)
+                "", // Eliminar bloques existentes
+                idBloque, // mismo bloque
+                bloque,
+                cleanText(c.condicionNombre || ""),
+                (c.condicionNombre || c.condicionValor) ? "Es igual a" : "",
+                cleanText(c.condicionValor || ""),
+                "Cambiar estado", // ✅ Acción alternativa
+                cleanText(c.cambioEstado) // ✅ Estado/Tarea = texto del nuevo estado
+            ]);
+        }
+    });
 
-            const csvConds = [headerConds.join(";"), ...condRows.map(r => r.join(";"))].join("\n");
-            downloadCSV(csvConds, "Condiciones.csv");
+    const csvConds = [headerConds.join(";"), ...condRows.map(r => r.join(";"))].join("\n");
+    downloadCSV(csvConds, "Condiciones.csv");
 
     // --- 4️⃣ Descargar ambos archivos ---
     downloadCSV(csvTareas, "Tareas.csv");
@@ -915,7 +921,6 @@ Engine.exportFlujoCSV = function() {
         URL.revokeObjectURL(url);
     }
 };
-
 
 /* ============================================================
    IMPORTAR FLUJO DESDE CSV NORMALIZADO (Tareas.csv + Condiciones.csv)
@@ -1143,34 +1148,66 @@ Engine.showCSVPreview = function() {
     </table>
 `;
 
-// === NUEVO BLOQUE: AGRUPAR POR "Asignado a" ===
-const agrupado = {};
+// === BLOQUES SEPARADOS: AGRUPACIÓN POR GRUPO Y USUARIO ===
+
+// 🟩 1️⃣ Agrupación por GRUPO
+const agrupadoGrupo = {};
 this.data.nodos.forEach(n => {
     const grupo = n.asignadoA?.trim() || "Sin asignar";
-    if (!agrupado[grupo]) agrupado[grupo] = [];
-    agrupado[grupo].push(n.titulo || "(Sin título)");
+    if (!agrupadoGrupo[grupo]) agrupadoGrupo[grupo] = [];
+    agrupadoGrupo[grupo].push(n.titulo || "(Sin título)");
 });
 
-let htmlAsignados = `
-    <h3>🧑‍💼 Agrupación por Asignado A</h3>
+let htmlAsignadosGrupo = `
+    <h3>👥 Asignaciones a grupo</h3>
     <table>
         <thead>
-            <tr><th>Unidad / Persona</th><th>Tareas asignadas</th></tr>
+            <tr><th>Grupo / Unidad</th><th>Tareas asignadas</th></tr>
         </thead>
         <tbody>
 `;
-for (const [grupo, tareas] of Object.entries(agrupado)) {
-    htmlAsignados += `
+for (const [grupo, tareas] of Object.entries(agrupadoGrupo)) {
+    htmlAsignadosGrupo += `
         <tr>
             <td><strong>${grupo}</strong> (${tareas.length})</td>
             <td>${tareas.join("<br>")}</td>
         </tr>
     `;
 }
-htmlAsignados += `</tbody></table>`;
+htmlAsignadosGrupo += `</tbody></table>`;
 
-content.innerHTML += htmlAsignados;
-    modal.classList.remove("hidden");
+// 🟦 2️⃣ Agrupación por USUARIO
+const agrupadoUsuario = {};
+this.data.nodos.forEach(n => {
+    const usuario = n.asignadoUsuario?.trim() || "Sin asignar";
+    if (!agrupadoUsuario[usuario]) agrupadoUsuario[usuario] = [];
+    agrupadoUsuario[usuario].push(n.titulo || "(Sin título)");
+});
+
+let htmlAsignadosUsuario = `
+    <h3>🙋‍♂️ Asignaciones a usuario</h3>
+    <table>
+        <thead>
+            <tr><th>Usuario</th><th>Tareas asignadas</th></tr>
+        </thead>
+        <tbody>
+`;
+for (const [usuario, tareas] of Object.entries(agrupadoUsuario)) {
+    htmlAsignadosUsuario += `
+        <tr>
+            <td><strong>${usuario}</strong> (${tareas.length})</td>
+            <td>${tareas.join("<br>")}</td>
+        </tr>
+    `;
+}
+htmlAsignadosUsuario += `</tbody></table>`;
+
+// ➕ Añadir ambos al contenido
+content.innerHTML += htmlAsignadosGrupo + htmlAsignadosUsuario;
+
+// 👇 Esto queda igual que antes
+modal.classList.remove("hidden");
+
 };
 
 document.getElementById("csvCerrar").addEventListener("click", () => {
@@ -1410,42 +1447,79 @@ const doc = new Document({
                     rows: tareasRows,
                     width: { size: 100, type: WidthType.PERCENTAGE }
                 }),
-                new Paragraph({
-                    text: "Agrupación por 'Asignado a'",
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { before: 400, after: 200 }
-                }),
-                (() => {
-                    // Agrupar por asignadoA
-                    const agrupado = {};
-                    this.data.nodos.forEach(n => {
-                        const grupo = n.asignadoA?.trim() || "Sin asignar";
-                        if (!agrupado[grupo]) agrupado[grupo] = [];
-                        agrupado[grupo].push(n.titulo || "(Sin título)");
-                    });
+               // === BLOQUES SEPARADOS: AGRUPACIÓN POR GRUPO Y USUARIO ===
 
-                    const filas = Object.entries(agrupado).map(([grupo, tareas]) =>
-                        new TableRow({
-                            children: [
-                                new TableCell({ children: [new Paragraph(grupo + ` (${tareas.length})`)] }),
-                                new TableCell({ children: [new Paragraph(tareas.join(", "))] })
-                            ]
-                        })
-                    );
+// 🟩 1️⃣ Tabla de Asignaciones a grupo
+new Paragraph({
+    text: "Asignaciones a grupo",
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 400, after: 200 }
+}),
+(() => {
+    const agrupadoGrupo = {};
+    this.data.nodos.forEach(n => {
+        const grupo = n.asignadoA?.trim() || "Sin asignar";
+        if (!agrupadoGrupo[grupo]) agrupadoGrupo[grupo] = [];
+        agrupadoGrupo[grupo].push(n.titulo || "(Sin título)");
+    });
 
-                    return new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            new TableRow({
-                                children: ["Unidad / Persona", "Tareas asignadas"].map(h =>
-                                    new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
-                                )
-                            }),
-                            ...filas
-                        ]
-                    });
-                })()
-                ,
+    const filas = Object.entries(agrupadoGrupo).map(([grupo, tareas]) =>
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph(grupo + ` (${tareas.length})`)] }),
+                new TableCell({ children: [new Paragraph(tareas.join(", "))] })
+            ]
+        })
+    );
+
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+            new TableRow({
+                children: ["Grupo / Unidad", "Tareas asignadas"].map(h =>
+                    new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
+                )
+            }),
+            ...filas
+        ]
+    });
+})(),
+
+// 🟦 2️⃣ Tabla de Asignaciones a usuario
+new Paragraph({
+    text: "Asignaciones a usuario",
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 400, after: 200 }
+}),
+(() => {
+    const agrupadoUsuario = {};
+    this.data.nodos.forEach(n => {
+        const usuario = n.asignadoUsuario?.trim() || "Sin asignar";
+        if (!agrupadoUsuario[usuario]) agrupadoUsuario[usuario] = [];
+        agrupadoUsuario[usuario].push(n.titulo || "(Sin título)");
+    });
+
+    const filas = Object.entries(agrupadoUsuario).map(([usuario, tareas]) =>
+        new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph(usuario + ` (${tareas.length})`)] }),
+                new TableCell({ children: [new Paragraph(tareas.join(", "))] })
+            ]
+        })
+    );
+
+    return new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+            new TableRow({
+                children: ["Usuario", "Tareas asignadas"].map(h =>
+                    new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
+                )
+            }),
+            ...filas
+        ]
+    });
+})(),
                 new Paragraph({
                     text: "Condiciones",
                     heading: HeadingLevel.HEADING_1,
