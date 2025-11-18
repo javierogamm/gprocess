@@ -514,24 +514,21 @@ if (nodo.tipo === "operacion_externa") {
         ,
 
 /* ============================================================
-   RESALTAR CONEXIONES DE UN NODO SELECCIONADO (VERSIÓN AJUSTADA)
+   RESALTAR CONEXIONES DE UN NODO SELECCIONADO (CORREGIDO)
 ============================================================ */
 highlightConnectionsForNode(nodeId) {
-    // 🔹 Limpiar cualquier resaltado previo
+    // *** CAMBIO: limpiar sobre .connection-line (no .connection-path) ***
     document.querySelectorAll(".connection-line").forEach(p => {
         p.classList.remove("highlighted-conn");
     });
 
     if (!nodeId) return;
 
-    // 🔹 Resaltar las conexiones que salen o entran en ese nodo
+    // *** CAMBIO: los <path> tienen id === conn.id (sin prefijos) ***
     Engine.data.conexiones.forEach(conn => {
         if (conn.from === nodeId || conn.to === nodeId) {
-            const path = document.getElementById(`c${conn.id}`);
-            if (path) {
-                path.classList.add("highlighted-conn");
-                console.log("🔶 resaltando conexión:", conn.id);
-            }
+            const path = document.getElementById(conn.id); // *** CAMBIO ***
+            if (path) path.classList.add("highlighted-conn");
         }
     });
 },

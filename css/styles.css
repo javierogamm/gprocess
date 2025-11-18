@@ -555,14 +555,14 @@ input {
     background: rgba(0, 0, 0, 0.08);
 }
 .connection-path.highlighted-conn {
-  stroke: #ff7b00 !important;
+  stroke: #50a1a2 !important;
   stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(255, 140, 0, 0.8));
+  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
   transition: stroke 0.2s ease;
 }
 .connection-line.highlighted-conn {
-  stroke: #ff7b00 !important;
+  stroke: #50a1a2 !important;
   stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(255, 140, 0, 0.8));
+  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
   transition: stroke 0.2s ease;
 }

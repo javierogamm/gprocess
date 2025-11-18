@@ -1355,11 +1355,17 @@ const doc = new Document({
                     heading: HeadingLevel.HEADING_3,
                     spacing: { before: 200, after: 100 }
                 }),
-                new Paragraph({
-                    text: descripcion,
-                    alignment: AlignmentType.JUSTIFIED,
-                    spacing: { after: 400 }
-                }),
+                // 🔹 Mantener saltos de línea en la descripción
+...descripcion
+    .split(/\r?\n+/)
+    .filter(linea => linea.trim() !== "")
+    .map(linea =>
+        new Paragraph({
+            children: [new TextRun({ text: linea, break: 1 })],
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 150 }
+        })
+    ),
              
             ]
         },

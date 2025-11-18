@@ -77,6 +77,7 @@ const Interactions = {
         }
     
         Engine.selectNode(nodo.id);
+        Renderer.highlightConnectionsForNode(nodo.id); // *** CAMBIO ***
     });
 
     /* --------- Inicio de drag (individual o múltiple) --------- */
@@ -213,9 +214,10 @@ const Interactions = {
             Engine.selectedConnectionId = null;
             UI.showGroupProperties(); // 👈 mostrará solo color + slider + eliminar
         } else if (this.selectedNodes.size === 1) {
-            const unico = Array.from(this.selectedNodes)[0];
-            Engine.selectNode(unico);
-        }
+    const unico = Array.from(this.selectedNodes)[0];
+    Engine.selectNode(unico);
+    Renderer.highlightConnectionsForNode(unico); // *** CAMBIO ***
+}
     },
         
 /* ========================================================
@@ -521,23 +523,10 @@ tryCompleteReconnect(e) {
 ,
 
 /* ============================================================
-   RESALTAR CONEXIONES DE UN NODO SELECCIONADO
+   RESALTAR CONEXIONES DE UN NODO SELECCIONADO (delegado)
 ============================================================ */
 highlightConnectionsForNode(nodeId) {
-    // Limpiar cualquier resaltado previo
-    document.querySelectorAll(".connection-path").forEach(p => {
-        p.classList.remove("highlighted-conn");
-    });
-
-    if (!nodeId) return;
-
-    // Resaltar las conexiones que salen o entran en el nodo
-    Engine.data.conexiones.forEach(conn => {
-        if (conn.from === nodeId || conn.to === nodeId) {
-            const path = document.getElementById(`conn-${conn.id}`);
-            if (path) path.classList.add("highlighted-conn");
-        }
-    });
+    Renderer.highlightConnectionsForNode(nodeId); // *** CAMBIO ***
 },
 };
 
@@ -562,7 +551,7 @@ if (area) {
             Engine.selectedConnectionId = null;
             UI.clear();
 // 🔸 Limpiar también los resaltados de conexiones
-document.querySelectorAll(".connection-path").forEach(p => p.classList.remove("highlighted-conn"));
+document.querySelectorAll(".connection-line").forEach(p => p.classList.remove("highlighted-conn")); // *** CAMBIO ***
             Interactions.startSelection(e);
         }
     });
