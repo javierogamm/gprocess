@@ -44,397 +44,507 @@ const ImportText = {
         return "formulario";
     },
 
-    /* ------------------------------------------
-       IMPORTAR TEXTO
-    ------------------------------------------ */
-    import(texto) {
+/* ------------------------------------------
+   IMPORTAR TEXTO (REEMPLAZO COMPLETO)
+------------------------------------------ */
+import(texto) {
 
-        const lineas = texto.split(/\r?\n/).map(l => l.trimEnd());
-        const mapaNodos = new Map();
+    const lineas = texto.split(/\r?\n/).map(l => l.trimEnd());
+    const mapaNodos = new Map();
 
-        let posicionY = 40;
-        const saltoY = 160;
-        const posicionX = 620;
+    // === Layout base: grid vertical con salto de columna (semilla) ===
+    const area = document.getElementById("canvasArea");
+    const container = document.getElementById("nodesContainer");
 
-        /* ----------------------------------------------------
-            FUNCIÓN ÚNICA PARA DIVIDIR COLUMNAS (ROBUSTA)
-        ---------------------------------------------------- */
-        function parseCols(linea) {
-            let cols = linea.split(/\t/g);
-            if (cols.length < 5) cols = linea.split(/\s{2,}/g);
-            while (cols.length < 5) cols.push("");
-            return cols;
+    const MARGIN = 120;
+    const saltoY = 160;            // separación vertical entre filas (semilla)
+    const saltoX = 320;            // separación horizontal entre columnas (semilla)
+    const viewH  = (area?.clientHeight || 900);
+    const viewW  = (area?.clientWidth  || 1400);
+    const maxFilas = Math.max(6, Math.floor((viewH - 2 * MARGIN) / saltoY));
+
+    let fila = 0;
+    let col  = 0;
+    const baseX = Math.max(MARGIN, Math.floor((viewW - saltoX) / 2));
+    const baseY = MARGIN;
+
+    // === utilidades de límites y tamaños ==============================
+    function getNodeSize(n) {
+        return { w: n.width  || 200, h: n.height || 100 };
+    }
+    function getCanvasBounds() {
+        // ⭐ CAMBIO: no crecemos en alto; en ancho permitimos crecer (scrollWidth)
+        const w = (container?.scrollWidth || area?.scrollWidth || area?.clientWidth || 1400);
+        const h = (container?.scrollHeight || area?.scrollHeight || area?.clientHeight || 4000);        return {
+            minX: MARGIN,
+            minY: MARGIN,
+            maxX: Math.max(MARGIN + 600, w - MARGIN),
+            maxY: Math.max(MARGIN + 400, h - MARGIN)
+        };
+    }
+    // Clampeo de una posición (esquina superior-izda del nodo)
+    function clampPosition(x, y, n) {
+        const { w, h } = getNodeSize(n);
+        const B = getCanvasBounds();
+        const clampedX = Math.min(Math.max(x, B.minX), B.maxX - w);
+        const clampedY = Math.min(Math.max(y, B.minY), B.maxY - h);
+        return { x: clampedX, y: clampedY };
+    }
+
+    // ----------------------------------------------------
+    // Función robusta para dividir columnas del copypaste
+    // ----------------------------------------------------
+    function parseCols(linea) {
+        let cols = linea.split(/\t/g);
+        if (cols.length < 5) cols = linea.split(/\s{2,}/g);
+        while (cols.length < 5) cols.push("");
+        return cols;
+    }
+
+    // ============================================================
+    // PRIMERA PASADA: CREAR NODOS (sólo líneas NO indentadas)
+    // ============================================================
+    lineas.forEach(rawLine => {
+
+        if (!rawLine.trim()) return;
+
+        const esAccion =
+            rawLine.startsWith("\t") ||
+            rawLine.startsWith("    ");
+
+        if (esAccion) return; // las acciones no crean nodo
+
+        let linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+        const partes = parseCols(linea);
+
+        const titulo   = (partes[0] || "").trim();
+        const condTxt  = (partes[1] || "").trim();
+        const asignado = (partes[2] || "").trim();
+
+        if (!titulo) return;
+
+        const tipoDetectado = this.inferTipo(titulo);
+
+        // Posición semilla en grid
+        let x = baseX + col * saltoX;
+        let y = baseY + fila * saltoY;
+        fila++;
+        if (fila >= maxFilas) { fila = 0; col++; }
+
+        const nodo = Engine.createNode(tipoDetectado);
+
+        // Semilla con clamp
+        let clamped = clampPosition(x, y, nodo);
+        nodo.x = clamped.x;
+        nodo.y = clamped.y;
+
+        const nodeDiv = document.getElementById(nodo.id);
+        if (nodeDiv) {
+            nodeDiv.style.left = nodo.x + "px";
+            nodeDiv.style.top  = nodo.y + "px";
         }
 
-        /* ============================================================
-           PRIMERA PASADA: CREAR NODOS
-        ============================================================ */
-        lineas.forEach(rawLine => {
+        const nodoReal = Engine.getNode(nodo.id);
+        if (nodoReal) {
+            nodoReal.titulo    = titulo;
+            nodoReal.asignadoA = asignado;
 
-            if (!rawLine.trim()) return;
+            if (nodeDiv) {
+                const titleDiv = nodeDiv.querySelector(".node-title");
+                if (titleDiv) titleDiv.innerText = nodoReal.titulo;
+            }
+        }
 
-            const esAccion =
-                rawLine.startsWith("\t") ||
-                rawLine.startsWith("    ");
+        mapaNodos.set(titulo, nodo.id);
+    });
 
-            if (esAccion) return;
+    // Re-render para que se vean los títulos recién puestos
+    Renderer.clearAll();
+    Engine.data.nodos.forEach(n => Renderer.renderNode(n));
 
-            let linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+    // ============================================================
+    // SEGUNDA PASADA: CONEXIONES + CONDICIONES + CAMBIO DE ESTADO
+    // ============================================================
+    let nodoActualId = null;
+    let condicionesPendientes = [];
+    let ultimaConexionId = null;
+    let branchIndex = 0;
 
+    lineas.forEach(rawLine => {
+        if (!rawLine.trim()) return;
+
+        const esAccion =
+            rawLine.startsWith("\t") ||
+            rawLine.startsWith("    ");
+
+        let linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+
+        // ---------------- LÍNEA DE ASUNTO (no indentada) ----------------
+        if (!esAccion) {
             const partes = parseCols(linea);
-
             const titulo   = (partes[0] || "").trim();
             const condTxt  = (partes[1] || "").trim();
-            const asignado = (partes[2] || "").trim();
-            const plazoTxt = (partes[3] || "").trim();
+            nodoActualId = mapaNodos.get(titulo) || null;
+            condicionesPendientes = [];
+            ultimaConexionId = null;
+            branchIndex = 0;
 
-            if (!titulo) return;
-
-            const tipoDetectado = this.inferTipo(titulo);
-
-            const nodo = Engine.createNode(tipoDetectado);
-
-            nodo.x = posicionX;
-            nodo.y = posicionY;
-            posicionY += saltoY;
-
-            const nodeDiv = document.getElementById(nodo.id);
-            if (nodeDiv) {
-                nodeDiv.style.left = nodo.x + "px";
-                nodeDiv.style.top = nodo.y + "px";
-            }
-
-            const nodoReal = Engine.getNode(nodo.id);
-
-            if (nodoReal) {
-                nodoReal.titulo      = titulo;
-                nodoReal.asignadoA   = asignado;
-              
-
-                if (nodeDiv) {
-                    const titleDiv = nodeDiv.querySelector(".node-title");
-                    if (titleDiv) titleDiv.innerText = nodoReal.titulo;
-
-                    const descDiv = nodeDiv.querySelector(".node-description");
-                }
-            }
-
-            mapaNodos.set(titulo, nodo.id);
-        });
-
-        /* ---------------------------------------------------------
-           RE-RENDER PARA QUE LOS TITULOS IMPORTADOS SE VEAN
-        --------------------------------------------------------- */
-        Renderer.clearAll();
-        Engine.data.nodos.forEach(n => Renderer.renderNode(n));
-
-
-        /* ============================================================
-           SEGUNDA PASADA: CREAR CONEXIONES
-        ============================================================ */
-
-        let nodoActualId = null;
-        let condicionesPendientes = [];
-        let ultimaConexionId = null;
-        let branchIndex = 0;
-
-        lineas.forEach(rawLine => {
-
-            if (!rawLine.trim()) return;
-
-            const esAccion =
-                rawLine.startsWith("\t") ||
-                rawLine.startsWith("    ");
-
-            let linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
-
-            /* ------------------------------------------
-               LÍNEA DE ASUNTO (NO INDENTADA)
-            ------------------------------------------ */
-            if (!esAccion) {
-
-                const partes = parseCols(linea);
-
-                const titulo   = (partes[0] || "").trim();
-                const condTxt  = (partes[1] || "").trim();
-                const asignado = (partes[2] || "").trim();
-                const plazoTxt = (partes[3] || "").trim();
-
-                nodoActualId = mapaNodos.get(titulo) || null;
-                condicionesPendientes = [];
-                ultimaConexionId = null;
-                branchIndex = 0;
-
-                if (condTxt && /^Sólo si/i.test(condTxt)) {
-
-                    const match = condTxt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
-
-                    if (match) {
-                        condicionesPendientes.push({
-                            campo: match[1],
-                            valor: match[2]
-                        });
-                    } else {
-                        condicionesPendientes.push({
-                            textoLibre: condTxt
-                        });
-                    }
-                }
-
-                return;
-            }
-
-            /* ------------------------------------------
-               LÍNEAS DE ACCIÓN (INDENTADAS)
-            ------------------------------------------ */
-
-            if (!nodoActualId) return;
-
-            const txt = linea.trim();
-
-            // CONDICIÓN
-            if (/^Sólo si/i.test(txt)) {
-
-                const match = txt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
-
+            if (condTxt && /^Sólo si/i.test(condTxt)) {
+                const match = condTxt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
                 if (match) {
-                    condicionesPendientes.push({
-                        campo: match[1],
-                        valor: match[2]
-                    });
+                    condicionesPendientes.push({ campo: match[1], valor: match[2] });
                 } else {
-                    condicionesPendientes.push({
-                        textoLibre: txt
-                    });
+                    condicionesPendientes.push({ textoLibre: condTxt });
                 }
-                return;
             }
-
-            // LANZAR TAREA
-            const lanzarMatch = txt.match(/^Lanzar tarea\s+'([^']+)'/i);
-
-            if (lanzarMatch) {
-
-                const destinoTitulo = lanzarMatch[1];
-                const destinoId = mapaNodos.get(destinoTitulo);
-
-                if (!destinoId) return;
-
-                let fromPos = "bottom";
-                let toPos = "top";
-
-                if (condicionesPendientes.length > 0) {
-                    if      (branchIndex === 0) fromPos = "right";
-                    else if (branchIndex === 1) fromPos = "left";
-                    else                        fromPos = "bottom";
-                    branchIndex++;
-                }
-
-                Engine.createConnection(nodoActualId, destinoId, fromPos, toPos);
-
-                // id de la conexión recién creada
-                let connId = null;
-                if (Engine.data.conexiones.length > 0) {
-                    connId = Engine.data.conexiones[Engine.data.conexiones.length - 1].id;
-                }
-                ultimaConexionId = connId;
-                
-                // registrar en outList: nodo hijo + conexión
-                let p = Engine.getNode(nodoActualId);
-                if (p) {
-                    p.outList = p.outList || [];
-                    p.outList.push({
-                        id: destinoId,
-                        connId: connId
-                    });
-                }
-                
-                if (connId && condicionesPendientes.length > 0) {
-
-                    condicionesPendientes.forEach(cond => {
-                        Engine.updateConnectionCondition(
-                            connId,
-                            cond.campo || "",
-                            cond.valor || cond.textoLibre || ""
-                        );
-                    });
-                }
-
-                condicionesPendientes = [];
-                return;
-            }
-
-            // CAMBIAR ESTADO
-            const cambiarMatch = txt.match(/^Cambiar estado del expediente a\s+'([^']+)'/i);
-
-            if (cambiarMatch && ultimaConexionId) {
-                Engine.updateConnectionCambioEstado(
-                    ultimaConexionId,
-                    cambiarMatch[1]
-                );
-                return;
-            }
-
-        });
-
-        // -----------------------------------------------------------
-        // Mover un nodo y TODO su subárbol (hijo + nietos, etc.)
-        // -----------------------------------------------------------
-        function moverSubarbol(nodo, dx, dy) {
-            if (!nodo) return;
-
-            nodo.x += dx;
-            nodo.y += dy;
-
-            const div = document.getElementById(nodo.id);
-            if (div) {
-                div.style.left = nodo.x + "px";
-                div.style.top  = nodo.y + "px";
-            }
-
-            if (nodo.outList && nodo.outList.length > 0) {
-                nodo.outList.forEach(entry => {
-                    const childId = entry.id || entry;
-                    const hijo = Engine.getNode(childId);
-                    if (hijo) {
-                        moverSubarbol(hijo, dx, dy);
-                    }
-                });
-            }
+            return;
         }
 
-        // ===========================================================
-        // DISTRIBUIR NODOS HIJOS EN HORIZONTAL BAJO SU NODO PADRE
-        // - Hijos con nietos (outList no vacía) → posiciones centrales, handler "bottom"
-        // - Hijos hoja (sin outList) → extremos, handler "left"/"right"
-        // ===========================================================
-        Engine.data.nodos.forEach(padre => {
+        // ---------------- LÍNEAS DE ACCIÓN (indentadas) ----------------
+        if (!nodoActualId) return;
 
-            if (!padre.outList || padre.outList.length < 2) return;
+        const txt = linea.trim();
 
-            const hijos = padre.outList
-                .map(entry => Engine.getNode(entry.id || entry))
-                .filter(Boolean);
+        // 1) Condición
+        if (/^Sólo si/i.test(txt)) {
+            const match = txt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
+            if (match) {
+                condicionesPendientes.push({ campo: match[1], valor: match[2] });
+            } else {
+                condicionesPendientes.push({ textoLibre: txt });
+            }
+            return;
+        }
 
-            const count = hijos.length;
-            if (count < 2) return;
+        // 2) Lanzar tarea
+        const lanzarMatch = txt.match(/^Lanzar tarea\s+'([^']+)'/i);
+        if (lanzarMatch) {
+            const destinoTitulo = lanzarMatch[1];
+            const destinoId = mapaNodos.get(destinoTitulo);
+            if (!destinoId) return;
 
-            // Separar hijos con nietos y sin nietos
-            const conNietos = [];
-            const sinNietos = [];
+            let fromPos = "bottom";
+            let toPos   = "top";
 
-            hijos.forEach(h => {
-                if (h.outList && h.outList.length > 0) {
-                    conNietos.push(h);
-                } else {
-                    sinNietos.push(h);
-                }
-            });
-
-            const centralSet = new Set(conNietos);
-
-            // Construir array ordenado: con nietos en el centro
-            const ordered = new Array(count);
-            const k = conNietos.length;
-            let centerStart = Math.floor((count - k) / 2);
-
-            conNietos.forEach((h, idx) => {
-                ordered[centerStart + idx] = h;
-            });
-
-            let leafIdx = 0;
-            for (let i = 0; i < count; i++) {
-                if (!ordered[i]) {
-                    ordered[i] = sinNietos[leafIdx++];
-                }
+            if (condicionesPendientes.length > 0) {
+                if      (branchIndex === 0) fromPos = "right";
+                else if (branchIndex === 1) fromPos = "left";
+                else                        fromPos = "bottom";
+                branchIndex++;
             }
 
-            // Mapa hijoId -> connId
-            const connMap = new Map();
-            padre.outList.forEach(entry => {
-                const childId = entry.id || entry;
-                if (entry.connId) {
-                    connMap.set(childId, entry.connId);
-                }
-            });
+            Engine.createConnection(nodoActualId, destinoId, fromPos, toPos);
 
-            const padreWidth = padre.width || 200;
-            const cx = padre.x + padreWidth / 2;
-            const baseY = padre.y + padre.height + 60;
-            const spacing = 260; // separación horizontal
+            // id de la última conexión creada
+            let connId = null;
+            if (Engine.data.conexiones.length > 0) {
+                connId = Engine.data.conexiones[Engine.data.conexiones.length - 1].id;
+            }
+            ultimaConexionId = connId;
 
-            ordered.forEach((dest, index) => {
-                const destWidth = dest.width || 200;
+            // Registrar subárbol para usar como grafo
+            const p = Engine.getNode(nodoActualId);
+            if (p) {
+                p.outList = p.outList || [];
+                p.outList.push({ id: destinoId, connId });
+            }
 
-                const targetCenterX = cx - ((count - 1) * spacing) / 2 + index * spacing;
-                const targetX = targetCenterX - destWidth / 2;
-                const targetY = baseY;
+            // Volcar condiciones en la conexión
+            if (connId && condicionesPendientes.length > 0) {
+                condicionesPendientes.forEach(cond => {
+                    Engine.updateConnectionCondition(
+                        connId,
+                        cond.campo || "",
+                        cond.valor || cond.textoLibre || ""
+                    );
+                });
+            }
+            condicionesPendientes = [];
+            return;
+        }
 
-                const dx = targetX - dest.x;
-                const dy = targetY - dest.y;
+        // 3) Cambiar estado
+        const cambiarMatch = txt.match(/^Cambiar estado del expediente a\s+'([^']+)'/i);
+        if (cambiarMatch && ultimaConexionId) {
+            Engine.updateConnectionCambioEstado(ultimaConexionId, cambiarMatch[1]);
+            return;
+        }
+    });
 
-                // 🔥 Mover el hijo Y TODO SU SUBÁRBOL (nietos, etc.)
-                moverSubarbol(dest, dx, dy);
+    // -----------------------------------------------------------
+    // LAYOUT POR NIVELES (vertical por profundidad; horizontal por “primos”)
+    // -----------------------------------------------------------
 
-                // Ajustar handler de salida según posición
-                const connId = connMap.get(dest.id);
-                if (connId) {
-                    const conn = Engine.data.conexiones.find(c => c.id === connId);
-                    if (conn) {
-                        let side;
-                        const isCentral = centralSet.has(dest);
+    // Construir grafo a partir de outList
+    const allNodes = Engine.data.nodos.slice();            // copia
+    const idToNode = new Map(allNodes.map(n => [n.id, n]));
+    const parentsOf = new Map();  // id -> Set(parentIds)
+    const childrenOf = new Map(); // id -> Set(childIds)
+    const appearanceIndex = new Map(); // orden de aparición estable
 
-                        if (isCentral) {
-                            side = "bottom";
-                        } else {
-                            // si queda a la izda/dcha del centro del padre
-                            if (targetCenterX < cx) {
-                                side = "left";
-                            } else {
-                                side = "right";
-                            }
-                        }
+    allNodes.forEach((n, idx) => {
+        appearanceIndex.set(n.id, idx);
+        parentsOf.set(n.id, new Set());
+        childrenOf.set(n.id, new Set());
+    });
 
-                        conn.fromPos = side; // usar handler correcto
-                    }
-                }
-            });
+    allNodes.forEach(p => {
+        (p.outList || []).forEach(entry => {
+            const cid = entry.id || entry;
+            if (!idToNode.has(cid)) return;
+            childrenOf.get(p.id).add(cid);
+            parentsOf.get(cid).add(p.id);
         });
+    });
 
-       /* ===========================================================
-           AJUSTE FINAL: CENTRAR TODO EL DIAGRAMA DENTRO DEL CANVAS
-           Evita que queden nodos fuera del área visible (izquierda o derecha)
-        ============================================================ */
-        const minX = Math.min(...Engine.data.nodos.map(n => n.x));
-        const minY = Math.min(...Engine.data.nodos.map(n => n.y));
-        const maxX = Math.max(...Engine.data.nodos.map(n => n.x + (n.width || 200)));
-        const maxY = Math.max(...Engine.data.nodos.map(n => n.y + (n.height || 100)));
+    // --- niveles por CAMINO MÁS LARGO (roots → node)
+    const levelOf = new Map(); // id -> nivel (0..N)
+    (function computeLevelsByLongestPath() {
+        const memo = new Map();
+        const visiting = new Set();
 
-        // Definir márgenes seguros (un poco más alto/bajo)
-        const margin = 120;
-        const offsetX = (minX < margin) ? (margin - minX) : 0;
-        const offsetY = (minY < margin) ? (margin - minY) : 0;
+        function depth(id) {
+            if (memo.has(id)) return memo.get(id);
+            if (visiting.has(id)) { // ciclo/back-edge durante el cálculo
+                memo.set(id, 0);
+                return 0;
+            }
+            visiting.add(id);
+            const ps = Array.from(parentsOf.get(id) || []);
+            let d;
+            if (ps.length === 0) {
+                d = 0; // raíz
+            } else {
+                let m = 0;
+                for (const pid of ps) m = Math.max(m, depth(pid));
+                d = m + 1;
+            }
+            visiting.delete(id);
+            memo.set(id, d);
+            return d;
+        }
 
-        // Si hay nodos demasiado anchos a la derecha, los centramos visualmente
-        const canvasWidth = document.getElementById("nodesContainer").offsetWidth || 1600;
-        const excesoDerecha = (maxX + margin) - canvasWidth;
-        const ajusteX = excesoDerecha > 0 ? -excesoDerecha / 2 : 0;
+        allNodes.forEach(n => levelOf.set(n.id, depth(n.id)));
+    })();
 
-        // 🔧 Mover todos los nodos al área visible
-        Engine.data.nodos.forEach(n => {
-            n.x += offsetX + ajusteX;
-            n.y += offsetY;
+    // Agrupar por nivel
+    const levels = [];
+    allNodes.forEach(n => {
+        const lv = levelOf.get(n.id) || 0;
+        if (!levels[lv]) levels[lv] = [];
+        levels[lv].push(n.id);
+    });
+
+    // Orden en cada nivel (coherencia horizontal)
+    function avgParentX(nid) {
+        const ps = Array.from(parentsOf.get(nid) || []);
+        if (!ps.length) return idToNode.get(nid).x;
+        const sum = ps.reduce((acc, pid) => acc + (idToNode.get(pid)?.x || 0), 0);
+        return sum / ps.length;
+    }
+    levels.forEach((arr) => {
+        if (!arr) return;
+        arr.sort((a, b) => {
+            const ax = avgParentX(a), bx = avgParentX(b);
+            if (ax !== bx) return ax - bx;
+            return (appearanceIndex.get(a) || 0) - (appearanceIndex.get(b) || 0);
+        });
+    });
+
+    // Colocar niveles dentro de los límites del canvas (vertical por profundidad, horizontal por “primos”)
+    let B = getCanvasBounds();
+
+    const utilPaddingX = 40;
+    let utilLeftBase   = B.minX + utilPaddingX;
+    let utilRightBase  = B.maxX - utilPaddingX;
+    let baseUtilWidth  = Math.max(400, utilRightBase - utilLeftBase);
+
+    // ⭐ CAMBIO: si un nivel tiene muchos “primos”, ensanchar el contenedor en X (no en Y)
+    const MIN_SPACING = 220;
+    const MAX_SPACING = 360;
+    const SIDE_PAD    = 80;
+
+    const widestCount = Math.max(...levels.filter(Boolean).map(arr => arr.length), 1);
+    const neededLevelWidth = Math.max(
+        baseUtilWidth,
+        (widestCount - 1) * MIN_SPACING + 2 * SIDE_PAD
+    );
+    const neededContainerWidth = MARGIN + neededLevelWidth + MARGIN;
+
+    if (container) {
+        const currentW = container.scrollWidth || container.clientWidth || 0;
+        if (neededContainerWidth > currentW) {
+            container.style.width = `${neededContainerWidth}px`;
+        }
+    }
+    const svg = document.getElementById("svgConnections");
+    if (svg) {
+        const svgW = Math.max(
+            parseInt(svg.getAttribute("width") || "0", 10) || 0,
+            container?.scrollWidth || container?.clientWidth || 0,
+            neededContainerWidth
+        );
+        svg.setAttribute("width", `${svgW}`);
+    }
+
+    // Recalcular bounds tras posible cambio de ancho
+    B = getCanvasBounds();
+    utilLeftBase   = B.minX + utilPaddingX;
+    utilRightBase  = B.maxX - utilPaddingX;
+    baseUtilWidth  = Math.max(400, utilRightBase - utilLeftBase);
+
+    // Vertical (profundidad)
+    const TOP_PAD   = 20;
+    const BOTTOM_PAD= 20;
+    const GAP_Y     = 180;
+    const startY    = B.minY + TOP_PAD;
+    const levelGapY = GAP_Y;
+
+    // Posicionar por niveles
+    levels.forEach((ids, lv) => {
+        if (!ids || !ids.length) return;
+        const count = ids.length;
+
+        // Ancho disponible en ESTE nivel (puede crecer según nº de “primos”)
+        const levelWidth = Math.max(
+            baseUtilWidth,
+            (count - 1) * MIN_SPACING + 2 * SIDE_PAD
+        );
+
+        // Spacing horizontal en ESTE nivel
+        const spacing = count > 1
+            ? Math.min(MAX_SPACING, Math.max(MIN_SPACING, levelWidth / (count - 1)))
+            : MIN_SPACING;
+
+        const centerX = utilLeftBase + levelWidth / 2;
+        const targetY = startY + lv * levelGapY;
+
+        ids.forEach((nid, idx) => {
+            const n = idToNode.get(nid);
+            const { w, h } = getNodeSize(n);
+
+            const targetCenterX = centerX - ((count - 1) * spacing) / 2 + idx * spacing;
+            let tx = targetCenterX - w / 2;
+            let ty = targetY;
+
+            // ⭐ CAMBIO: ligero empuje a la derecha si hay back-edge a ancestro (sin cambiar nivel)
+            const myLevel = levelOf.get(nid) || 0;
+            const hasBackEdge = Array.from(childrenOf.get(nid) || [])
+                .some(tid => (levelOf.get(tid) || 0) < myLevel);
+            if (hasBackEdge) {
+                tx += 140;
+            }
+
+            // clamp y aplicar
+            const cl = clampPosition(tx, ty, n);
+            n.x = cl.x; n.y = cl.y;
 
             const div = document.getElementById(n.id);
-            if (div) {
-                div.style.left = n.x + "px";
-                div.style.top  = n.y + "px";
-            }
+            if (div) { div.style.left = n.x + "px"; div.style.top = n.y + "px"; }
+        });
+    });
+
+    // (Opcional) Forzar conexiones verticales
+    /*
+    Engine.data.conexiones.forEach(conn => {
+        conn.fromPos = "bottom";
+        conn.toPos = "top";
+    });
+    */
+
+    // ===========================================================
+    // NORMALIZAR Y AJUSTAR A ÁREA (fit + márgenes seguros)
+    // ===========================================================
+    (function normalizeAndFit() {
+
+        if (!Engine.data.nodos.length) return;
+
+        // 1) BBox actual
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        Engine.data.nodos.forEach(n => {
+            minX = Math.min(minX, n.x);
+            minY = Math.min(minY, n.y);
+            maxX = Math.max(maxX, n.x + (n.width || 200));
+            maxY = Math.max(maxY, n.y + (n.height || 100));
         });
 
-        // 🧭 Recalcular conexiones y guardar
-        Renderer.redrawConnections();
-        Engine.saveHistory();
+        // 2) Desplazar si toca margen superior/izquierdo
+        let shiftX = 0, shiftY = 0;
+        const B2 = getCanvasBounds();
 
-    }
+        if (minX < B2.minX) shiftX = B2.minX - minX;
+        if (minY < B2.minY) shiftY = B2.minY - minY;
+
+        if (shiftX !== 0 || shiftY !== 0) {
+            Engine.data.nodos.forEach(n => {
+                const trialX = n.x + shiftX;
+                const trialY = n.y + shiftY;
+                const cl = clampPosition(trialX, trialY, n);
+                n.x = cl.x; n.y = cl.y;
+                const div = document.getElementById(n.id);
+                if (div) { div.style.left = n.x + "px"; div.style.top = n.y + "px"; }
+            });
+        }
+
+        // 3) Fit si sobrepasa el área útil (con clamp posterior)
+        let bboxMinX = Infinity, bboxMinY = Infinity, bboxMaxX = -Infinity, bboxMaxY = -Infinity;
+        Engine.data.nodos.forEach(n => {
+            bboxMinX = Math.min(bboxMinX, n.x);
+            bboxMinY = Math.min(bboxMinY, n.y);
+            bboxMaxX = Math.max(bboxMaxX, n.x + (n.width || 200));
+            bboxMaxY = Math.max(bboxMaxY, n.y + (n.height || 100));
+        });
+
+        const width  = bboxMaxX - bboxMinX;
+        const height = bboxMaxY - bboxMinY;
+
+        const availW = (B2.maxX - B2.minX);
+        const availH = (B2.maxY - B2.minY);
+
+        const sW = availW / width;
+        const sH = availH / height;
+        const scale = Math.min(1, sW, sH);
+
+        if (scale < 0.98) {
+            Engine.data.nodos.forEach(n => {
+                const sx = B2.minX + (n.x - bboxMinX) * scale;
+                const sy = B2.minY + (n.y - bboxMinY) * scale;
+                const cl = clampPosition(Math.round(sx), Math.round(sy), n);
+                n.x = cl.x; n.y = cl.y;
+                const div = document.getElementById(n.id);
+                if (div) { div.style.left = n.x + "px"; div.style.top = n.y + "px"; }
+            });
+        }
+
+        // 4) Centrar la vista
+        if (area) {
+            let vMinX = Infinity, vMinY = Infinity, vMaxX = -Infinity, vMaxY = -Infinity;
+            Engine.data.nodos.forEach(n => {
+                vMinX = Math.min(vMinX, n.x);
+                vMinY = Math.min(vMinY, n.y);
+                vMaxX = Math.max(vMaxX, n.x + (n.width || 200));
+                vMaxY = Math.max(vMaxY, n.y + (n.height || 100));
+            });
+            const bboxW = vMaxX - vMinX;
+            const bboxH = vMaxY - vMinY;
+            area.scrollLeft = Math.max(0, (vMinX + bboxW/2) - area.clientWidth/2);
+            area.scrollTop  = Math.max(0, (vMinY + bboxH/2) - area.clientHeight/2);
+        }
+    })();
+
+    // Redibujar y guardar
+    Renderer.redrawConnections();
+    Engine.saveHistory();
+
+    // Saneador final (idempotente)
+    Engine.data.nodos.forEach(n => {
+        const cl = clampPosition(n.x, n.y, n);
+        if (cl.x !== n.x || cl.y !== n.y) {
+            n.x = cl.x; n.y = cl.y;
+            const div = document.getElementById(n.id);
+            if (div) { div.style.left = n.x + "px"; div.style.top = n.y + "px"; }
+        }
+    });
+}
+
 };
