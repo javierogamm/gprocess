@@ -456,15 +456,6 @@ if (btnImportar && txtImportar) {
         alert("Diagrama importado correctamente.");
     });
 }
-     /* ========================================================
-           BOTÓN ELIMINAR NODO
-        ======================================================== */
-        const deleteBtn = document.getElementById("btnDeleteNode");
-        if (deleteBtn) {
-            deleteBtn.addEventListener("click", () => {
-                Engine.deleteSelected();
-            });
-        }
    
    /* ========================================================
    DRAG & DROP PARA CREAR NODOS DESDE EL PANEL IZQUIERDO
@@ -638,6 +629,57 @@ showNodeProperties(id) {
 
     if (this.inputTextColorDescripcion)
         this.inputTextColorDescripcion.value = nodo.colorDescripcion || "#333333";
+
+// ============================================================
+// ✅ BOTÓN ELIMINAR — FUNCIONAL EN MODO SIMPLE Y MÚLTIPLE
+// ============================================================
+let btnEliminar = document.getElementById("btnDeleteNode");
+if (!btnEliminar) {
+    btnEliminar = document.createElement("button");
+    btnEliminar.id = "btnDeleteNode";
+    btnEliminar.className = "btn";
+    btnEliminar.style.background = "#dc2626";
+    btnEliminar.style.color = "white";
+    btnEliminar.style.width = "100%";
+    btnEliminar.style.marginTop = "10px";
+    btnEliminar.style.fontWeight = "bold";
+    this.propsEditor.appendChild(btnEliminar);
+}
+
+// 🔁 Actualizar texto dinámico según contexto
+if (Interactions.selectedNodes && Interactions.selectedNodes.size > 1) {
+    btnEliminar.textContent = `🗑️ Eliminar selección (${Interactions.selectedNodes.size})`;
+} else {
+    btnEliminar.textContent = "🗑️ Eliminar nodo";
+}
+
+// 🎯 Evento único, se comporta según modo actual
+btnEliminar.onclick = () => {
+    // Si hay selección múltiple
+    if (Interactions.selectedNodes && Interactions.selectedNodes.size > 1) {
+        if (!confirm(`¿Eliminar ${Interactions.selectedNodes.size} nodos seleccionados?`)) return;
+        Array.from(Interactions.selectedNodes).forEach(id => Engine.deleteNode(id));
+        Interactions.selectedNodes.clear();
+        UI.clear();
+        return;
+    }
+
+    // Si hay un nodo individual activo
+    if (UI.currentNodeId) {
+        Engine.deleteNode(UI.currentNodeId);
+        UI.clear();
+        return;
+    }
+
+    // Si no hay nada seleccionado
+    alert("No hay ningún nodo seleccionado para eliminar.");
+};
+
+// 🔚 Garantizar que siempre queda el último en el panel
+this.propsEditor.appendChild(btnEliminar);
+btnEliminar.style.display = "block";
+
+
 },
 
     
@@ -769,28 +811,33 @@ showGroupProperties() {
         btnAlinear.style.display = "block";
     }
 
-    // 🗑️ Botón eliminar selección
-    let btnEliminar = document.getElementById("btnDeleteGroup");
-    if (!btnEliminar) {
-        btnEliminar = document.createElement("button");
-        btnEliminar.id = "btnDeleteGroup";
-        btnEliminar.className = "btn";
-        btnEliminar.textContent = "🗑️ Eliminar selección";
-        btnEliminar.style.background = "#dc2626";
-        btnEliminar.style.color = "white";
-        btnEliminar.style.width = "100%";
-        btnEliminar.style.marginTop = "10px";
-        btnEliminar.addEventListener("click", () => {
-            if (Interactions.selectedNodes.size === 0) return;
-            if (!confirm(`¿Eliminar ${Interactions.selectedNodes.size} nodos seleccionados?`)) return;
-            Array.from(Interactions.selectedNodes).forEach(id => Engine.deleteNode(id));
-            Interactions.selectedNodes.clear();
-            UI.clear();
-        });
-        this.propsEditor.appendChild(btnEliminar);
-    } else {
-        btnEliminar.style.display = "block";
-    }
+// ============================================================
+// 🔥 Botón eliminar — siempre el último elemento visible
+// ============================================================
+let btnEliminar = document.getElementById("btnDeleteNode");
+if (!btnEliminar) {
+    btnEliminar = document.createElement("button");
+    btnEliminar.id = "btnDeleteNode";
+    btnEliminar.className = "btn";
+    btnEliminar.textContent = "🗑️ Eliminar selección";
+    btnEliminar.style.background = "#dc2626";
+    btnEliminar.style.color = "white";
+    btnEliminar.style.width = "100%";
+    btnEliminar.style.marginTop = "10px";
+    btnEliminar.addEventListener("click", () => {
+        if (Interactions.selectedNodes.size === 0) return;
+        if (!confirm(`¿Eliminar ${Interactions.selectedNodes.size} nodos seleccionados?`)) return;
+        Array.from(Interactions.selectedNodes).forEach(id => Engine.deleteNode(id));
+        Interactions.selectedNodes.clear();
+        UI.clear();
+    });
+    this.propsEditor.appendChild(btnEliminar);
+} else {
+    // Moverlo al final del panel
+    this.propsEditor.appendChild(btnEliminar);
+    btnEliminar.textContent = "🗑️ Eliminar selección";
+}
+btnEliminar.style.display = "block";
 
     // 🔖 Título del panel
     const header = this.propsEditor.querySelector("h3");

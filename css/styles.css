@@ -183,31 +183,57 @@ input {
     opacity: 1;
 }
 
-.handle.top { left: 50%; top: 0%; }
-.handle.bottom { left: 50%; top: 100%; }
-.handle.left { left: 0%; top: 50%; }
-.handle.right { left: 100%; top: 50%; }
+.handle.top { left: 50%; top: -5%; }
+.handle.bottom { left: 50%; top: 105%; }
+.handle.left { left: -5%; top: 50%; }
+.handle.right { left: 105%; top: 50%; }
 
 /* ============================================
    SVG DE LAS CONEXIONES
 ============================================ */
+/* ============================================
+   SVG DE LAS CONEXIONES
+============================================ */
 #svgConnections {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 20000px;
-    height: 20000px;
-    pointer-events: auto;
-    z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20000px;
+  height: 20000px;
+  z-index: 10;
+  pointer-events: all !important; /* 🔥 Asegura que reciba clics */
 }
 
 .connection-line {
-    stroke:#4a7f84;
-    stroke-width: 2;
-    fill: none;
-    pointer-events: stroke;
+  stroke: #4a7f84;
+  stroke-width: 2;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer; /* 👆 muestra mano al pasar por encima */
+  transition: all 0.2s ease;
 }
 
+/* 🟢 Al pasar por encima, más ancho y sombra suave */
+.connection-line:hover {
+  stroke-width: 6px;
+  filter: drop-shadow(0 0 2px #045570);
+  transition: all 0.15s ease;
+}
+
+/* 🔧 Área de clic invisible (paths auxiliares) */
+.connection-hit {
+  cursor: pointer;
+}
+
+/* 🔧 FIX para que los clics lleguen al SVG sin bloquear los nodos */
+#nodesContainer {
+  z-index: 20;
+  pointer-events: none !important; /* deja pasar eventos */
+}
+
+#nodesContainer .node {
+  pointer-events: all !important; /* pero los nodos sí clicables */
+}
 .temp-line {
     stroke: #045570;
     stroke-width: 2;
@@ -229,8 +255,8 @@ input {
 ============================================ */
 .node-resizer {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
     bottom: 2px;
     right: 2px;
     background: #4a7f84;      /* mismo tono que los handles */
@@ -758,4 +784,9 @@ input {
 #canvasArea.dragover {
   background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
   transition: background 0.3s ease;
+}
+.connection-line:hover {
+  stroke-width: 8px;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
+  transition: all 0.2s ease;
 }

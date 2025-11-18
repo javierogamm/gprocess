@@ -86,7 +86,7 @@ fichaProyecto: {
         y,
         width: 120,
         height: 50,
-        salidas: []
+        
     };
 
     // 🎨 Personalización especial para algunos tipos
@@ -710,7 +710,7 @@ Engine.importFromCSV = async function(file) {
                 y: parseFloat(obj.y) || 100,
                 width: parseFloat(obj.width) || 200,
                 height: parseFloat(obj.height) || 100,
-                salidas: []
+               
             };
         });
 
@@ -993,8 +993,7 @@ Engine.importFlujoCSV = async function(files) {
                 y: baseY + Math.floor(i / 3) * stepY,
                 width: 200,
                 height: 100,
-                salidas: [],
-                tareaManual: (t["¿Tarea Manual?"] || "").toLowerCase().startsWith("s"),
+                                tareaManual: (t["¿Tarea Manual?"] || "").toLowerCase().startsWith("s"),
                 asignadoA: t["Asignado A"] || ""    // ✅ nuevo
             };
 

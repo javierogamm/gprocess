@@ -11,6 +11,11 @@ const Renderer = {
     init() {
         this.svg = document.getElementById("svgConnections");
         this.container = document.getElementById("nodesContainer");
+        
+    // 🔥 forzar recepción de clics
+    if (this.svg) {
+        this.svg.style.pointerEvents = "all";
+    }
     },
 
     clearAll() {
@@ -702,58 +707,40 @@ redrawConnectionsDynamic(conn, fixedX, fixedY, mx, my, movingEnd) {
             defs.appendChild(marker);
             this.svg.appendChild(defs);
         }
-    
-        // =============================
-        // 🟦 Área de clic invisible (gruesa)
-        // =============================
-        const hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        hit.setAttribute("d", d);
-        hit.setAttribute("stroke", "transparent");
-        hit.setAttribute("stroke-width", "18");
-        hit.setAttribute("fill", "none");
-        hit.style.cursor = "pointer";
-    
-        hit.addEventListener("click", (e) => {
-            e.stopPropagation();
-            Engine.selectConnection(conn.id);
-        });
-    
-        this.svg.appendChild(hit);
-    
-        // =============================
-        // 🧭 Línea visible con flecha
-        // =============================
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.classList.add("connection-line");
-        path.id = conn.id;
-        path.setAttribute("d", d);
-        path.setAttribute("fill", "none");       
-        path.setAttribute("stroke", "#4a7f84");
-        path.setAttribute("stroke-width", "2");
-    
-        // 🔻 Agregar la flecha al final
-        path.setAttribute("marker-end", "url(#arrowhead)");
-    
-        // Eventos
-        path.addEventListener("click", (e) => {
-            e.stopPropagation();
-            Engine.selectConnection(conn.id);
-        });
-    
-        path.addEventListener("mousedown", (e) => {
-            if (e.altKey) {
-                // ALT + clic → reconectar origen
-                e.stopPropagation();
-                Interactions.startReconnectConnection(conn.id, "from");
-            } else if (e.shiftKey) {
-                // SHIFT + clic → reconectar destino
-                e.stopPropagation();
-                Interactions.startReconnectConnection(conn.id, "to");
-            }
-        });
-    
-        this.svg.appendChild(path);
-    
+// 🧭 Línea visible con flecha
+const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+path.classList.add("connection-line");
+path.id = conn.id;
+path.setAttribute("d", d);
+path.setAttribute("fill", "none");       
+path.setAttribute("stroke", "#4a7f84");
+path.setAttribute("stroke-width", "2");
+path.setAttribute("marker-end", "url(#arrowhead)");
+this.svg.appendChild(path);  // ⚠️ primero el visible
+
+// 🟦 Área de clic invisible (gruesa, encima)
+const hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
+hit.setAttribute("d", d);
+hit.setAttribute("stroke", "rgba(0,0,0,0.001)"); // casi invisible pero capta eventos
+hit.setAttribute("stroke-width", "30");
+hit.setAttribute("fill", "none");
+hit.setAttribute("pointer-events", "all");
+hit.classList.add("connection-hit");
+hit.style.cursor = "pointer";
+
+hit.addEventListener("mouseenter", () => {
+    hit.setAttribute("stroke", "rgba(0,0,0,0.1)");
+});
+hit.addEventListener("mouseleave", () => {
+    hit.setAttribute("stroke", "rgba(0,0,0,0.001)");
+});
+hit.addEventListener("click", (e) => {
+    e.stopPropagation();
+    Engine.selectConnection(conn.id);
+});
+
+this.svg.appendChild(hit); // ⚠️ el hit se añade DESPUÉS → queda arriba
+   
 // =============================
 // 🏷️ ETIQUETA SEGÚN REGLAS (0, 1 o 2+ codos)
 // =============================
