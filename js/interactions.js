@@ -76,9 +76,8 @@ const Interactions = {
             div.classList.add("selected-multi");
         }
     
-        Engine.selectNode(nodo.id);
-        Renderer.highlightConnectionsForNode(nodo.id); // *** CAMBIO ***
-    });
+            Engine.selectNode(nodo.id);
+            Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));    });
 
     /* --------- Inicio de drag (individual o múltiple) --------- */
     div.addEventListener("mousedown", (e) => {
@@ -213,12 +212,14 @@ const Interactions = {
             Engine.selectedNodeId = null;
             Engine.selectedConnectionId = null;
             UI.showGroupProperties(); // 👈 mostrará solo color + slider + eliminar
-        } else if (this.selectedNodes.size === 1) {
-    const unico = Array.from(this.selectedNodes)[0];
-    Engine.selectNode(unico);
-    Renderer.highlightConnectionsForNode(unico); // *** CAMBIO ***
-}
-    },
+            } else if (this.selectedNodes.size === 1) {
+                const unico = Array.from(this.selectedNodes)[0];
+                Engine.selectNode(unico);
+                Renderer.highlightConnectionsForNode([unico]);
+            } else if (this.selectedNodes.size > 1) {
+                Renderer.highlightConnectionsForNode(Array.from(this.selectedNodes));
+            }    
+        },
         
 /* ========================================================
    INICIAR RECONEXIÓN DE UNA LÍNEA EXISTENTE
@@ -372,20 +373,22 @@ onMouseMove(e) {
     }
     
 
-    // 🟢 Drag individual
-    if (this.draggingNode) {
-        const nodo = Engine.getNode(this.draggingNode);
-        if (nodo) {
-            nodo.x = Math.round((mx - this.dragOffsetX) / this.GRID_SIZE) * this.GRID_SIZE;
-            nodo.y = Math.round((my - this.dragOffsetY) / this.GRID_SIZE) * this.GRID_SIZE;
-            const div = document.getElementById(nodo.id);
-            div.style.left = nodo.x + "px";
-            div.style.top = nodo.y + "px";
-            Renderer.redrawConnections();
-        }
-        return;
-    }
+   // 🟢 Drag individual
+if (this.draggingNode) {
+    const nodo = Engine.getNode(this.draggingNode);
+    if (nodo) {
+        nodo.x = Math.round((mx - this.dragOffsetX) / this.GRID_SIZE) * this.GRID_SIZE;
+        nodo.y = Math.round((my - this.dragOffsetY) / this.GRID_SIZE) * this.GRID_SIZE;
+        const div = document.getElementById(nodo.id);
+        div.style.left = nodo.x + "px";
+        div.style.top = nodo.y + "px";
+        Renderer.redrawConnections();
 
+        // 🔥 Mantener highlight activo mientras mueves
+        Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));
+    }
+    return;
+}
     // 🔵 Nueva conexión temporal
     if (this.connecting) {
         Renderer.drawTempLine(this.connectStartX, this.connectStartY, mx, my);
@@ -455,6 +458,11 @@ onMouseMove(e) {
         this.reconnectConn = null;
         this.reconnectEnd = null;
         Renderer.redrawConnections();
+
+        // 💡 Mantener highlight después de soltar el ratón
+if (Interactions.selectedNodes.size > 0) {
+    Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));
+}
     },
 /* ========================================================
    INICIAR RECONEXIÓN DESDE UNA LÍNEA EXISTENTE

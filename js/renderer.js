@@ -514,25 +514,27 @@ if (nodo.tipo === "operacion_externa") {
         ,
 
 /* ============================================================
-   RESALTAR CONEXIONES DE UN NODO SELECCIONADO (CORREGIDO)
+   RESALTAR CONEXIONES DE UNO O VARIOS NODOS SELECCIONADOS
 ============================================================ */
-highlightConnectionsForNode(nodeId) {
-    // *** CAMBIO: limpiar sobre .connection-line (no .connection-path) ***
+highlightConnectionsForNode(nodeIds) {
+    // Aceptar string o array
+    const ids = Array.isArray(nodeIds) ? nodeIds : [nodeIds];
+
+    // Quitar highlights previos
     document.querySelectorAll(".connection-line").forEach(p => {
         p.classList.remove("highlighted-conn");
     });
 
-    if (!nodeId) return;
+    if (!ids || ids.length === 0) return;
 
-    // *** CAMBIO: los <path> tienen id === conn.id (sin prefijos) ***
+    // Recorrer conexiones que enlacen cualquier nodo seleccionado
     Engine.data.conexiones.forEach(conn => {
-        if (conn.from === nodeId || conn.to === nodeId) {
-            const path = document.getElementById(conn.id); // *** CAMBIO ***
+        if (ids.includes(conn.from) || ids.includes(conn.to)) {
+            const path = document.getElementById(conn.id);
             if (path) path.classList.add("highlighted-conn");
         }
     });
 },
-
 
         /* ============================================================
    HELPERS PARA TRAMOS Y CÁLCULO LIMPIO DE ETIQUETAS
