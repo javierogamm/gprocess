@@ -637,7 +637,7 @@ input {
 .floating-assign-btn {
   position: fixed;
   top: 15px;
-  right: 300px;
+  right: 400px;
   z-index: 2000;
   background: rgba(4, 200, 144, 0.821);
   color: white;
@@ -717,7 +717,7 @@ input {
 .floating-cambios-btn {
   position: fixed;
   top: 60px;          /* 👈 justo debajo del botón de Asignaciones */
-  right: 300px;         /* mismo alineado a la izquierda */
+  right: 400px;         /* mismo alineado a la izquierda */
   z-index: 2000;
   background: rgba(2, 144, 104, 0.821); /* verde elegante */
   color: white;
@@ -790,3 +790,74 @@ input {
   filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
   transition: all 0.2s ease;
 }
+/* ============================================================
+   TESAURO: Botón flotante y panel lateral
+============================================================ */
+.floating-tesauro-btn {
+  position: fixed;
+  top: 105px;           /* debajo del botón de Cambios */
+  right: 400px;
+  z-index: 2000;
+  background: #475569; /* gris azulado */
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+.floating-tesauro-btn:hover { background: #334155; }
+
+.tesauro-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 320px;
+  background: #f9fafb;
+  box-shadow: -4px 0 8px rgba(0,0,0,0.15);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 1999;
+  padding: 20px;
+}
+.tesauro-panel.visible { transform: translateX(0); }
+
+.tesauro-panel h3 {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+  color: #1e293b;
+  border-bottom: 2px solid #cbd5e1;
+  padding-bottom: 6px;
+}
+.tesauro-item {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  position: relative;
+}
+.tesauro-item .btn-eliminar {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #dc2626;
+  font-size: 14px;
+}
+.btn-guardar {
+  background: #2563eb;
+  color: white;
+  margin-top: 10px;
+  width: 100%;
+  border-radius: 6px;
+  padding: 10px;
+}
+.btn-guardar:hover { background: #1e40af; }
