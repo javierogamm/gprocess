@@ -717,6 +717,28 @@ path.setAttribute("stroke", "#4a7f84");
 path.setAttribute("stroke-width", "2");
 path.setAttribute("marker-end", "url(#arrowhead)");
 this.svg.appendChild(path);  // ⚠️ primero el visible
+// ⚙️ Identificar y habilitar drop
+path.setAttribute("data-conn-id", conn.id);
+path.classList.add("conn-path");
+path.style.pointerEvents = "stroke"; // permite soltar encima del trazo
+
+if (!path.__dndBound) {
+  path.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    path.classList.add("conn-drop-over"); // para resaltar visualmente
+  });
+  path.addEventListener("dragleave", () => {
+    path.classList.remove("conn-drop-over");
+  });
+  path.addEventListener("drop", (e) => {
+    path.classList.remove("conn-drop-over");
+    if (window.handleTesauroDrop) {
+      window.handleTesauroDrop(e, conn.id);
+    }
+  });
+  path.__dndBound = true;
+}
 
 // 🟦 Área de clic invisible (gruesa, encima)
 const hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -806,6 +828,8 @@ if (conn.condicionNombre || conn.condicionValor) {
 
     }
     ,
+
+    
     /* ============================================================
    MOSTRAR HANDLES DE RECONEXIÓN CUANDO UNA LÍNEA ESTÁ SELECCIONADA
 ============================================================ */
@@ -1268,5 +1292,152 @@ document.addEventListener("click", (e) => {
         Renderer.LineEditor.clear();
     }
 });
+/* ============================================================
+   EFECTO VISUAL: FLASH VERDE EN CONEXIÓN
+============================================================ */
+Renderer.flashConnection = function (connId) {
+    const path = document.querySelector(`.conn-path[data-conn-id="${connId}"]`);
+    if (!path) return;
+  
+    const oldStroke = path.getAttribute("stroke") || "#4a7f84";
+    const oldWidth = path.getAttribute("stroke-width") || "2";
+  
+    // Cambia temporalmente el color y grosor
+    path.setAttribute("stroke", "#10b981");
+    path.setAttribute("stroke-width", "4");
+    path.style.transition = "all 0.25s ease";
+  
+    // Revertir a su estado original tras 0.5 s
+    setTimeout(() => {
+      path.setAttribute("stroke", oldStroke);
+      path.setAttribute("stroke-width", oldWidth);
+    }, 500);
+  };
+  
+/* ============================================================
+   DROP TESAURO SOBRE CONEXIÓN
+   (Asigna condicionNombre y condicionValor automáticamente)
+============================================================ */
+window.handleTesauroDrop = function (e, connId) {
+    try {
+      e.preventDefault();
+  
+      const Eng = window.Engine ?? (typeof Engine !== "undefined" ? Engine : null);
+      if (!Eng) return;
+  
+      // 1️⃣ Recuperar el payload arrastrado
+      const raw =
+        e.dataTransfer.getData("application/x-tesauro") ||
+        e.dataTransfer.getData("text/plain");
+      if (!raw) return;
+  
+      let payload = null;
+      try {
+        payload = JSON.parse(raw);
+      } catch {
+        return;
+      }
+  
+      // 2️⃣ Determinar nombre del campo tesauro
+      let condicionNombre = (payload.nombre || "").trim();
+      if (!condicionNombre)
+        condicionNombre = (payload.refCampo || "").trim();
+      if (!condicionNombre) return;
+  
+      // 3️⃣ Determinar valor según el tipo
+      let valor = (payload.valor || "").trim();
+  
+      // ---- SELECTOR ----
+      if (payload.tipo === "selector") {
+        if (!valor) {
+          const campo = (Eng.tesauro || []).find(
+            (t) =>
+              t.nombre === condicionNombre ||
+              t.ref === payload.refCampo
+          );
+          if (!campo || !Array.isArray(campo.opciones)) {
+            alert("Este selector no tiene valores definidos.");
+            return;
+          }
+          const opcionesTxt = campo.opciones
+            .map((o) => `${o.ref} — ${o.valor}`)
+            .join("\n");
+          const indicado = prompt(
+            `Valor para "${campo.nombre}" (escribe la REFERENCIA):\n${opcionesTxt}`
+          );
+          if (!indicado) return;
+          const found = campo.opciones.find(
+            (o) =>
+              o.ref.toLowerCase() ===
+              indicado.trim().toLowerCase()
+          );
+          if (!found) {
+            alert("Referencia no válida.");
+            return;
+          }
+          valor = found.valor;
+        }
+      }
+  
+      // ---- SI/NO ----
+      else if (payload.tipo === "si_no") {
+        if (!valor) {
+          valor = confirm(
+            `Asignar "${condicionNombre}" = Sí ?`
+          )
+            ? "Sí"
+            : "No";
+        }
+      }
+  
+      // ---- TEXTO o NUMÉRICO ----
+      else if (
+        payload.tipo === "texto" ||
+        payload.tipo === "numerico"
+      ) {
+        if (payload.needsInput || !valor) {
+          const input = prompt(
+            `Introduce el valor para "${condicionNombre}"${
+              payload.tipo === "numerico" ? " (numérico)" : ""
+            }:`
+          );
+          if (input == null) return;
+          if (
+            payload.tipo === "numerico" &&
+            isNaN(parseFloat(input))
+          ) {
+            alert("Introduce un número válido.");
+            return;
+          }
+          valor = input.trim();
+        }
+      } else {
+        // Tipo no reconocido
+        return;
+      }
+  
+      // 4️⃣ Actualizar la conexión en Engine
+      if (typeof Eng.updateConnectionCondition === "function") {
+        Eng.updateConnectionCondition(connId, condicionNombre, valor);
+      } else {
+        // Si no existe ese método, forzamos actualización directa
+        const conn = Eng.getConnection(connId);
+        if (conn) {
+          conn.condicionNombre = condicionNombre;
+          conn.condicionValor = valor;
+          Eng.saveHistory?.();
+          Eng.updateConnections?.();
+        }
+      }
+  
+      // 5️⃣ Efecto visual (flash verde corto)
+      if (window.Renderer && typeof Renderer.flashConnection === "function") {
+        Renderer.flashConnection(connId);
+      }
+    } catch (err) {
+      console.error("Error en handleTesauroDrop:", err);
+    }
+  };
+  
 
 window.addEventListener("DOMContentLoaded", () => Renderer.init());
