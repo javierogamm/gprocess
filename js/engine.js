@@ -186,7 +186,9 @@ importFromJSON(jsonString) {
         } else {
             this.tesauro = [];
         }
-
+        document.dispatchEvent(                                  // ✅
+            new CustomEvent("tesauroUpdated", { detail: { source: "Engine:import" } })
+          );
         // Si existe el panel, sincronizar y pintar
         if (window.DataTesauro) {
             DataTesauro.campos = this.tesauro.map(x => ({...x}));
@@ -1622,3 +1624,4 @@ document.getElementById("btnIAJson").addEventListener("click", () => {
     area.addEventListener("contextmenu", (e) => e.preventDefault());
 
 })();
+window.Engine = Engine; // ✅ expone Engine en window para que DataTesauro lo vea

@@ -70,35 +70,39 @@ const DataTesauro = {
       if (this.panel.classList.contains("visible")) this.render();
     });
 
-    // 💾 Guardar nuevo campo
-    const btnGuardar = document.getElementById("btnGuardarCampo");
-    if (btnGuardar) {
-      btnGuardar.addEventListener("click", () => {
-        const ref = document.getElementById("tRef").value.trim();
-        const nombre = document.getElementById("tNombre").value.trim();
-        const tipo = document.getElementById("tTipo").value;
+      // 💾 Guardar nuevo campo
+      const btnGuardar = document.getElementById("btnGuardarCampo");
+      if (btnGuardar) {
+        btnGuardar.addEventListener("click", () => {
+          const ref = document.getElementById("tRef").value.trim();
+          const nombre = document.getElementById("tNombre").value.trim();
+          const tipo = document.getElementById("tTipo").value;
 
-        if (!ref || !nombre) {
-          alert("Completa al menos Referencia y Nombre.");
-          return;
-        }
+          if (!ref || !nombre) {
+            alert("Completa al menos Referencia y Nombre.");
+            return;
+          }
 
-        const nuevo = { id: this.generateId(), ref, nombre, tipo };
-        this.campos.push(nuevo);
+          const nuevo = { id: this.generateId(), ref, nombre, tipo };
+          this.campos.push(nuevo);
 
-        // **FIX** Sincronizar SIEMPRE con Engine.tesauro
-        if (window.Engine) {
-          Engine.tesauro = [...this.campos];
-          Engine.saveHistory?.();
-        }
+          // ✅ Sincronizar SIEMPRE con Engine.tesauro (aunque Engine sea const)
+          const Eng = window.Engine ?? (typeof Engine !== "undefined" ? Engine : null); // ✅
+          if (Eng) {
+            Eng.tesauro = [...this.campos];            // ✅
+            Eng.saveHistory?.();
+            document.dispatchEvent(                   // ✅ notificar a quien escuche
+              new CustomEvent("tesauroUpdated", { detail: { source: "DataTesauro:save" } })
+            );
+          }
 
-        this.render();
+          this.render();
 
-        document.getElementById("tRef").value = "";
-        document.getElementById("tNombre").value = "";
-        document.getElementById("tTipo").value = "selector";
-      });
-    }
+          document.getElementById("tRef").value = "";
+          document.getElementById("tNombre").value = "";
+          document.getElementById("tTipo").value = "selector";
+        });
+      }
 
     // Al cargar, si Engine ya trae tesauro → sincroniza vista
     if (window.Engine && Array.isArray(Engine.tesauro) && Engine.tesauro.length) {
@@ -139,20 +143,24 @@ const DataTesauro = {
     });
     this.listDiv.innerHTML = html;
 
-    // 🗑️ Eliminación (y sincronización)
-    this.listDiv.querySelectorAll(".btn-eliminar").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const id = e.target.dataset.id;
-        this.campos = this.campos.filter(c => c.id !== id);
+      // 🗑️ Eliminación (y sincronización)
+      this.listDiv.querySelectorAll(".btn-eliminar").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const id = e.target.dataset.id;
+          this.campos = this.campos.filter(c => c.id !== id);
 
-        if (window.Engine) {
-          Engine.tesauro = [...this.campos]; /* **FIX** spread correcto */
-          Engine.saveHistory?.();
-        }
+          const Eng = window.Engine ?? (typeof Engine !== "undefined" ? Engine : null); // ✅
+          if (Eng) {
+            Eng.tesauro = [...this.campos];            // ✅
+            Eng.saveHistory?.();
+            document.dispatchEvent(                   // ✅
+              new CustomEvent("tesauroUpdated", { detail: { source: "DataTesauro:delete" } })
+            );
+          }
 
-        this.render();
+          this.render();
+        });
       });
-    });
   },
 
   /* ============================================================
@@ -177,3 +185,4 @@ const DataTesauro = {
    ARRANQUE
 ============================================================ */
 window.addEventListener("DOMContentLoaded", () => DataTesauro.init());
+window.DataTesauro = DataTesauro; // ✅ expone el panel en window
