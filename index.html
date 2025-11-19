@@ -50,8 +50,8 @@
                      }
                      </script>
      <hr>
-     <!-- Botón de Export WORD comentado para evitar uso de librerias de momento -->
-      <!--<button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX</button>-->
+     
+      <button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX</button>
      <button class="btn" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
 <!-- Botón de importación -->
 <button id="btnImportFlujo" class="btn">📥 Importar Flujo CSV</button>
@@ -172,11 +172,11 @@
     SCRIPTS (ORDEN CORRECTO)
 ========================= -->
 
-<!-- 1️⃣ Librerías externas -->
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>-->
-
-<!-- ✅ DOCX versión estable, expone window.docx correctamente -->
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.0/docx.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
+ <!-- 1️⃣ Librerías externas  -->
+<script src="js/html2canvas.min.js"></script>
+<!-- 
+✅ DOCX versión estable, expone window.docx correctamente -->
+<script src="js/docx-8.2.2.umd.js"></script> 
 
 <!-- 2️⃣ Archivos de tu app -->
 <script src="js/engine.js"></script>

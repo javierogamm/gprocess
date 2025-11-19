@@ -186,9 +186,7 @@ importFromJSON(jsonString) {
         } else {
             this.tesauro = [];
         }
-        document.dispatchEvent(                                  // ✅
-            new CustomEvent("tesauroUpdated", { detail: { source: "Engine:import" } })
-          );
+
         // Si existe el panel, sincronizar y pintar
         if (window.DataTesauro) {
             DataTesauro.campos = this.tesauro.map(x => ({...x}));
@@ -1169,96 +1167,109 @@ document.getElementById("btnExportDocx").addEventListener("click", () => {
 });
 
 Engine.exportToDOCX = async function() {
-    // 🔒 Cargar docx si no está en window
-    let docxLib = window.docx;
+    // ✅ Usar la librería DOCX cargada en local (js/docx-8.2.2.umd.js)
+    const docxLib = window.docx;
     if (!docxLib) {
-        try {
-            console.warn("⚙️ Cargando docx manualmente desde CDN...");
-            const mod = await import("https://cdn.jsdelivr.net/npm/docx@8.0.0/+esm");
-            docxLib = mod;
-            window.docx = mod;
-        } catch (err) {
-            alert("❌ No se pudo cargar la librería DOCX.");
-            console.error("Error importando docx:", err);
-            return;
-        }
+        alert("❌ No se encontró la librería DOCX (window.docx). Revisa que js/docx-8.2.2.umd.js se carga antes de engine.js");
+        console.error("window.docx es undefined");
+        return;
     }
 
-    const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, PageBreak, AlignmentType } = docxLib;
+    // ✅ Comprobamos también html2canvas por si acaso
+    if (typeof window.html2canvas !== "function") {
+        alert("❌ No se encontró html2canvas. Revisa que js/html2canvas.min.js se carga antes de engine.js");
+        console.error("window.html2canvas no es una función");
+        return;
+    }
 
-// --- 1️⃣ CAPTURAR ÁREA COMPLETA DEL DIAGRAMA SIN CORTAR NI DESPLAZAR ---
-const containerNodes = document.getElementById("nodesContainer");
-const svgConnections = document.getElementById("svgConnections");
-const nodes = this.data.nodos;
+    const {
+        Document,
+        Packer,
+        Paragraph,
+        TextRun,
+        HeadingLevel,
+        ImageRun,
+        Table,
+        TableRow,
+        TableCell,
+        WidthType,
+        PageBreak,
+        AlignmentType
+    } = docxLib;
 
-if (!nodes.length) {
-    alert("⚠️ No hay nodos en el diagrama.");
-    return;
-}
+    // --- 1️⃣ CAPTURAR ÁREA COMPLETA DEL DIAGRAMA SIN CORTAR NI DESPLAZAR ---
+    const containerNodes = document.getElementById("nodesContainer");
+    const svgConnections = document.getElementById("svgConnections");
+    const nodes = this.data.nodos;
 
-// ============================================================
-// 🧭 Calcular el área total ocupada (solo para ajustar tamaño)
-// ============================================================
-let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-nodes.forEach(n => {
-    if (n.x < minX) minX = n.x;
-    if (n.y < minY) minY = n.y;
-    if (n.x + n.width > maxX) maxX = n.x + n.width;
-    if (n.y + n.height > maxY) maxY = n.y + n.height;
-});
+    if (!nodes.length) {
+        alert("⚠️ No hay nodos en el diagrama.");
+        return;
+    }
 
-// 🔹 Márgenes visuales (solo expansión del área)
-const marginX = 300;
-const marginY = 300;
-const areaWidth = (maxX - minX) + marginX * 2;
-const areaHeight = (maxY - minY) + marginY * 2;
+    // ============================================================
+    // 🧭 Calcular el área total ocupada (solo para ajustar tamaño)
+    // ============================================================
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(n => {
+        if (n.x < minX) minX = n.x;
+        if (n.y < minY) minY = n.y;
+        if (n.x + n.width > maxX) maxX = n.x + n.width;
+        if (n.y + n.height > maxY) maxY = n.y + n.height;
+    });
 
-// ============================================================
-// 🖼️ Crear un contenedor temporal que mantenga coordenadas absolutas
-// ============================================================
-const wrapper = document.createElement("div");
-wrapper.style.position = "absolute";
-wrapper.style.left = "-9999px";
-wrapper.style.top = "0";
-wrapper.style.width = areaWidth + "px";
-wrapper.style.height = areaHeight + "px";
-wrapper.style.background = "#f3f4f6";
-wrapper.style.overflow = "visible";
+    // 🔹 Márgenes visuales (solo expansión del área)
+    const marginX = 300;
+    const marginY = 300;
+    const areaWidth = (maxX - minX) + marginX * 2;
+    const areaHeight = (maxY - minY) + marginY * 2;
 
-// Clonar el SVG y nodos SIN alterar su posición
-const svgClone = svgConnections.cloneNode(true);
-svgClone.style.position = "absolute";
-svgClone.style.left = "0";
-svgClone.style.top = "0";
+    // ============================================================
+    // 🖼️ Crear un contenedor temporal que mantenga coordenadas absolutas
+    // ============================================================
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "absolute";
+    wrapper.style.left = "-9999px";
+    wrapper.style.top = "0";
+    wrapper.style.width = areaWidth + "px";
+    wrapper.style.height = areaHeight + "px";
+    wrapper.style.background = "#f3f4f6";
+    wrapper.style.overflow = "visible";
 
-const nodesClone = containerNodes.cloneNode(true);
-nodesClone.style.position = "absolute";
-nodesClone.style.left = "0";
-nodesClone.style.top = "0";
+    // Clonar el SVG y nodos SIN alterar su posición
+    const svgClone = svgConnections.cloneNode(true);
+    svgClone.style.position = "absolute";
+    svgClone.style.left = "0";
+    svgClone.style.top = "0";
 
-wrapper.appendChild(svgClone);
-wrapper.appendChild(nodesClone);
-document.body.appendChild(wrapper);
+    const nodesClone = containerNodes.cloneNode(true);
+    nodesClone.style.position = "absolute";
+    nodesClone.style.left = "0";
+    nodesClone.style.top = "0";
 
-// ============================================================
-// 📸 Captura con html2canvas toda la zona (sin desplazar)
-// ============================================================
-const canvasFull = await html2canvas(wrapper, {
-    backgroundColor: "#f3f4f6",
-    scale: 1.25, // un poco más de resolución
-    useCORS: true,
-    x: minX - marginX,
-    y: minY - marginY,
-    width: areaWidth,
-    height: areaHeight
-});
+    wrapper.appendChild(svgClone);
+    wrapper.appendChild(nodesClone);
+    document.body.appendChild(wrapper);
 
-// Limpiar wrapper temporal
-document.body.removeChild(wrapper);
+    // ============================================================
+    // 📸 Captura con html2canvas toda la zona (sin desplazar)
+    // ============================================================
+    const canvasFull = await html2canvas(wrapper, {
+        backgroundColor: "#f3f4f6",
+        scale: 1.25, // un poco más de resolución
+        useCORS: true,
+        x: minX - marginX,
+        y: minY - marginY,
+        width: areaWidth,
+        height: areaHeight
+    });
 
-// Convertir imagen a bytes
-const imgData = canvasFull.toDataURL("image/png");
-const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
+    // Limpiar wrapper temporal
+    document.body.removeChild(wrapper);
+
+    // Convertir imagen a bytes
+    const imgData = canvasFull.toDataURL("image/png");
+    const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
 
     // --- 2️⃣ DATOS DE FICHA ---
     const ficha = this.fichaProyecto;
@@ -1267,13 +1278,19 @@ const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
     const descripcion = ficha.descripcion || "";
 
     // --- 3️⃣ TABLAS DE TAREAS Y CONDICIONES ---
-    const formatTipo = (txt) => txt.replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
-    const sortedNodes = [...this.data.nodos].sort((a,b) => a.y - b.y || a.x - b.x);
+    const formatTipo = (txt) =>
+        txt.replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
+
+    const sortedNodes = [...this.data.nodos].sort(
+        (a, b) => a.y - b.y || a.x - b.x
+    );
 
     const tareasRows = [
         new TableRow({
             children: ["#", "Tipo", "Nombre", "Manual", "Asignado A"].map(h =>
-                new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
+                new TableCell({
+                    children: [new Paragraph({ text: h, bold: true })]
+                })
             )
         }),
         ...sortedNodes.map((n, i) =>
@@ -1291,14 +1308,20 @@ const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
 
     const connRows = [
         new TableRow({
-            children: ["Tarea Origen", "Bloque", "Condición", "Valor", "Tarea Destino"].map(h =>
-                new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
+            children: ["Tarea Origen", "Bloque", "Condición", "Valor", "Tarea Destino"].map(
+                h =>
+                    new TableCell({
+                        children: [new Paragraph({ text: h, bold: true })]
+                    })
             )
         }),
         ...this.data.conexiones.map(c => {
             const from = this.getNode(c.from);
             const to = this.getNode(c.to);
-            const bloque = (c.condicionNombre || c.condicionValor) ? "Sólo si" : "En todo caso";
+            const bloque = (c.condicionNombre || c.condicionValor)
+                ? "Sólo si"
+                : "En todo caso";
+
             return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph(from?.titulo || "")] }),
@@ -1312,209 +1335,264 @@ const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
     ];
 
     // --- 4️⃣ CONSTRUIR DOCUMENTO ---
-const doc = new Document({
-    styles: {
-        default: {
-            document: {
-                run: { font: "Calibri", size: 22 }, // 11 pt
-                paragraph: { spacing: { after: 200 } }
+    const doc = new Document({
+        styles: {
+            default: {
+                document: {
+                    run: { font: "Calibri", size: 22 }, // 11 pt
+                    paragraph: { spacing: { after: 200 } }
+                }
             }
-        }
-    },
-    sections: [
-        // 📘 Página 1 — Ficha descriptiva
-        {
-            children: [
-                new Paragraph({
-                    text: titulo,
-                    heading: HeadingLevel.HEADING_1,
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 400 },
-                    style: "Title"
-                }),
-                new Paragraph({
-                    text: "Actividad: " + actividad,
-                    heading: HeadingLevel.HEADING_2,
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 400 }
-                }),
-                new Paragraph({
-                    text: "Descripción del procedimiento",
-                    bold: true,
-                    heading: HeadingLevel.HEADING_3,
-                    spacing: { before: 200, after: 100 }
-                }),
-                // 🔹 Mantener saltos de línea en la descripción
-...descripcion
-    .split(/\r?\n+/)
-    .filter(linea => linea.trim() !== "")
-    .map(linea =>
-        new Paragraph({
-            children: [new TextRun({ text: linea, break: 1 })],
-            alignment: AlignmentType.JUSTIFIED,
-            spacing: { after: 150 }
-        })
-    ),
-             
-            ]
         },
-
-       // 🧩 Página 2 — Imagen del diagrama
-{
-    children: [
-        new Paragraph({
-            text: "Diagrama del proceso",
-            heading: HeadingLevel.HEADING_1,
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 400 }
-        }),
-        new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-                new ImageRun({
-                    data: imgBytes,
-                    // Escalar manteniendo proporciones exactas del canvas
-                    transformation: {
-                        width: 750, // ancho máximo en DOCX
-                        height: (canvasFull.height / canvasFull.width) * 750
-                    }
-                })
-            ]
-        }),
-        new Paragraph({ children: [new PageBreak()] })
-    ]
-},
-
-
-        // 📊 Página 3 — Tablas de tareas y condiciones
-        {
-            children: [
-                new Paragraph({
-                    text: "Tareas",
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { after: 200 }
-                }),
-                new Table({
-                    rows: tareasRows,
-                    width: { size: 100, type: WidthType.PERCENTAGE }
-                }),
-               // === BLOQUES SEPARADOS: AGRUPACIÓN POR GRUPO Y USUARIO ===
-
-// 🟩 1️⃣ Tabla de Asignaciones a grupo
-new Paragraph({
-    text: "Asignaciones a grupo",
-    heading: HeadingLevel.HEADING_1,
-    spacing: { before: 400, after: 200 }
-}),
-(() => {
-    const agrupadoGrupo = {};
-    this.data.nodos.forEach(n => {
-        const grupo = n.asignadoA?.trim() || "Sin asignar";
-        if (!agrupadoGrupo[grupo]) agrupadoGrupo[grupo] = [];
-        agrupadoGrupo[grupo].push(n.titulo || "(Sin título)");
-    });
-
-    const filas = Object.entries(agrupadoGrupo).map(([grupo, tareas]) =>
-        new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph(grupo + ` (${tareas.length})`)] }),
-                new TableCell({ children: [new Paragraph(tareas.join(", "))] })
-            ]
-        })
-    );
-
-    return new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        rows: [
-            new TableRow({
-                children: ["Grupo / Unidad", "Tareas asignadas"].map(h =>
-                    new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
-                )
-            }),
-            ...filas
-        ]
-    });
-})(),
-
-// 🟦 2️⃣ Tabla de Asignaciones a usuario
-new Paragraph({
-    text: "Asignaciones a usuario",
-    heading: HeadingLevel.HEADING_1,
-    spacing: { before: 400, after: 200 }
-}),
-(() => {
-    const agrupadoUsuario = {};
-    this.data.nodos.forEach(n => {
-        const usuario = n.asignadoUsuario?.trim() || "Sin asignar";
-        if (!agrupadoUsuario[usuario]) agrupadoUsuario[usuario] = [];
-        agrupadoUsuario[usuario].push(n.titulo || "(Sin título)");
-    });
-
-    const filas = Object.entries(agrupadoUsuario).map(([usuario, tareas]) =>
-        new TableRow({
-            children: [
-                new TableCell({ children: [new Paragraph(usuario + ` (${tareas.length})`)] }),
-                new TableCell({ children: [new Paragraph(tareas.join(", "))] })
-            ]
-        })
-    );
-
-    return new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        rows: [
-            new TableRow({
-                children: ["Usuario", "Tareas asignadas"].map(h =>
-                    new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
-                )
-            }),
-            ...filas
-        ]
-    });
-})(),
-                new Paragraph({
-                    text: "Condiciones",
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { after: 200 }
-                }),
-                new Table({
-                    rows: connRows,
-                    width: { size: 100, type: WidthType.PERCENTAGE }
-                })
-                ,
-                new Paragraph({
-                    text: "Cambios de estado",
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { before: 400, after: 200 }
-                }),
-                new Table({
-                    width: { size: 100, type: WidthType.PERCENTAGE },
-                    rows: [
-                        new TableRow({
-                            children: ["Tarea origen", "Condición", "Estado adquirido"].map(h =>
-                                new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
-                            )
-                        }),
-                        ...this.data.conexiones
-                            .filter(c => c.cambioEstado && c.cambioEstado.trim() !== "")
-                            .map(c => {
-                                const from = this.getNode(c.from);
-                                const condTxt = [c.condicionNombre, c.condicionValor]
-                                    .filter(Boolean)
-                                    .join(" ");
-                                return new TableRow({
-                                    children: [
-                                        new TableCell({ children: [new Paragraph(from?.titulo || "")] }),
-                                        new TableCell({ children: [new Paragraph(condTxt || "En todo caso")] }),
-                                        new TableCell({ children: [new Paragraph(c.cambioEstado)] })
-                                    ]
-                                });
+        sections: [
+            // 📘 Página 1 — Ficha descriptiva
+            {
+                children: [
+                    new Paragraph({
+                        text: titulo,
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 },
+                        style: "Title"
+                    }),
+                    new Paragraph({
+                        text: "Actividad: " + actividad,
+                        heading: HeadingLevel.HEADING_2,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 }
+                    }),
+                    new Paragraph({
+                        text: "Descripción del procedimiento",
+                        bold: true,
+                        heading: HeadingLevel.HEADING_3,
+                        spacing: { before: 200, after: 100 }
+                    }),
+                    // 🔹 Mantener saltos de línea en la descripción
+                    ...descripcion
+                        .split(/\r?\n+/)
+                        .filter(linea => linea.trim() !== "")
+                        .map(linea =>
+                            new Paragraph({
+                                children: [new TextRun({ text: linea, break: 1 })],
+                                alignment: AlignmentType.JUSTIFIED,
+                                spacing: { after: 150 }
                             })
-                    ]
-                })
-            ]
-        }
-    ]
-}); // 👈 cierre del Document correctamente
+                        )
+                ]
+            },
+
+            // 🧩 Página 2 — Imagen del diagrama
+            {
+                children: [
+                    new Paragraph({
+                        text: "Diagrama del proceso",
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 }
+                    }),
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        children: [
+                            new ImageRun({
+                                data: imgBytes,
+                                // Escalar manteniendo proporciones exactas del canvas
+                                transformation: {
+                                    width: 750, // ancho máximo en DOCX
+                                    height: (canvasFull.height / canvasFull.width) * 750
+                                }
+                            })
+                        ]
+                    }),
+                    new Paragraph({ children: [new PageBreak()] })
+                ]
+            },
+
+            // 📊 Página 3 — Tablas de tareas, agrupaciones y condiciones
+            {
+                children: [
+                    new Paragraph({
+                        text: "Tareas",
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { after: 200 }
+                    }),
+                    new Table({
+                        rows: tareasRows,
+                        width: { size: 100, type: WidthType.PERCENTAGE }
+                    }),
+
+                    // 🟩 Tabla: Asignaciones a grupo
+                    new Paragraph({
+                        text: "Asignaciones a grupo",
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 400, after: 200 }
+                    }),
+                    (() => {
+                        const agrupadoGrupo = {};
+                        this.data.nodos.forEach(n => {
+                            const grupo = n.asignadoA?.trim() || "Sin asignar";
+                            if (!agrupadoGrupo[grupo]) agrupadoGrupo[grupo] = [];
+                            agrupadoGrupo[grupo].push(n.titulo || "(Sin título)");
+                        });
+
+                        const filas = Object.entries(agrupadoGrupo).map(
+                            ([grupo, tareas]) =>
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            children: [
+                                                new Paragraph(grupo + ` (${tareas.length})`)
+                                            ]
+                                        }),
+                                        new TableCell({
+                                            children: [
+                                                new Paragraph(tareas.join(", "))
+                                            ]
+                                        })
+                                    ]
+                                })
+                        );
+
+                        return new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({
+                                    children: ["Grupo / Unidad", "Tareas asignadas"].map(
+                                        h =>
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        text: h,
+                                                        bold: true
+                                                    })
+                                                ]
+                                            })
+                                    )
+                                }),
+                                ...filas
+                            ]
+                        });
+                    })(),
+
+                    // 🟦 Tabla: Asignaciones a usuario
+                    new Paragraph({
+                        text: "Asignaciones a usuario",
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 400, after: 200 }
+                    }),
+                    (() => {
+                        const agrupadoUsuario = {};
+                        this.data.nodos.forEach(n => {
+                            const usuario = n.asignadoUsuario?.trim() || "Sin asignar";
+                            if (!agrupadoUsuario[usuario]) agrupadoUsuario[usuario] = [];
+                            agrupadoUsuario[usuario].push(n.titulo || "(Sin título)");
+                        });
+
+                        const filas = Object.entries(agrupadoUsuario).map(
+                            ([usuario, tareas]) =>
+                                new TableRow({
+                                    children: [
+                                        new TableCell({
+                                            children: [
+                                                new Paragraph(usuario + ` (${tareas.length})`)
+                                            ]
+                                        }),
+                                        new TableCell({
+                                            children: [
+                                                new Paragraph(tareas.join(", "))
+                                            ]
+                                        })
+                                    ]
+                                })
+                        );
+
+                        return new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({
+                                    children: ["Usuario", "Tareas asignadas"].map(
+                                        h =>
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph({
+                                                        text: h,
+                                                        bold: true
+                                                    })
+                                                ]
+                                            })
+                                    )
+                                }),
+                                ...filas
+                            ]
+                        });
+                    })(),
+
+                    new Paragraph({
+                        text: "Condiciones",
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { after: 200 }
+                    }),
+                    new Table({
+                        rows: connRows,
+                        width: { size: 100, type: WidthType.PERCENTAGE }
+                    }),
+
+                    new Paragraph({
+                        text: "Cambios de estado",
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 400, after: 200 }
+                    }),
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: [
+                            new TableRow({
+                                children: ["Tarea origen", "Condición", "Estado adquirido"].map(
+                                    h =>
+                                        new TableCell({
+                                            children: [
+                                                new Paragraph({ text: h, bold: true })
+                                            ]
+                                        })
+                                )
+                            }),
+                            ...this.data.conexiones
+                                .filter(
+                                    c =>
+                                        c.cambioEstado &&
+                                        c.cambioEstado.trim() !== ""
+                                )
+                                .map(c => {
+                                    const from = this.getNode(c.from);
+                                    const condTxt = [c.condicionNombre, c.condicionValor]
+                                        .filter(Boolean)
+                                        .join(" ");
+                                    return new TableRow({
+                                        children: [
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph(from?.titulo || "")
+                                                ]
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph(
+                                                        condTxt || "En todo caso"
+                                                    )
+                                                ]
+                                            }),
+                                            new TableCell({
+                                                children: [
+                                                    new Paragraph(c.cambioEstado)
+                                                ]
+                                            })
+                                        ]
+                                    });
+                                })
+                        ]
+                    })
+                ]
+            }
+        ]
+    });
 
     // --- 5️⃣ EXPORTAR ---
     const blob = await Packer.toBlob(doc);
@@ -1527,6 +1605,7 @@ new Paragraph({
 
     console.log("📄 DOCX generado con formato mejorado:", nombreArchivo);
 };
+
 
 /* ============================================================
    PEGAR JSON MANUALMENTE DESDE EL PORTAPAPELES
@@ -1624,4 +1703,3 @@ document.getElementById("btnIAJson").addEventListener("click", () => {
     area.addEventListener("contextmenu", (e) => e.preventDefault());
 
 })();
-window.Engine = Engine; // ✅ expone Engine en window para que DataTesauro lo vea
