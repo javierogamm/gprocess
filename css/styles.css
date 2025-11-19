@@ -223,6 +223,7 @@ input {
 /* 🔧 Área de clic invisible (paths auxiliares) */
 .connection-hit {
   cursor: pointer;
+  stroke-width: 20px !important; 
 }
 
 /* 🔧 FIX para que los clics lleguen al SVG sin bloquear los nodos */
@@ -861,3 +862,27 @@ input {
   padding: 10px;
 }
 .btn-guardar:hover { background: #1e40af; }
+.conn-drop-over {
+  stroke: #10b981 !important;
+  stroke-width: 3 !important;
+  filter: brightness(1.2);
+}
+/* ===============================
+   EFECTO VISUAL DE DRAG-OVER EN CONEXIÓN
+=============================== */
+.conn-path.conn-drop-over {
+  stroke: #10b981 !important;         /* verde vivo */
+  stroke-width: 4 !important;         /* un poco más gruesa */
+  filter: drop-shadow(0 0 3px #10b981);
+  transition: all 0.15s ease;
+  
+}
+/* ==========================================================
+   🔸 Desactivar área invisible de clic durante arrastre Tesauro
+   (para que las líneas reales puedan iluminarse correctamente)
+   y mantener una gran zona de drop.
+========================================================== */
+.drag-tesauro-active .connection-hit {
+  pointer-events: none !important; /* deja pasar el evento al path visible */
+  stroke-width: 30px !important;   /* 🔥 área de detección MUCHO más grande */
+}
