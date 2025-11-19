@@ -22,7 +22,8 @@ fichaProyecto: {
     actividad: "",
     descripcion: ""
 },
-
+// TESAURO (colección de campos personalizados)
+tesauro: [],
     /* -------------------------------------------
        CONTROL DE SELECCIÓN
     -------------------------------------------- */
@@ -106,56 +107,38 @@ fichaProyecto: {
 },
 
 
-    /* ============================================================
+/* ============================================================
    EXPORTAR TODO EL DIAGRAMA A JSON
 ============================================================ */
 exportToJSON() {
-
-    // -------------------------------------------
-    // 1️⃣ Construir estructura completa del JSON
-    // -------------------------------------------
     const full = {
         fichaProyecto: this.fichaProyecto,
+        // Tesauro: prioriza Engine; si está vacío, coge lo del panel
+        tesauro: (Array.isArray(this.tesauro) && this.tesauro.length > 0)
+            ? this.tesauro.map(x => ({...x}))
+            : (window.DataTesauro ? DataTesauro.campos.map(x => ({...x})) : []),
         nodos: this.data.nodos,
         conexiones: this.data.conexiones
     };
 
     const dataString = JSON.stringify(full, null, 2);
 
-    // -------------------------------------------
-    // 2️⃣ Obtener nombre del proceso
-    // -------------------------------------------
     let nombreProceso = this.fichaProyecto.procedimiento?.trim() || "SinNombre";
-
-    // Limpieza: evitar caracteres ilegales en nombres de archivo
     nombreProceso = nombreProceso.replace(/[\\\/:*?"<>|]/g, "_");
 
-    // -------------------------------------------
-    // 3️⃣ Obtener fecha AAAAMMDD-HHMMSS
-    // -------------------------------------------
     const now = new Date();
-
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, "0");
     const dd = String(now.getDate()).padStart(2, "0");
-
     const hh = String(now.getHours()).padStart(2, "0");
     const mi = String(now.getMinutes()).padStart(2, "0");
     const ss = String(now.getSeconds()).padStart(2, "0");
+    const fecha = `${yyyy}${mm}${dd}_${hh}-${mi}-${ss}`;
 
-    const fecha = `${yyyy}${mm}${dd}:${hh}-${mi}-${ss}`;
-
-    // -------------------------------------------
-    // 4️⃣ Construir nombre final del archivo
-    // -------------------------------------------
     const nombreArchivo = `Proceso - ${nombreProceso} - ${fecha}.json`;
 
-    // -------------------------------------------
-    // 5️⃣ Crear archivo descargable
-    // -------------------------------------------
     const blob = new Blob([dataString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
     a.href = url;
     a.download = nombreArchivo;
@@ -167,98 +150,65 @@ exportToJSON() {
     console.log("💾 Diagrama exportado correctamente como:", nombreArchivo);
 },
 
-
 /* ============================================================
    IMPORTAR JSON COMPLETO Y RECONSTRUIR EL DIAGRAMA
 ============================================================ */
 importFromJSON(jsonString) {
     try {
         const parsed = JSON.parse(jsonString);
+        if (!parsed) { alert("❌ JSON no válido."); return; }
 
-        if (!parsed) {
-            alert("❌ JSON no válido.");
-            return;
-        }
+        // 1) Ficha
+        this.fichaProyecto = {
+            procedimiento: parsed.fichaProyecto?.procedimiento || "",
+            actividad:     parsed.fichaProyecto?.actividad     || "",
+            descripcion:   parsed.fichaProyecto?.descripcion   || ""
+        };
+        const titleDiv = document.getElementById("projectTitle");
+        if (titleDiv) titleDiv.innerText = this.fichaProyecto.procedimiento || "";
 
-        // -------------------------------
-        // 1️⃣ FICHA DEL PROYECTO (nuevo)
-        // -------------------------------
-        if (parsed.fichaProyecto) {
-            this.fichaProyecto = {
-                procedimiento: parsed.fichaProyecto.procedimiento || "",
-                actividad: parsed.fichaProyecto.actividad || "",
-                descripcion: parsed.fichaProyecto.descripcion || "",
-            };
-
-            // Actualizar título visible en el canvas
-            const titleDiv = document.getElementById("projectTitle");
-            if (titleDiv) {
-                titleDiv.innerText = this.fichaProyecto.procedimiento || "";
-            }
-        } else {
-            // Si no viene en el JSON, asegurar estructura
-            this.fichaProyecto = {
-                procedimiento: "",
-                actividad: "",
-                descripcion: ""
-            };
-        }
-
-        // -------------------------------
-        // 2️⃣ Validar nodos y conexiones
-        // -------------------------------
+        // 2) Validación
         if (!parsed.nodos || !parsed.conexiones) {
-            alert("❌ JSON sin nodos o conexiones.");
-            return;
+            alert("❌ JSON sin nodos o conexiones."); return;
         }
 
-        // 3️⃣ Guardar estado previo para undo
         this.saveHistory();
 
-        // -------------------------------
-        // 4️⃣ Cargar datos en memoria
-        // -------------------------------
+        // 3) Cargar datos
         this.data = {
             nodos: parsed.nodos,
             conexiones: parsed.conexiones
         };
 
-        // -------------------------------
-        // 5️⃣ Limpiar todo lo visual
-        // -------------------------------
+        // 4) Tesauro (retrocompatible)
+        if (Array.isArray(parsed.tesauro)) {
+            this.tesauro = parsed.tesauro.map(x => ({...x}));
+        } else {
+            this.tesauro = [];
+        }
+
+        // Si existe el panel, sincronizar y pintar
+        if (window.DataTesauro) {
+            DataTesauro.campos = this.tesauro.map(x => ({...x}));
+            DataTesauro.render();
+        }
+        console.log(`📚 Tesauro cargado con ${this.tesauro.length} campos.`);
+
+        // 5) Redibujar
         Renderer.clearAll();
+        this.data.nodos.forEach(n => Renderer.renderNode(n));
+        this.data.conexiones.forEach(c => Renderer.drawConnection(c));
 
-        // -------------------------------
-        // 6️⃣ Renderizar nodos
-        // -------------------------------
-        this.data.nodos.forEach(nodo => {
-            Renderer.renderNode(nodo);
-        });
-
-        // -------------------------------
-        // 7️⃣ Dibujar conexiones
-        // -------------------------------
-        this.data.conexiones.forEach(conn => {
-            Renderer.drawConnection(conn);
-        });
-
-        // -------------------------------
-        // 8️⃣ Guardar nuevo estado
-        // -------------------------------
         this.saveHistory();
-
-        // -------------------------------
-        // 9️⃣ Limpiar panel derecho
-        // -------------------------------
         UI.clear();
 
-        console.log("✅ Diagrama importado correctamente (incluyendo ficha del proyecto).");
-
+        console.log("✅ Diagrama importado correctamente (incluyendo ficha y tesauro).");
     } catch (err) {
         console.error("❌ Error al importar JSON:", err);
         alert("Error al importar el archivo JSON. Revisa la consola.");
     }
 },
+
 
 /* ============================================================
    ACTUALIZAR TODAS LAS CONEXIONES (al mover nodos)
