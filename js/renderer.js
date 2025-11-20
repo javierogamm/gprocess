@@ -19,10 +19,16 @@ const Renderer = {
     },
 
     clearAll() {
-        this.container.innerHTML = "";
-        this.svg.innerHTML = "";
-    },
-
+        // 🧹 Limpia el contenido visual actual
+        if (this.container) this.container.innerHTML = "";
+        if (this.svg) this.svg.innerHTML = "";
+      
+        // ✨ Limpia resaltados y selecciones visuales
+        document.querySelectorAll(".connection-line.selected-conn").forEach(el => el.classList.remove("selected-conn"));
+        document.querySelectorAll(".node.selected-conn").forEach(el => el.classList.remove("selected-conn"));
+      },
+      
+      
     /* =======================================================
        RENDERIZAR NODO COMPLETO
     ======================================================== */
@@ -77,6 +83,7 @@ const Renderer = {
             nodo.height = div.offsetHeight;
             Engine.updateConnections();
         });
+        
 
 /* ------------------------------------------
    DESCRIPCIÓN WYSIWYG DEL NODO
@@ -125,6 +132,16 @@ desc.addEventListener("input", () => {
     Engine.updateNode(nodo.id, { descripcion: text });
     Engine.updateConnections();
 });
+
+/* ============================================================
+   LIMPIAR SOLO DESTACADOS DE CONEXIÓN Y NODOS
+============================================================ */
+Renderer.clearHighlights = function() {
+    document.querySelectorAll(".connection-line.selected-conn, .connection-path.selected-conn")
+      .forEach(el => el.classList.remove("selected-conn"));
+    document.querySelectorAll(".node.selected-conn")
+      .forEach(el => el.classList.remove("selected-conn"));
+  };
 /* ------------------------------------------
    RESIZER
 ------------------------------------------ */
@@ -540,6 +557,38 @@ highlightConnectionsForNode(nodeIds) {
         }
     });
 },
+/* ============================================================
+   RESALTAR UNA CONEXIÓN Y SUS NODOS
+============================================================ */
+highlightConnectionFull(connId) {
+
+    // 🧹 1️⃣ Limpiar cualquier highlight anterior
+    document.querySelectorAll(".connection-line, .conn-path").forEach(p => {
+        p.classList.remove("highlighted-conn", "selected-conn");
+    });
+
+    document.querySelectorAll(".node").forEach(n => {
+        n.classList.remove("highlighted-node", "selected-conn");
+    });
+
+    // Si no hay connId, salimos (ya se limpió todo)
+    if (!connId) return;
+
+    // 🧩 2️⃣ Encontrar la conexión
+    const conn = Engine.getConnection(connId);
+    if (!conn) return;
+
+    // ✨ 3️⃣ Iluminar la línea
+    const el = document.getElementById(conn.id);
+    if (el) el.classList.add("highlighted-conn", "selected-conn");
+
+    // ✨ 4️⃣ Iluminar los nodos conectados
+    const n1 = document.getElementById(conn.from);
+    const n2 = document.getElementById(conn.to);
+    if (n1) n1.classList.add("highlighted-node");
+    if (n2) n2.classList.add("highlighted-node");
+},
+
 
         /* ============================================================
    HELPERS PARA TRAMOS Y CÁLCULO LIMPIO DE ETIQUETAS
@@ -1288,7 +1337,7 @@ this.updateHandles(pts);        };
     updateHandles(pts) {
         this.handles.forEach((h) => {
             const i = parseInt(h.dataset.index);
-            if (i >= pts.length - 1) return;
+            if (i >= pts.length - 1) retuhiglightrn;
             const p1 = pts[i];
             const p2 = pts[i + 1];
             const cx = (p1.x + p2.x) / 2;
@@ -1314,10 +1363,54 @@ Engine.selectConnection = function(connId) {
    LIMPIAR HANDLES AL HACER CLIC FUERA
 ============================================================ */
 document.addEventListener("click", (e) => {
-    if (!e.target.closest(".connection-line") && !e.target.classList.contains("line-segment-handle")) {
+
+    const clickedNode   = e.target.closest(".node");
+    const clickedLine   = e.target.closest(".connection-line") || e.target.closest(".conn-path");
+    const clickedHit    = e.target.closest(".connection-hit");
+    const clickedLabel  = e.target.classList.contains("connection-label");
+
+    // 🧽 FUNCION DE LIMPIEZA COMPLETA
+    const cleanAll = () => {
+        Renderer.highlightConnectionFull(null);
         Renderer.LineEditor.clear();
+        document.querySelectorAll(".selected-conn").forEach(el =>
+            el.classList.remove("selected-conn")
+        );
+    };
+
+    // 1️⃣ CLIC EN NODO → limpia todo menos ese nodo
+    if (clickedNode) {
+        cleanAll();
+        clickedNode.classList.add("highlighted-node");
+        return;
     }
+
+    // 2️⃣ CLIC EN LÍNEA → limpia TODO y vuelve a aplicar solo esa línea
+    if (clickedLine || clickedHit) {
+
+        const connId =
+            clickedLine?.id ||
+            clickedHit?.getAttribute("data-conn-id");
+
+        cleanAll();
+
+        if (connId) {
+            Renderer.highlightConnectionFull(connId);
+            // MARCAR COMO SELECCIONADA
+            document.getElementById(connId)?.classList.add("selected-conn");
+        }
+
+        return;
+    }
+
+    // 3️⃣ CLIC EN ETIQUETA → no limpiar
+    if (clickedLabel) return;
+
+    // 4️⃣ CLIC FUERA → limpiar todo
+    cleanAll();
 });
+
+
 /* ============================================================
    EFECTO VISUAL: FLASH VERDE EN CONEXIÓN
 ============================================================ */

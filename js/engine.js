@@ -315,14 +315,63 @@ alignSelectedNodes() {
     selectConnection(connId) {
         this.selectedConnectionId = connId;
         this.selectedNodeId = null;
-    
+      
+        // 🔹 Obtener conexión
         const conn = this.getConnection(connId);
         if (!conn) return;
-    
+      
+        // ======================================================
+        // ✨ ILUMINAR LÍNEA Y NODOS CONECTADOS
+        // ======================================================
+      
+        // 1️⃣ Limpiar selecciones previas
+        document.querySelectorAll(".connection-line.selected-conn").forEach(el => el.classList.remove("selected-conn"));
+        document.querySelectorAll(".node.selected-conn").forEach(el => el.classList.remove("selected-conn"));
+      
+        // 2️⃣ Buscar la línea correcta (por id o data-conn-id)
+        let path = document.getElementById(connId);
+        if (!path) {
+          path = document.querySelector(`.connection-line[data-conn-id="${connId}"]`);
+        }
+      
+        // 3️⃣ Resaltar la línea seleccionada
+        if (path) path.classList.add("selected-conn");
+      
+        // 4️⃣ Resaltar nodos origen y destino
+        const fromNode = document.getElementById(conn.from);
+        const toNode = document.getElementById(conn.to);
+        if (fromNode) fromNode.classList.add("selected-conn");
+        if (toNode) toNode.classList.add("selected-conn");
+      
+        // ======================================================
+        // 🔸 Mantener tu comportamiento original
+        // ======================================================
         UI.showConnectionProperties(connId);
-        toggleRightPanel(true); // 👈 abre el panel cuando se selecciona una conexión
-        Renderer.showConnectionHandles(conn); // 👈 mostrar los drag handles
-    },
+        toggleRightPanel(true);
+        Renderer.showConnectionHandles(conn);
+      },
+      clearAll() {
+        console.log("🧹 Engine.clearAll ejecutado");
+      
+        // 1️⃣ Limpiar estructura de datos interna
+        this.data = { nodos: [], conexiones: [] };
+        this.selectedNodeId = null;
+        this.selectedConnectionId = null;
+      
+        // 2️⃣ Pedir al Renderer que limpie el canvas y selecciones
+        if (window.Renderer && typeof Renderer.clearAll === "function") {
+          Renderer.clearAll();
+        }
+      
+        // 3️⃣ (Opcional) Limpiar panel de propiedades y ficha si procede
+        if (window.UI && typeof UI.clearProperties === "function") UI.clearProperties();
+        if (this.fichaProyecto) {
+          this.fichaProyecto = { procedimiento: "", actividad: "", descripcion: "" };
+        }
+      
+        console.log("✅ Engine.clearAll completado");
+      },
+      
     /* ============================================================
        CREAR CONEXIÓN ENTRE NODOS
     ============================================================ */
@@ -870,7 +919,6 @@ Engine.exportFlujoCSV = function() {
     });
 
     const csvConds = [headerConds.join(";"), ...condRows.map(r => r.join(";"))].join("\n");
-    downloadCSV(csvConds, "Condiciones.csv");
 
     // --- 4️⃣ Descargar ambos archivos ---
     downloadCSV(csvTareas, "Tareas.csv");
@@ -1659,4 +1707,20 @@ document.getElementById("btnIAJson").addEventListener("click", () => {
     area.addEventListener("contextmenu", (e) => e.preventDefault());
 
 })();
+
+document.addEventListener("click", (e) => {
+    // Si el clic NO es sobre un nodo ni sobre una conexión
+    if (!e.target.closest(".node") && 
+        !e.target.closest(".connection-line") && 
+        !e.target.closest(".connection-hit")) {
+
+        // Eliminar destacado de selectConnection()
+        document.querySelectorAll(".connection-line.selected-conn, .connection-path.selected-conn")
+          .forEach(el => el.classList.remove("selected-conn"));
+
+        document.querySelectorAll(".node.selected-conn")
+          .forEach(el => el.classList.remove("selected-conn"));
+    }
+});
+
 window.Engine = Engine; // ✅ expone Engine en window para que DataTesauro lo vea

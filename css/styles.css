@@ -957,3 +957,22 @@ body.panel-locked #canvasArea {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+/* ============================================================
+   ✨ SELECCIÓN DE CONEXIÓN — LÍNEA + NODOS ORIGEN/DESTINO
+============================================================ */
+
+/* 🔹 Línea seleccionada (ya coherente con tu gama) */
+.connection-line.selected-conn {
+  stroke: #00b4d8 !important;
+  stroke-width: 4px !important;
+  filter: drop-shadow(0 0 6px rgba(0,180,216,0.8));
+  transition: stroke 0.2s ease, filter 0.2s ease;
+}
+
+/* 🔹 Nodos conectados (resaltados con tono compatible) */
+.node.selected-conn {
+  outline: 3px solid rgba(0,180,216,0.8) !important;
+  box-shadow: 0 0 10px rgba(0,180,216,0.6);
+  z-index: 1200;
+  transition: box-shadow 0.2s ease, outline 0.2s ease;
+}

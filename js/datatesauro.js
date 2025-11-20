@@ -39,24 +39,6 @@ const DataTesauro = {
         <h3>📚 Campos del Tesauro</h3>
         <div id="tesauroList" class="tesauro-list"></div>
 
-        <h4>➕ Nuevo campo</h4>
-         <label>Nombre</label>
-        <input id="tNombre" type="text" placeholder="Ej: Documento principal" />
-
-        <label>Referencia</label>
-        <input id="tRef" type="text" placeholder="Ej: ref_doc" />
-
-       
-
-        <label>Tipo</label>
-        <select id="tTipo">
-          <option value="selector">Selector</option>
-          <option value="si_no">Sí / No</option>
-          <option value="numerico">Numérico</option>
-          <option value="texto">Texto</option>
-        </select>
-
-        <button id="btnGuardarCampo" class="btn btn-guardar">💾 Guardar campo</button>
       `;
       document.body.appendChild(panel);
     }
@@ -200,194 +182,251 @@ const DataTesauro = {
     return camel;
   },
 
-  /* ============================================================
-   RENDERIZAR LISTA DE CAMPOS (con DnD a conexiones)
+/* ============================================================
+   RENDERIZAR LISTA DE CAMPOS AGRUPADOS POR TIPO (colapsables)
+   ✅ Con autogeneración de referencia y descolapso automático
 ============================================================ */
-  render() {
-    if (!this.listDiv) return;
+render() {
+  if (!this.listDiv) return;
 
-    if (this.campos.length === 0) {
-      this.listDiv.innerHTML = `<p style="color:#555;">No hay campos creados todavía.</p>`;
-      return;
-    }
+  // 🔹 Definir grupos
+  const grupos = [
+    { tipo: "selector", titulo: "Selector I18N" },
+    { tipo: "si_no", titulo: "Sí / No" },
+    { tipo: "texto", titulo: "Texto" },
+    { tipo: "numerico", titulo: "Numérico" }
+  ];
 
-    let html = "";
-    this.campos.forEach(c => {
-      const isSelector = c.tipo === "selector";
-      const opts = Array.isArray(c.opciones) ? c.opciones : [];
-      const collapsed = c.colapsado ?? false;
+  // 🔹 Inicializar colapsables (por defecto, cerrados)
+  if (this.collapsed_crear === undefined) this.collapsed_crear = true;
+  grupos.forEach(g => {
+    if (this[`collapsed_${g.tipo}`] === undefined) this[`collapsed_${g.tipo}`] = true;
+  });
+
+  // ===========================================================
+  // 📦 HTML del bloque principal
+  // ===========================================================
+  let html = `
+  <!-- 🔹 Bloque Crear nuevo campo -->
+  <div class="tesauro-group">
+    <div class="tesauro-group-header" data-group="crear"
+         style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+                background:#e5e7eb; padding:6px; border-radius:6px; margin-bottom:6px;">
+      <strong>➕ Crear nuevo campo</strong>
+      <span class="arrow">${this.collapsed_crear ? "▶" : "▼"}</span>
+    </div>
+
+    <div class="tesauro-group-body" data-body="crear"
+         style="display:${this.collapsed_crear ? "none" : "block"}; padding:8px;
+                border:1px solid #ddd; border-radius:6px; margin-bottom:8px;">
+      <label>Nombre</label>
+      <input id="tNombre" type="text" placeholder="Ej: Documento principal"
+             style="width:100%; margin-bottom:4px;">
+      <label>Referencia</label>
+      <input id="tRef" type="text" placeholder="Ej: ref_doc"
+             style="width:100%; margin-bottom:4px;">
+      <label>Tipo</label>
+      <select id="tTipo" style="width:100%; margin-bottom:6px;">
+        <option value="selector">Selector</option>
+        <option value="si_no">Sí / No</option>
+        <option value="numerico">Numérico</option>
+        <option value="texto">Texto</option>
+      </select>
+      <button id="btnGuardarCampo" class="btn btn-guardar" style="width:100%;">💾 Guardar campo</button>
+    </div>
+  </div>`;
+
+  // ===========================================================
+  // 🧩 Listado de campos agrupados
+  // ===========================================================
+  if (!this.campos || this.campos.length === 0) {
+    html += `<p style="color:#555; margin-top:10px;">No hay campos creados todavía.</p>`;
+  } else {
+    grupos.forEach(gr => {
+      const camposTipo = this.campos.filter(c => c.tipo === gr.tipo);
+      const collapsed = this[`collapsed_${gr.tipo}`];
+      const arrow = collapsed ? "▶" : "▼";
 
       html += `
-        <div class="tesauro-item" data-id="${c.id}">
-          <div class="tesauro-header" data-id="${c.id}" style="display:flex; align-items:center; gap:8px; justify-content:space-between; cursor:${isSelector ? "pointer" : "default"};">
-            <div>
-              <strong>${c.nombre}</strong>
-              <span style="color:#555;">(${c.ref})</span><br>
-              <small>Tipo: ${this.prettyTipo(c.tipo)}</small>
-            </div>
-            <div>
-              ${isSelector ? `<span class="arrow">${collapsed ? "▶" : "▼"}</span>` : ""}
-              <button class="btn-eliminar" data-id="${c.id}">🗑️</button>
-            </div>
+        <div class="tesauro-group">
+          <div class="tesauro-group-header" data-group="${gr.tipo}"
+               style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+                      background:#e5e7eb; padding:6px; border-radius:6px; margin-top:6px;">
+            <strong>${gr.titulo}</strong>
+            <span class="arrow">${arrow}</span>
           </div>
-      `;
+          <div class="tesauro-group-body" data-body="${gr.tipo}"
+               style="display:${collapsed ? "none" : "block"}; border:1px solid #ddd;
+                      border-radius:6px; padding:6px; margin-bottom:8px;">`;
 
-      /* ---------- Bloque por tipo ---------- */
-      if (isSelector) {
-        const hiddenAttr = collapsed ? "style='display:none;'" : "";
-        const items = opts.map(o => `
-          <li class="opt-item" data-oid="${o.id}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0; border-bottom:1px dashed #ddd;">
-            <div>
-              <code style="background:#f6f6f6; padding:2px 6px; border-radius:6px;">${o.ref}</code>
-              &nbsp;—&nbsp;${o.valor}
-            </div>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <span class="drag-pill" draggable="true"
-                    data-dnd="selector"
-                    data-campo-nombre="${this.escapeAttr(c.nombre)}"
-                    data-campo-ref="${this.escapeAttr(c.ref)}"
-                    data-opt-ref="${this.escapeAttr(o.ref)}"
-                    data-opt-valor="${this.escapeAttr(o.valor)}"
-                    title="Arrastrar a una conexión"
-                    style="font-size:12px; padding:2px 6px; border:1px solid #cbd5e1; border-radius:10px; background:#fff;">⤴ Arrastrar</span>
-              <button class="btn-del-opt" data-id="${c.id}" data-oid="${o.id}" title="Eliminar valor">🗑️</button>
-            </div>
-          </li>
-        `).join("");
-
-        html += `
-<div class="selector-add" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-  <input type="text" class="opt-valor" 
-         placeholder="Valor visible" 
-         style="flex:0 0 50%; padding:4px 6px;">
-  <input type="text" class="opt-ref" 
-         placeholder="Ref (p.ej. ALTA)" 
-         style="flex:0 0 30%; text-align:center; padding:4px 6px;">
-  <button class="btn-add-opt" data-id="${c.id}" 
-          style="flex:1; max-width:40px; padding:4px 0; font-size:16px;">+</button>
-</div>            <ul class="opt-list" style="list-style:none; margin:0; padding:0;">
-              ${items || `<li style="color:#777;">(sin valores)</li>`}
-            </ul>
-          </div>
-        `;
-      } else if (c.tipo === "si_no") {
-        html += `
-          <div class="tesauro-bool" style="margin-top:8px; display:flex; gap:8px;">
-            <span class="drag-pill" draggable="true"
-                  data-dnd="si_no"
-                  data-campo-nombre="${this.escapeAttr(c.nombre)}"
-                  data-campo-ref="${this.escapeAttr(c.ref)}"
-                  data-valor="Sí"
-                  title="Arrastrar a una conexión"
-                  style="font-size:12px; padding:2px 8px; border:1px solid #10b981; color:#065f46; border-radius:10px; background:#ecfdf5;">Sí</span>
-            <span class="drag-pill" draggable="true"
-                  data-dnd="si_no"
-                  data-campo-nombre="${this.escapeAttr(c.nombre)}"
-                  data-campo-ref="${this.escapeAttr(c.ref)}"
-                  data-valor="No"
-                  title="Arrastrar a una conexión"
-                  style="font-size:12px; padding:2px 8px; border:1px solid #ef4444; color:#7f1d1d; border-radius:10px; background:#fef2f2;">No</span>
-          </div>
-        `;
-      } else if (c.tipo === "texto" || c.tipo === "numerico") {
-        html += `
-          <div class="tesauro-free" style="margin-top:8px;">
-            <span class="drag-pill" draggable="true"
-                  data-dnd="${c.tipo}"
-                  data-campo-nombre="${this.escapeAttr(c.nombre)}"
-                  data-campo-ref="${this.escapeAttr(c.ref)}"
-                  data-needs-input="true"
-                  title="Arrastrar a una conexión; al soltar te pedirá el valor"
-                  style="font-size:12px; padding:2px 8px; border:1px solid #cbd5e1; border-radius:10px; background:#fff;">✎ Arrastrar para escribir…</span>
-          </div>
-        `;
+      if (camposTipo.length === 0) {
+        html += `<p style="color:#777;">(sin campos ${gr.titulo})</p>`;
+      } else {
+        camposTipo.forEach(c => { html += this.renderTesauroItem(c); });
       }
 
-      html += `</div>`;
+      html += `</div></div>`;
     });
+  }
 
-    this.listDiv.innerHTML = html;
+  // ===========================================================
+  // 🧩 Inyectar y vincular eventos dinámicos
+  // ===========================================================
+  this.listDiv.innerHTML = html;
 
-    // 🗑️ Eliminar campo
-    this.listDiv.querySelectorAll(".btn-eliminar").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const id = e.target.dataset.id;
-        this.campos = this.campos.filter(c => c.id !== id);
-        this.sync();
-        this.render();
-      });
+  /* ------------------------------------------
+     🎛️ Colapsar/expandir grupos
+  ------------------------------------------ */
+  this.listDiv.querySelectorAll(".tesauro-group-header").forEach(h => {
+    h.addEventListener("click", () => {
+      const g = h.dataset.group;
+      this[`collapsed_${g}`] = !this[`collapsed_${g}`];
+      this.render();
     });
+  });
 
-    // ➕ Añadir valor (selector)
-    this.listDiv.querySelectorAll(".btn-add-opt").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const campoId = e.currentTarget.dataset.id;
-        const item = e.currentTarget.closest(".tesauro-item");
-        const refInput = item.querySelector(".opt-ref");
-        const valorInput = item.querySelector(".opt-valor");
-        const ref = (refInput?.value || "").trim();
-        const valor = (valorInput?.value || "").trim();
-        if (!ref || !valor) return alert("Indica 'Referencia' y 'Valor'.");
-
-        const campo = this.campos.find(x => x.id === campoId);
-        if (!campo) return;
-        if (!Array.isArray(campo.opciones)) campo.opciones = [];
-
-        if (campo.opciones.some(o => (o.ref || "").trim().toLowerCase() === ref.toLowerCase())) {
-          const continuar = confirm("Ya existe una opción con esa referencia. ¿Añadir de todos modos?");
-          if (!continuar) return;
-        }
-
-        campo.opciones.push({ id: this.generateId(), ref, valor });
-        this.sync();
-
-        if (refInput) refInput.value = "";
-        if (valorInput) valorInput.value = "";
-        this.render();
-      });
+  /* ------------------------------------------
+     🧠 Autogenerar referencia dinámicamente
+  ------------------------------------------ */
+  const inputNombre = this.listDiv.querySelector("#tNombre");
+  const inputRef = this.listDiv.querySelector("#tRef");
+  if (inputNombre && inputRef) {
+    inputNombre.addEventListener("input", () => {
+      const nombre = inputNombre.value.trim();
+      const refAuto = this.generarReferenciaDesdeNombre(nombre);
+      inputRef.value = refAuto;
     });
+  }
 
-    // 🗑️ Eliminar valor (selector)
-    this.listDiv.querySelectorAll(".btn-del-opt").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const campoId = e.currentTarget.dataset.id;
-        const optId = e.currentTarget.dataset.oid;
-        const campo = this.campos.find(x => x.id === campoId);
-        if (!campo) return;
-        campo.opciones = (campo.opciones || []).filter(o => o.id !== optId);
-        this.sync();
-        this.render();
-      });
+  /* ------------------------------------------
+     💾 Guardar nuevo campo
+     🔸 Ahora descolapsa automáticamente su grupo
+  ------------------------------------------ */
+  const btnGuardar = this.listDiv.querySelector("#btnGuardarCampo");
+  if (btnGuardar) {
+    btnGuardar.addEventListener("click", () => {
+      const ref = document.getElementById("tRef").value.trim();
+      const nombre = document.getElementById("tNombre").value.trim();
+      const tipo = document.getElementById("tTipo").value;
+      if (!ref || !nombre) return alert("Completa Referencia y Nombre.");
+
+      const nuevo = { id: this.generateId(), ref, nombre, tipo };
+      if (tipo === "selector") nuevo.opciones = [];
+      this.campos.push(nuevo);
+
+      // ✅ Descolapsar automáticamente el grupo del tipo recién creado
+      this[`collapsed_${tipo}`] = false;
+
+      this.sync();
+      this.render();
     });
+  }
 
-    // ⬇️⬆️ Colapsar / expandir (solo selectores)
-    this.listDiv.querySelectorAll(".tesauro-header").forEach(h => {
-      h.addEventListener("click", (e) => {
-        const id = h.dataset.id;
-        const campo = this.campos.find(x => x.id === id);
-        if (!campo || campo.tipo !== "selector") return;
-        campo.colapsado = !campo.colapsado;
-        this.render();
-      });
+  /* ------------------------------------------
+     🗑️ Eliminar campo
+  ------------------------------------------ */
+  this.listDiv.querySelectorAll(".btn-eliminar").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const id = e.target.dataset.id;
+      this.campos = this.campos.filter(c => c.id !== id);
+      this.sync();
+      this.render();
     });
+  });
 
-    // 🧲 DnD
-    this.listDiv.querySelectorAll(".drag-pill").forEach(pill => {
-      pill.addEventListener("dragstart", (ev) => {
-        const payload = this.buildDragPayloadFromEl(pill);
-        if (!payload) return;
-        const json = JSON.stringify(payload);
-        ev.dataTransfer.setData("application/x-tesauro", json);
-        ev.dataTransfer.setData("text/plain", json);
-        ev.dataTransfer.effectAllowed = "copy";
-        document.body.classList.add("drag-tesauro-active");
-      });
-      pill.addEventListener("dragend", () => {
-        document.body.classList.remove("drag-tesauro-active");
-      });
+  /* ------------------------------------------
+     ➕ Añadir valor (selector)
+  ------------------------------------------ */
+  this.listDiv.querySelectorAll(".btn-add-opt").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const campoId = e.currentTarget.dataset.id;
+      const item = e.currentTarget.closest(".tesauro-item");
+      const refInput = item.querySelector(".opt-ref");
+      const valorInput = item.querySelector(".opt-valor");
+      const ref = (refInput?.value || "").trim();
+      const valor = (valorInput?.value || "").trim();
+      if (!ref || !valor) return alert("Indica 'Referencia' y 'Valor'.");
+
+      const campo = this.campos.find(x => x.id === campoId);
+      if (!campo) return;
+      if (!Array.isArray(campo.opciones)) campo.opciones = [];
+
+      campo.opciones.push({ id: this.generateId(), ref, valor });
+      this.sync();
+      this.render();
     });
-  },
+  });
 
+  /* ------------------------------------------
+     🧲 Drag & Drop
+  ------------------------------------------ */
+  this.listDiv.querySelectorAll(".drag-pill").forEach(pill => {
+    pill.addEventListener("dragstart", ev => {
+      const payload = this.buildDragPayloadFromEl(pill);
+      if (!payload) return;
+      const json = JSON.stringify(payload);
+      ev.dataTransfer.setData("application/x-tesauro", json);
+      ev.dataTransfer.setData("text/plain", json);
+      ev.dataTransfer.effectAllowed = "copy";
+      document.body.classList.add("drag-tesauro-active");
+    });
+    pill.addEventListener("dragend", () => {
+      document.body.classList.remove("drag-tesauro-active");
+    });
+  });
+},
+
+/* ============================================================
+   SUBFUNCIÓN para renderizar cada item del grupo
+============================================================ */
+renderTesauroItem(c) {
+  const isSelector = c.tipo === "selector";
+  const opts = Array.isArray(c.opciones) ? c.opciones : [];
+
+  let html = `
+  <div class="tesauro-item" data-id="${c.id}" style="border:1px solid #e5e7eb; padding:6px; border-radius:6px; margin-bottom:6px;">
+    <div class="tesauro-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <strong>${c.nombre}</strong>
+        <span style="color:#555;">(${c.ref})</span><br>
+        <small>Tipo: ${this.prettyTipo(c.tipo)}</small>
+      </div>
+      <button class="btn-eliminar" data-id="${c.id}" title="Eliminar">🗑️</button>
+    </div>`;
+
+  if (isSelector) {
+    const items = opts.map(o => `
+      <li class="opt-item" data-oid="${o.id}" style="display:flex; justify-content:space-between; padding:2px 0; border-bottom:1px dashed #ddd;">
+        <div><code>${o.ref}</code> — ${o.valor}</div>
+        <button class="btn-del-opt" data-id="${c.id}" data-oid="${o.id}" title="Eliminar valor">🗑️</button>
+      </li>`).join("");
+    html += `
+      <div class="selector-add" style="margin-top:6px;">
+        <input type="text" class="opt-valor" placeholder="Valor visible" style="width:48%;">
+        <input type="text" class="opt-ref" placeholder="Ref (p.ej. ALTA)" style="width:30%;">
+        <button class="btn-add-opt" data-id="${c.id}" style="width:18%;">+</button>
+      </div>
+      <ul style="list-style:none; margin:4px 0; padding:0;">${items}</ul>`;
+  } else if (c.tipo === "si_no") {
+    html += `
+      <div style="margin-top:6px;">
+        <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="Sí"
+              style="padding:2px 8px; border:1px solid #10b981; color:#065f46; border-radius:10px; background:#ecfdf5;">Sí</span>
+        <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="No"
+              style="padding:2px 8px; border:1px solid #ef4444; color:#7f1d1d; border-radius:10px; background:#fef2f2;">No</span>
+      </div>`;
+  } else if (c.tipo === "texto" || c.tipo === "numerico") {
+    html += `
+      <div style="margin-top:6px;">
+        <span class="drag-pill" draggable="true" data-dnd="${c.tipo}" data-campo-ref="${this.escapeAttr(c.ref)}" data-needs-input="true"
+              style="font-size:12px; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; background:#fff;">✎ Arrastrar para escribir…</span>
+      </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+,
   /* ============================================================
      HELPERS DnD
   ============================================================ */
@@ -471,6 +510,170 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// Botón exportar Tesauro
+document.addEventListener("DOMContentLoaded", () => {
+  const btnTesCSV = document.getElementById("btnExportTesauro");
+  if (btnTesCSV) {
+    btnTesCSV.addEventListener("click", () => DataTesauro.exportTesauroCSV());
+  }
+});
+
+/* ============================================================
+   EXPORTAR TESAURO A CSV NORMALIZADO 
+   (Sobrescribir/Eliminar = "No", Clasificación = "5.00.00. SIN CLASIFICACIÓN",
+    Propiedad tipo campo 1 = "Botones" si es Sí/No)
+============================================================ */
+/* ============================================================
+   EXPORTAR TESAURO A DOS CSVs:
+   1️⃣ Tesauro.csv → todos los campos
+   2️⃣ Tesauro_Valores.csv → solo los selectores con sus valores
+============================================================ */
+DataTesauro.exportTesauroCSV = function() {
+  const lista = (window.Engine?.tesauro?.length ? Engine.tesauro : this.campos) || [];
+  if (!lista.length) {
+    alert("No hay campos de tesauro definidos para exportar.");
+    return;
+  }
+
+  // ===========================================================
+  // 1️⃣ TESAURO PRINCIPAL
+  // ===========================================================
+  const header1 = [
+    "Nombre Entidad","Sobrescribir","Eliminar","Clasificación","Referencia",
+    "Nombre Castellano","Nombre Catalán","Nombre Valenciano","Nombre Gallego","Nombre Euskera","Nombre Balear",
+    "Nombre Inglés","Nombre Francés","Nombre Alemán","Nombre Italiano",
+    "Ayuda Castellano","Ayuda Catalán","Ayuda Valenciano","Ayuda Gallego","Ayuda Euskera","Ayuda Balear",
+    "Ayuda Inglés","Ayuda Francés","Ayuda Alemán","Ayuda Italiano",
+    "Tipo de campo","Propiedad del tipo de campo 1","Propiedad del tipo de campo 2","Propiedad del tipo de campo 3","Propiedad del tipo de campo 4",
+    "Momento de captura","Agrupación","Obligatorio","Campo asunto"
+  ];
+
+  const traducirTipo = (t) => {
+    switch (t) {
+      case "selector": return "Selector I18N";
+      case "texto": return "Texto";
+      case "numerico": return "Numérico";
+      case "si_no": return "Sí/No";
+      default: return t || "";
+    }
+  };
+
+  const rows1 = lista.map(c => {
+    const tipoVisible = traducirTipo(c.tipo);
+    const propiedad1 = (c.tipo === "si_no") ? "Botones" : ""; // ✅ Botones para Sí/No
+
+    return [
+      "",                                // Nombre Entidad
+      "No",                              // Sobrescribir
+      "No",                              // Eliminar
+      "5.00.00. SIN CLASIFICACIÓN",      // Clasificación
+      c.ref || "",                       // Referencia
+      c.nombre || "",                    // Nombre Castellano
+      "", "", "", "", "",                // Otros idiomas
+      "", "", "", "",                    // Idiomas extra
+      "", "", "", "", "", "", "", "", "", "", // Ayudas
+      tipoVisible,                       // Tipo de campo
+      propiedad1,                        // Propiedad 1
+      "", "", "",                        // Propiedades 2-4
+      "", "", "", ""                     // Momento, Agrupación, Obligatorio, Campo asunto
+    ];
+  });
+
+  const csv1 = [header1.join(";"), ...rows1.map(r => r.map(clean).join(";"))].join("\n");
+  downloadCSV("Tesauro.csv", csv1);
+
+  // ===========================================================
+  // 2️⃣ TESAURO VALORES (SOLO SELECTORES)
+  // ===========================================================
+  const selectores = lista.filter(c => c.tipo === "selector" && Array.isArray(c.opciones) && c.opciones.length);
+  if (selectores.length) {
+    const header2 = ["Referencia Tesauro", "Referencia I18N", "Idioma", "Valor"];
+    const rows2 = [];
+
+    selectores.forEach(sel => {
+      sel.opciones.forEach(opt => {
+        rows2.push([
+          sel.ref || "",
+          opt.ref || "",
+          "Castellano",
+          opt.valor || ""
+        ]);
+      });
+    });
+
+    const csv2 = [header2.join(";"), ...rows2.map(r => r.map(clean).join(";"))].join("\n");
+    downloadCSV("Tesauro_Valores.csv", csv2);
+  }
+
+  console.log("📚 Exportación completada: Tesauro.csv + Tesauro_Valores.csv");
+
+  // ===========================================================
+  // UTILIDADES INTERNAS
+  // ===========================================================
+  function downloadCSV(nombre, contenido) {
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + contenido], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombre;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function clean(t) {
+    return (t || "").toString().replace(/\n/g, " ").replace(/;/g, ",").trim();
+  }
+};/* ============================================================
+   EXPORTAR VALORES DE CAMPOS SELECTOR A CSV (I18N)
+   Formato:
+   Referencia Tesauro | Referencia I18N | Idioma | Valor
+============================================================ */
+DataTesauro.exportTesauroValoresCSV = function() {
+  const lista = (window.Engine?.tesauro?.length ? Engine.tesauro : this.campos) || [];
+  if (!lista.length) {
+    alert("No hay campos de tesauro definidos para exportar.");
+    return;
+  }
+
+  // Filtramos solo los selectores con opciones
+  const selectores = lista.filter(c => c.tipo === "selector" && Array.isArray(c.opciones) && c.opciones.length);
+  if (!selectores.length) {
+    alert("No hay campos de tipo 'selector' con opciones para exportar.");
+    return;
+  }
+
+  const header = ["Referencia Tesauro", "Referencia I18N", "Idioma", "Valor"];
+  const rows = [];
+
+  selectores.forEach(sel => {
+    sel.opciones.forEach(opt => {
+      rows.push([
+        sel.ref || "",      // Referencia del tesauro
+        opt.ref || "",      // Referencia I18N (de la opción)
+        "Castellano",       // Idioma fijo
+        opt.valor || ""     // Valor visible
+      ]);
+    });
+  });
+
+  const csv = [header.join(";"), ...rows.map(r => r.map(clean).join(";"))].join("\n");
+
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Tesauro_Valores.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+
+  console.log("📚 Exportación completada: Tesauro_Valores.csv");
+
+  function clean(t) {
+    return (t || "").toString().replace(/\n/g, " ").replace(/;/g, ",").trim();
+  }
+};
 /* ============================================================
    ARRANQUE
 ============================================================ */
