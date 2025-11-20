@@ -830,24 +830,22 @@ this.svg.appendChild(hit); // ⚠️ el hit se añade DESPUÉS → queda arriba
 // =============================
 if (conn.condicionNombre || conn.condicionValor) {
 
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.classList.add("connection-label");
-
-    const texto = conn.condicionNombre
+    // 1️⃣ Texto base
+    const textoBase = conn.condicionNombre
         ? `${conn.condicionNombre}: ${conn.condicionValor || ""}`
         : (conn.condicionValor || "");
-    label.textContent = texto;
 
-    // 1) puntos del path y tramos "reales"
-    const pts = Renderer.parsePoints(d);
+    const texto = (textoBase || "").trim();
+    if (!texto) return;
+
+    // 2️⃣ Puntos del path y tramos "reales"
+    const pts  = Renderer.parsePoints(d);
     const segs = Renderer._toSegments(pts); // [{p1,p2}, ...]
-
     if (!segs.length) return;
 
-    // 2) seleccionar tramo según tus reglas
+    // 3️⃣ Elegir tramo según nº de codos
     const elbows = Math.max(0, segs.length - 1);
     let seg;
-
     if (elbows === 0) {
         // 0 codos → tramo único
         seg = segs[0];
@@ -859,34 +857,71 @@ if (conn.condicionNombre || conn.condicionValor) {
         seg = segs[1];
     }
 
-    // 3) punto medio del tramo elegido
+    // 4️⃣ Punto medio del tramo elegido
     const midX = (seg.p1.x + seg.p2.x) / 2;
     const midY = (seg.p1.y + seg.p2.y) / 2;
 
-    // 4) SIEMPRE horizontal
-    label.setAttribute("text-anchor", "middle");
-    label.setAttribute("dominant-baseline", "middle");
+    // 5️⃣ Partir el texto en varias líneas cortas
+    const maxCharsPerLine = 22;      // 🔧 ajusta a tu gusto
+    const maxLines        = 3;       // 🔧 máximo de líneas visibles
+    const words  = texto.split(/\s+/);
+    const lines  = [];
+    let current  = "";
 
-    // pequeño desplazamiento para legibilidad
-    if (Math.abs(seg.p1.y - seg.p2.y) < Math.abs(seg.p1.x - seg.p2.x)) {
-        // tramo horizontal
-        label.setAttribute("x", midX);
-        label.setAttribute("y", midY - 6);
-    } else {
-        // tramo vertical
-        label.setAttribute("x", midX - 6);
-        label.setAttribute("y", midY);
+    words.forEach(w => {
+        const probe = (current ? current + " " : "") + w;
+        if (probe.length > maxCharsPerLine && current) {
+            lines.push(current);
+            current = w;
+        } else {
+            current = probe;
+        }
+    });
+    if (current) lines.push(current);
+
+    // Si hay demasiadas líneas, recortamos y añadimos "…"
+    if (lines.length > maxLines) {
+        const lastIdx = maxLines - 1;
+        lines[lastIdx] = (lines[lastIdx] + " …").trim();
+        lines.length = maxLines;
     }
 
+    // 6️⃣ Crear <text> con <tspan> por línea
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.classList.add("connection-label");
+    label.dataset.connId = conn.id;
+
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("dominant-baseline", "middle");
     label.setAttribute("fill", "#ffffff");
     label.setAttribute("stroke", "#000000");
     label.setAttribute("stroke-width", "2");
     label.setAttribute("paint-order", "stroke fill");
 
-    label.dataset.connId = conn.id;
+    // Pequeño ajuste vertical según orientación del tramo
+    const isHorizontal = Math.abs(seg.p1.y - seg.p2.y) < Math.abs(seg.p1.x - seg.p2.x);
+    const baseY = isHorizontal ? (midY - 6) : midY;
+
+    lines.forEach((line, idx) => {
+        const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+        tspan.textContent = line;
+
+        // Primera línea: x/y absolutos
+        if (idx === 0) {
+            tspan.setAttribute("x", midX);
+            tspan.setAttribute("y", baseY);
+        } else {
+            // Siguientes → mismo x, desplazadas con dy
+            tspan.setAttribute("x", midX);
+            tspan.setAttribute("dy", "1.2em");
+        }
+
+        label.appendChild(tspan);
+    });
 
     this.svg.appendChild(label);
 }
+
 
     }
     ,

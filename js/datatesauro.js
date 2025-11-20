@@ -264,7 +264,17 @@ html += `
     </div>
   </div>
 `;
-
+// ⚡ === BOTÓN DE TRANSFORMAR CONDICIONES A TESAUROS ===
+html += `
+  <div class="tesauro-transform-zone" style="margin-top:10px;">
+    <button id="btnTransformCondiciones" class="btn btn-transform"
+            style="width:100%; background:#fef3c7; border:1px solid #f59e0b; border-radius:6px;">
+      ⚡ Transformar condiciones a Tesauros
+    </button>
+    <input id="inputTransformCondiciones" type="file" accept=".json"
+           style="display:none;">
+  </div>
+`;
   } 
   
   else {
@@ -324,6 +334,104 @@ html += `
       inputRef.value = refAuto;
     });
   }
+
+// ⚡ === EVENTO TRANSFORMAR CONDICIONES A TESAUROS (desde conexiones del JSON) ===
+const btnTransform = this.listDiv.querySelector("#btnTransformCondiciones");
+const inputTransform = this.listDiv.querySelector("#inputTransformCondiciones");
+
+if (btnTransform && inputTransform) {
+  btnTransform.addEventListener("click", () => {
+    inputTransform.value = "";
+    inputTransform.click(); // abre el selector JSON
+  });
+
+  inputTransform.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const jsonText = await file.text();
+      const data = JSON.parse(jsonText);
+
+      if (!Array.isArray(data.conexiones)) {
+        alert("❌ El JSON no contiene un array válido de conexiones.");
+        return;
+      }
+
+      // 🧠 Agrupar condiciones por nombre
+      const mapa = {};
+      for (const conn of data.conexiones) {
+        const nombre = (conn.condicionNombre || "").trim();
+        const valor = (conn.condicionValor || "").trim();
+        if (!nombre) continue;
+
+        if (!mapa[nombre]) mapa[nombre] = new Set();
+        if (valor) mapa[nombre].add(valor);
+      }
+
+      const nuevos = [];
+
+      for (const [nombre, valoresSet] of Object.entries(mapa)) {
+        const valores = Array.from(valoresSet);
+        if (valores.length === 0) continue;
+
+        // ✅ Usa la misma función del DataTesauro
+        const refCond = this.generarReferenciaDesdeNombre(nombre);
+        const lowerVals = valores.map(v => v.toLowerCase());
+
+        if (lowerVals.includes("sí") && lowerVals.includes("no")) {
+          // 🟢 Tipo Sí/No
+          nuevos.push({
+            id: this.generateId(),
+            ref: refCond,
+            nombre,
+            tipo: "si_no",
+            opciones: []
+          });
+        } else if (valores.length > 1) {
+          // 🟣 Selector (varios valores)
+          const opts = valores.map(v => ({
+            id: this.generateId(),
+            ref: this.generarReferenciaDesdeNombre(v),
+            valor: v
+          }));
+          nuevos.push({
+            id: this.generateId(),
+            ref: refCond,
+            nombre,
+            tipo: "selector",
+            opciones: opts
+          });
+        } else {
+          // 🔵 Texto simple
+          nuevos.push({
+            id: this.generateId(),
+            ref: refCond,
+            nombre,
+            tipo: "texto",
+            opciones: []
+          });
+        }
+      }
+
+      if (!nuevos.length) {
+        alert("⚠️ No se detectaron condiciones válidas en las conexiones del JSON.");
+        return;
+      }
+
+      // Añadir nuevos tesauros
+      this.campos.push(...nuevos);
+      this.sync();
+      this.render();
+
+      alert(`✅ ${nuevos.length} condiciones convertidas a tesauros.`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error al procesar el JSON: " + err.message);
+    }
+  });
+}
+
 // 🆕 === IMPORTACIÓN TESAURO: botón + drag & drop ===
 const btnImport = this.listDiv.querySelector("#btnImportTesauro");
 const dropZone  = this.listDiv.querySelector("#dropZoneTesauro");
@@ -528,6 +636,23 @@ this.listDiv.querySelectorAll(".btn-editar").forEach(btn => {
       document.body.classList.remove("drag-tesauro-active");
     });
   });
+/* ------------------------------------------
+   🗑️ Eliminar valor dentro de selector
+------------------------------------------ */
+this.listDiv.querySelectorAll(".btn-del-opt").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const campoId = e.currentTarget.dataset.id;
+    const optId = e.currentTarget.dataset.oid;
+
+    const campo = this.campos.find(c => c.id === campoId);
+    if (!campo || !Array.isArray(campo.opciones)) return;
+
+    campo.opciones = campo.opciones.filter(o => o.id !== optId);
+
+    this.sync();
+    this.render();
+  });
+});
 
   // ------------------------------------------
 // 🎛️ Toggle edición
@@ -694,14 +819,26 @@ renderTesauroItem(c) {
         `;
       }
 
-      const items = opts.map(o => `
-        <li class="opt-item" data-oid="${o.id}" 
-            style="display:flex; justify-content:space-between; padding:2px 0; border-bottom:1px dashed #ddd;">
-          <div><code>${o.ref}</code> — ${o.valor}</div>
-          <button class="btn-del-opt" data-id="${c.id}" data-oid="${o.id}" title="Eliminar valor">🗑️</button>
-        </li>`
-      ).join("");
-
+const items = opts.map(o => `
+  <li class="opt-item" data-oid="${o.id}" 
+      style="display:flex; justify-content:space-between; align-items:center; padding:4px 6px; 
+             margin:3px 0; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px;">
+    <span class="drag-pill"
+      draggable="true"
+      data-dnd="selector"
+      data-campo-nombre="${this.escapeAttr(c.nombre)}"
+      data-campo-ref="${this.escapeAttr(c.ref)}"
+      data-opt-ref="${this.escapeAttr(o.ref)}"
+      data-opt-valor="${this.escapeAttr(o.valor)}"
+      style="display:inline-block; padding:2px 8px; border-radius:9999px; 
+             background:#dbeafe; color:#1e40af; font-size:13px; font-weight:500; cursor:grab;">
+  • ${o.valor}
+</span>
+    <button class="btn-del-opt" data-id="${c.id}" data-oid="${o.id}" 
+            title="Eliminar valor"
+            style="border:none; background:transparent; cursor:pointer; font-size:14px;">🗑️</button>
+  </li>
+`).join("");
       html += `
         <div class="selector-add" style="margin-top:6px;">
           <input type="text" class="opt-valor" placeholder="Valor visible" style="width:48%;">
@@ -713,29 +850,44 @@ renderTesauroItem(c) {
       `;
     }
 
-    // ------------------------------------
-    // SI/NO
-    // ------------------------------------
-    else if (c.tipo === "si_no") {
-      html += `
-        <div style="margin-top:6px;">
-          <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="Sí"
-                style="padding:2px 8px; border:1px solid #10b981; color:#065f46; border-radius:10px; background:#ecfdf5;">Sí</span>
-          <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="No"
-                style="padding:2px 8px; border:1px solid #ef4444; color:#7f1d1d; border-radius:10px; background:#fef2f2;">No</span>
-        </div>`;
-    }
+// ------------------------------------
+// SI/NO
+// ------------------------------------
+else if (c.tipo === "si_no") {
+  html += `
+    <div style="margin-top:6px;">
+      <span class="drag-pill" draggable="true"
+            data-dnd="si_no"
+            data-campo-nombre="${this.escapeAttr(c.nombre)}"
+            data-campo-ref="${this.escapeAttr(c.ref)}"
+            data-valor="Sí"
+            style="padding:2px 8px; border:1px solid #10b981; color:#065f46; border-radius:10px; background:#ecfdf5;">Sí</span>
+      <span class="drag-pill" draggable="true"
+            data-dnd="si_no"
+            data-campo-nombre="${this.escapeAttr(c.nombre)}"
+            data-campo-ref="${this.escapeAttr(c.ref)}"
+            data-valor="No"
+            style="padding:2px 8px; border:1px solid #ef4444; color:#7f1d1d; border-radius:10px; background:#fef2f2;">No</span>
+    </div>`;
+}
 
-    // ------------------------------------
-    // TEXTO / NUMERICO
-    // ------------------------------------
-    else if (c.tipo === "texto" || c.tipo === "numerico") {
-      html += `
-        <div style="margin-top:6px;">
-          <span class="drag-pill" draggable="true" data-dnd="${c.tipo}" data-campo-ref="${this.escapeAttr(c.ref)}" data-needs-input="true"
-                style="font-size:12px; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; background:#fff;">✎ Arrastrar para escribir…</span>
-        </div>`;
-    }
+// ------------------------------------
+// TEXTO / NUMERICO
+// ------------------------------------
+else if (c.tipo === "texto" || c.tipo === "numerico") {
+  html += `
+    <div style="margin-top:6px;">
+      <span class="drag-pill" draggable="true"
+            data-dnd="${c.tipo}"
+            data-campo-nombre="${this.escapeAttr(c.nombre)}"
+            data-campo-ref="${this.escapeAttr(c.ref)}"
+            data-needs-input="true"
+            style="font-size:12px; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; background:#fff;">
+        ✎ Arrastrar para escribir…
+      </span>
+    </div>`;
+}
+
   }
 
   html += `</div>`;
