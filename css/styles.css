@@ -711,7 +711,10 @@ input {
 /* ✨ Resaltado de nodos */
 .node-highlight {
   outline: 3px solid rgba(4, 200, 144, 0.821) !important;
-  box-shadow: 0 0 10px rgba(2, 144, 104, 0.821);
+  background-color: rgba(4, 200, 144, 0.08) !important; /* 🔹 leve tono de fondo */
+  box-shadow: 0 0 15px rgba(4, 200, 144, 0.6);          /* 🔹 resplandor visible */
+  transition: all 0.2s ease;
+  z-index: 1500;                                        /* 🔹 sobre otros elementos */
 }
 /* 🔘 Botón flotante Cambios */
 .floating-cambios-btn {
@@ -773,11 +776,14 @@ input {
   font-weight: bold;
 }
 
-/* ✨ Iluminado de nodos destino */
+/* ✨ Iluminado de nodos destino (borde + fondo) */
 .node-highlight-cambio {
-  outline: 3px solid #10b981 !important;
-  box-shadow: 0 0 10px #10b981;
+  outline: 3px solid #10b981 !important;                /* borde verde esmeralda */
+  background-color: rgba(16, 185, 129, 0.15) !important; /* fondo suave */
+  box-shadow: 0 0 12px rgba(12, 247, 118, 0.6);          /* brillo exterior */
+  transition: all 0.25s ease-in-out;
 }
+
 /* ============================================================
    EFECTO VISUAL AL ARRASTRAR NODOS SOBRE EL CANVAS
 ============================================================ */
@@ -965,4 +971,15 @@ body.panel-locked #canvasArea {
   box-shadow: 0 0 10px rgba(0,180,216,0.6);
   z-index: 1200;
   transition: box-shadow 0.2s ease, outline 0.2s ease;
+}
+/* 🔧 Fix visual para resaltado de asignaciones */
+.node.node-highlight .shape,
+.node.node-highlight svg {
+  filter: drop-shadow(0 0 10px rgba(4, 200, 144, 0.6));
+}
+
+.node.node-highlight {
+  background-color: rgba(4, 200, 144, 0.12) !important;
+  outline: 3px solid rgba(4, 200, 144, 0.9) !important;
+  box-shadow: 0 0 12px rgba(4, 200, 144, 0.7);
 }

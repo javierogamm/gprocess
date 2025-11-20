@@ -110,21 +110,41 @@ const CambiosEstado = {
         });
     },
 
-    /* ============================================================
-       ILUMINAR NODOS DESTINO DE ESE CAMBIO DE ESTADO
-    ============================================================ */
-    highlight(estado) {
-        Engine.data.conexiones.forEach(conn => {
-            if (conn.cambioEstado?.trim() === estado) {
-                const nodoDestino = Engine.getNode(conn.to);
-                if (nodoDestino) {
-                    const div = document.getElementById(nodoDestino.id);
-                    if (div) div.classList.add("node-highlight-cambio");
-                }
+/* ============================================================
+   ILUMINAR NODOS DESTINO Y SU SUBÁRBOL HASTA SIGUIENTE CAMBIO
+============================================================ */
+highlight(estado) {
+    // 🔹 Buscar conexiones que llevan a ese cambio de estado
+    Engine.data.conexiones.forEach(conn => {
+        if (conn.cambioEstado?.trim() === estado) {
+            const nodoDestino = Engine.getNode(conn.to);
+            if (nodoDestino) {
+                this._resaltaSubarbol(nodoDestino);
             }
-        });
-    },
+        }
+    });
+},
 
+// 🔹 Función recursiva para iluminar hijos y nietos hasta otro cambio de estado
+_resaltaSubarbol(nodo) {
+    const div = document.getElementById(nodo.id);
+    if (div) div.classList.add("node-highlight-cambio");
+
+    // Recorremos todas las salidas del nodo
+    if (nodo.outList && nodo.outList.length > 0) {
+        nodo.outList.forEach(salida => {
+            const conn = Engine.getConnection(salida.connId);
+            if (!conn) return;
+
+            // 🚫 Si esta conexión tiene cambio de estado, detenemos aquí
+            if (conn.cambioEstado?.trim()) return;
+
+            const hijo = Engine.getNode(salida.id);
+            if (hijo) this._resaltaSubarbol(hijo);
+        });
+    }
+}
+,
     /* ============================================================
        LIMPIAR ILUMINACIÓN
     ============================================================ */

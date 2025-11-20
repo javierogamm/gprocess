@@ -2,7 +2,7 @@
    RENDERER.JS
    Dibuja nodos, SVGs internos, handles, conexiones y etiquetas.
 ============================================================ */
-
+let lastNodeClickTime = 0;
 const Renderer = {
 
     svg: null,
@@ -1384,52 +1384,52 @@ Engine.selectConnection = function(connId) {
 /* ============================================================
    LIMPIAR HANDLES AL HACER CLIC FUERA
 ============================================================ */
+// 🧩 Listener global de limpieza
 document.addEventListener("click", (e) => {
+  const now = Date.now();
+  if (now - lastNodeClickTime < 150) return; // evita doble ejecución inmediata
 
-    const clickedNode   = e.target.closest(".node");
-    const clickedLine   = e.target.closest(".connection-line") || e.target.closest(".conn-path");
-    const clickedHit    = e.target.closest(".connection-hit");
-    const clickedLabel  = e.target.classList.contains("connection-label");
+  const clickedNode   = e.target.closest(".node");
+  const clickedLine   = e.target.closest(".connection-line") || e.target.closest(".conn-path");
+  const clickedHit    = e.target.closest(".connection-hit");
+  const clickedLabel  = e.target.classList.contains("connection-label");
 
-    // 🧽 FUNCION DE LIMPIEZA COMPLETA
-    const cleanAll = () => {
-        Renderer.highlightConnectionFull(null);
-        Renderer.LineEditor.clear();
-        document.querySelectorAll(".selected-conn").forEach(el =>
-            el.classList.remove("selected-conn")
-        );
-    };
+  const cleanAll = () => {
+    Renderer.highlightConnectionFull(null);
+    Renderer.LineEditor.clear();
+    document.querySelectorAll(".selected-conn, .highlighted-node").forEach(el =>
+      el.classList.remove("selected-conn", "highlighted-node")
+    );
+  };
 
-    // 1️⃣ CLIC EN NODO → limpia todo menos ese nodo
-    if (clickedNode) {
-        cleanAll();
-        clickedNode.classList.add("highlighted-node");
-        return;
-    }
+  // ⚙️ Si haces clic dentro del nodo ya seleccionado → ignora
+  const selected = document.querySelector(".node.highlighted-node");
+  if (selected && selected.contains(e.target)) return;
 
-    // 2️⃣ CLIC EN LÍNEA → limpia TODO y vuelve a aplicar solo esa línea
-    if (clickedLine || clickedHit) {
-
-        const connId =
-            clickedLine?.id ||
-            clickedHit?.getAttribute("data-conn-id");
-
-        cleanAll();
-
-        if (connId) {
-            Renderer.highlightConnectionFull(connId);
-            // MARCAR COMO SELECCIONADA
-            document.getElementById(connId)?.classList.add("selected-conn");
-        }
-
-        return;
-    }
-
-    // 3️⃣ CLIC EN ETIQUETA → no limpiar
-    if (clickedLabel) return;
-
-    // 4️⃣ CLIC FUERA → limpiar todo
+  // 1️⃣ CLIC EN NODO
+  if (clickedNode) {
+    lastNodeClickTime = now;
+    e.stopPropagation();
     cleanAll();
+    clickedNode.classList.add("highlighted-node");
+    return;
+  }
+
+  // 2️⃣ CLIC EN LÍNEA
+  if (clickedLine || clickedHit) {
+    lastNodeClickTime = now;
+    e.stopPropagation();
+    const connId = clickedLine?.id || clickedHit?.getAttribute("data-conn-id");
+    cleanAll();
+    if (connId) Renderer.highlightConnectionFull(connId);
+    return;
+  }
+
+  // 3️⃣ CLIC EN ETIQUETA → no limpiar
+  if (clickedLabel) return;
+
+  // 4️⃣ CLIC FUERA → limpiar todo
+  cleanAll();
 });
 
 
