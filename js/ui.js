@@ -1066,6 +1066,17 @@ function collapseSidePanelsWhenRightPanelOpens() {
   
   // Activar al cargar
   window.addEventListener("DOMContentLoaded", collapseSidePanelsWhenRightPanelOpens);
+
+  /* ============================================================
+   📏 Utilidad: calcular desplazamiento lateral activo (en px)
+============================================================ */
+function getActivePanelOffset() {
+    const rightPanel = document.getElementById("rightPanel");
+    if (rightPanel && rightPanel.classList.contains("visible")) {
+      return rightPanel.offsetWidth || 350; // ancho real del panel
+    }
+    return 0;
+  }
 /* ============================================================
    ARRANQUE
 ============================================================ */

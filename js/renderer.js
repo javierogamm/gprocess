@@ -760,7 +760,33 @@ hit.addEventListener("click", (e) => {
     e.stopPropagation();
     Engine.selectConnection(conn.id);
 });
+// 🧪 LOG DE DEPURACIÓN DE COORDENADAS DE HOVER
+hit.addEventListener("mousemove", (e) => {
+    const svgRect = Renderer.svg.getBoundingClientRect();
+    const contRect = Renderer.container.getBoundingClientRect();
+    const mx = e.clientX - contRect.left;
+    const my = e.clientY - contRect.top;
 
+    // Parsear puntos reales de la línea
+    const pts = Renderer.parsePoints(d);
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+
+    console.log("🧭 HOVER DETECTADO EN CONEXIÓN:", conn.id);
+    console.log({
+        mouse_client: { x: e.clientX, y: e.clientY },
+        mouse_rel_container: { x: mx, y: my },
+        svg_offset_vs_container: {
+            dx: svgRect.left - contRect.left,
+            dy: svgRect.top - contRect.top,
+            svgW: svgRect.width,
+            svgH: svgRect.height,
+            contW: contRect.width,
+            contH: contRect.height
+        },
+        path_points: { from: first, to: last },
+    });
+});
 this.svg.appendChild(hit); // ⚠️ el hit se añade DESPUÉS → queda arriba
    
 // =============================
@@ -1438,6 +1464,8 @@ window.handleTesauroDrop = function (e, connId) {
       console.error("Error en handleTesauroDrop:", err);
     }
   };
+  
+
   
 
 window.addEventListener("DOMContentLoaded", () => Renderer.init());

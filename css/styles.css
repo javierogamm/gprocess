@@ -109,7 +109,7 @@ input {
     min-width: 8000px;     /* 🔥 ancho ampliado del canvas lógico */
     min-height: 4000px;    /* 🔥 alto ampliado para subárboles grandes */
     z-index: 20;
-    pointer-events: auto !important;;
+    pointer-events: none !important; /* deja pasar eventos */
     overflow: visible;     /* 🔥 permite que los loops se vean aunque salgan del marco */
 }
 .node {
@@ -206,39 +206,30 @@ input {
   position: absolute;
   top: 0;
   left: 0;
-  width: 20000px;
-  height: 20000px;
-  z-index: 10;
-  pointer-events: all !important; /* 🔥 Asegura que reciba clics */
+  width: 8000px;
+  height: 4000px;
+  overflow: visible;
+  pointer-events: none; /* ✅ deja pasar hover a las líneas */
 }
 
-.connection-line {
-  stroke: #4a7f84;
-  stroke-width: 2;
-  fill: none;
-  pointer-events: stroke;
-  cursor: pointer; /* 👆 muestra mano al pasar por encima */
-  transition: all 0.2s ease;
-}
 
-/* 🟢 Al pasar por encima, más ancho y sombra suave */
-.connection-line:hover {
-  stroke-width: 6px;
-  filter: drop-shadow(0 0 2px #045570);
-  transition: all 0.15s ease;
-}
 
 /* 🔧 Área de clic invisible (paths auxiliares) */
 .connection-hit {
+  stroke: transparent;           /* evita tapar nada visualmente */
+  stroke-width: 12px;            /* área razonable */
+  fill: none;
+  pointer-events: stroke;        /* solo activa en el trazo */
   cursor: pointer;
-  stroke-width: 20px !important; 
+  stroke-linecap: round;         /* centrado visual correcto */
+  stroke-linejoin: round;
+  pointer-events: visibleStroke;  /* ⚡ permite pasar hover a la línea visible */
 }
-
 /* 🔧 FIX para que los clics lleguen al SVG sin bloquear los nodos */
-#nodesContainer {
+/*#nodesContainer {
   z-index: 20;
-  pointer-events: none !important; /* deja pasar eventos */
-}
+  pointer-events: none !important; /* deja pasar eventos }*/
+
 
 #nodesContainer .node {
   pointer-events: all !important; /* pero los nodos sí clicables */
@@ -794,11 +785,6 @@ input {
   background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
   transition: background 0.3s ease;
 }
-.connection-line:hover {
-  stroke-width: 8px;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
-  transition: all 0.2s ease;
-}
 /* ============================================================
    TESAURO: Botón flotante y panel lateral
 ============================================================ */
@@ -921,4 +907,53 @@ input {
 .tesauro-panel.visible ~ .floating-cambios-btn,
 .tesauro-panel.visible ~ .floating-tesauro-btn {
   right: 360px;
+}
+/* ============================================================
+   🔒 BLOQUEAR DESPLAZAMIENTO DEL VIEWPORT AL ABRIR PANEL LATERAL
+   (evita que el canvas se mueva y desincronice las líneas)
+============================================================ */
+body.panel-locked {
+  overflow: hidden !important; /* bloquea movimiento */
+}
+
+body.panel-locked #canvasArea {
+  pointer-events: none; /* previene scrolls mientras se abre */
+}
+
+/* 🔹 Hover — efecto más luminoso */
+
+#svgConnections {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8000px;
+  height: 4000px;
+  overflow: visible;
+}
+
+.connection-line {
+  stroke: #4a7f84;
+  stroke-width: 2;
+  fill: none;
+  cursor: pointer;
+  pointer-events: stroke;
+  transition: stroke-width 0.15s ease;
+}
+
+/* 🔹 Solo efecto de selección, sin hover */
+.connection-line.selected,
+.connection-line.highlighted-conn {
+  stroke: #50a1a2 !important;
+  stroke-width: 4px !important;
+  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
+}
+
+.connection-hit {
+  stroke: transparent;
+  stroke-width: 20px;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
