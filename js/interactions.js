@@ -614,3 +614,50 @@ window.addEventListener("mouseup", (e) => {
     }
     Interactions.onMouseUp(e);
 });
+/* ============================================================
+   🚀 NAVEGACIÓN SUAVE CONTINUA POR EL CANVAS (WASD + FLECHAS)
+============================================================ */
+(() => {
+  const area = document.getElementById("canvasArea");
+  if (!area) return;
+
+  const keys = new Set();
+  const baseSpeed = 8; // velocidad base
+  let animationFrame = null;
+
+  function smoothMove() {
+    if (keys.size === 0) return; // sin teclas → detener
+    let dx = 0, dy = 0;
+    const step = keys.has("shift") ? baseSpeed * 3 : baseSpeed;
+
+    if (keys.has("w") || keys.has("arrowup")) dy -= step;
+    if (keys.has("s") || keys.has("arrowdown")) dy += step;
+    if (keys.has("a") || keys.has("arrowleft")) dx -= step;
+    if (keys.has("d") || keys.has("arrowright")) dx += step;
+
+    area.scrollLeft += dx;
+    area.scrollTop += dy;
+
+    animationFrame = requestAnimationFrame(smoothMove);
+  }
+
+  window.addEventListener("keydown", (e) => {
+    const key = e.key.toLowerCase();
+    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(key)) {
+      keys.add(key);
+      if (!animationFrame) {
+        animationFrame = requestAnimationFrame(smoothMove);
+      }
+      e.preventDefault();
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    const key = e.key.toLowerCase();
+    keys.delete(key);
+    if (keys.size === 0 && animationFrame) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+  });
+})();
