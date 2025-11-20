@@ -1724,3 +1724,4 @@ document.addEventListener("click", (e) => {
 });
 
 window.Engine = Engine; // ✅ expone Engine en window para que DataTesauro lo vea
+

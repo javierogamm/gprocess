@@ -61,34 +61,43 @@ const DataTesauro = {
     const btnGuardar = document.getElementById("btnGuardarCampo");
     if (btnGuardar) {
       btnGuardar.addEventListener("click", () => {
-        const ref = document.getElementById("tRef").value.trim();
-        const nombre = document.getElementById("tNombre").value.trim();
-        const tipo = document.getElementById("tTipo").value;
+  const ref = document.getElementById("tRef").value.trim();
+  const nombre = document.getElementById("tNombre").value.trim();
+  const tipo = document.getElementById("tTipo").value;
 
-        if (!ref || !nombre) {
-          alert("Completa al menos Referencia y Nombre.");
-          return;
-        }
+  if (!ref || !nombre) {
+    alert("Completa Referencia y Nombre.");
+    return;
+  }
 
-        const nuevo = { id: this.generateId(), ref, nombre, tipo };
-        if (tipo === "selector") nuevo.opciones = [];
-        this.campos.push(nuevo);
+  const editingId = btnGuardar.dataset.editing;
 
-        const Eng = window.Engine ?? (typeof Engine !== "undefined" ? Engine : null);
-        if (Eng) {
-          Eng.tesauro = [...this.campos];
-          Eng.saveHistory?.();
-          document.dispatchEvent(
-            new CustomEvent("tesauroUpdated", { detail: { source: "DataTesauro:save" } })
-          );
-        }
+  if (editingId) {
+    // ⭐ ACTUALIZAR EXISTENTE ⭐
+    const campo = this.campos.find(c => c.id === editingId);
+    if (campo) {
+      campo.ref = ref;
+      campo.nombre = nombre;
+      campo.tipo = tipo;
 
-        this.render();
+      if (tipo === "selector" && !campo.opciones) campo.opciones = [];
+    }
 
-        document.getElementById("tRef").value = "";
-        document.getElementById("tNombre").value = "";
-        document.getElementById("tTipo").value = "selector";
-      });
+    // Volver a modo "Crear"
+    btnGuardar.textContent = "💾 Guardar campo";
+    delete btnGuardar.dataset.editing;
+
+  } else {
+    // ⭐ CREAR NUEVO CAMPO ⭐
+    const nuevo = { id: this.generateId(), ref, nombre, tipo };
+    if (tipo === "selector") nuevo.opciones = [];
+    this.campos.push(nuevo);
+  }
+
+  // Sincronizar y refrescar UI
+  this.sync();
+  this.render();
+});
     }
 
     // 🧠 Autogenerar referencia al escribir el nombre
@@ -241,7 +250,24 @@ render() {
   // ===========================================================
   if (!this.campos || this.campos.length === 0) {
     html += `<p style="color:#555; margin-top:10px;">No hay campos creados todavía.</p>`;
-  } else {
+    // 🆕 === BOTÓN Y ZONA DE IMPORTACIÓN TESAURO ===
+html += `
+  <div class="tesauro-import-zone" style="margin-top:16px; border-top:1px solid #ccc; padding-top:8px;">
+    <button id="btnImportTesauro" class="btn btn-import" 
+            style="width:100%; background:#e0f2fe; border:1px solid #60a5fa; border-radius:6px;">
+      📥 Importar Tesauro
+    </button>
+    <div id="dropZoneTesauro" class="drop-zone hidden"
+         style="margin-top:8px; padding:20px; border:2px dashed #60a5fa; border-radius:10px; 
+                text-align:center; color:#0369a1;">
+      Arrastra aquí <strong>Tesauro.csv</strong> y <strong>Tesauro_Valores.csv</strong>
+    </div>
+  </div>
+`;
+
+  } 
+  
+  else {
     grupos.forEach(gr => {
       const camposTipo = this.campos.filter(c => c.tipo === gr.tipo);
       const collapsed = this[`collapsed_${gr.tipo}`];
@@ -267,6 +293,7 @@ render() {
 
       html += `</div></div>`;
     });
+
   }
 
   // ===========================================================
@@ -297,31 +324,116 @@ render() {
       inputRef.value = refAuto;
     });
   }
+// 🆕 === IMPORTACIÓN TESAURO: botón + drag & drop ===
+const btnImport = this.listDiv.querySelector("#btnImportTesauro");
+const dropZone  = this.listDiv.querySelector("#dropZoneTesauro");
 
-  /* ------------------------------------------
-     💾 Guardar nuevo campo
-     🔸 Ahora descolapsa automáticamente su grupo
-  ------------------------------------------ */
-  const btnGuardar = this.listDiv.querySelector("#btnGuardarCampo");
-  if (btnGuardar) {
-    btnGuardar.addEventListener("click", () => {
-      const ref = document.getElementById("tRef").value.trim();
-      const nombre = document.getElementById("tNombre").value.trim();
-      const tipo = document.getElementById("tTipo").value;
-      if (!ref || !nombre) return alert("Completa Referencia y Nombre.");
+if (btnImport && dropZone) {
 
-      const nuevo = { id: this.generateId(), ref, nombre, tipo };
-      if (tipo === "selector") nuevo.opciones = [];
-      this.campos.push(nuevo);
+  // Mostrar / ocultar zona de importación
+  btnImport.addEventListener("click", () => {
+    dropZone.classList.toggle("hidden");
+  });
 
-      // ✅ Descolapsar automáticamente el grupo del tipo recién creado
-      this[`collapsed_${tipo}`] = false;
-
-      this.sync();
-      this.render();
+  // Efectos visuales
+  ["dragenter","dragover"].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault();
+      dropZone.style.background = "#e0f7ff";
     });
+  });
+  ["dragleave","drop"].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault();
+      dropZone.style.background = "transparent";
+    });
+  });
+
+  // Al soltar archivos
+dropZone.addEventListener("drop", async e => {
+  e.preventDefault();
+
+  const files = [...e.dataTransfer.files];
+if (files.length < 1) {
+    console.warn("❌ Debes soltar al menos un CSV.");
+    return;
+}
+  console.log("🔥 Archivos recibidos:");
+  files.forEach(f => console.log(" - ", f.name));
+
+  // Leer todos los CSV
+  const contents = await Promise.all(files.map(f => f.text()));
+
+  let mainCSV = null;
+  let valCSV  = null;
+
+  // Detectar qué CSV es cuál por su cabecera
+  for (let i = 0; i < contents.length; i++) {
+    const text = contents[i].trimStart().split("\n")[0].toLowerCase();
+
+    if (text.includes("nombre entidad") && text.includes("referencia") && text.includes("castellano")) {
+      mainCSV = contents[i];
+      console.log("📄 Detectado como Tesauro PRINCIPAL:", files[i].name);
+    }
+
+    if (text.startsWith("referencia tesauro;") || text.startsWith("referencia;i18n") || text.includes("idioma;valor")) {
+      valCSV = contents[i];
+      console.log("📄 Detectado como Tesauro VALORES:", files[i].name);
+    }
   }
 
+// Si no hay CSV principal → error
+if (!mainCSV) {
+    console.warn("❌ No se ha encontrado el archivo principal de tesauros.");
+    return;
+}
+
+// SI hay principal PERO NO hay valores → OK
+// solo marcamos aviso, pero continuamos
+if (!valCSV) {
+    console.warn("⚠ No hay archivo de valores. Se importarán TESAUROS sin opciones.");
+}
+  console.log("🔥 LLAMANDO A importTesauroFromCSV()");
+  DataTesauro.importTesauroFromCSV(mainCSV, valCSV);
+});
+
+  function readFile(file) {
+    return new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsText(file, "utf-8");
+    });
+  }
+}
+/* ------------------------------------------
+   💾 Guardar nuevo campo
+------------------------------------------ */
+const btnGuardar = this.listDiv.querySelector("#btnGuardarCampo");
+if (btnGuardar) {
+  btnGuardar.addEventListener("click", () => {
+    const ref = document.getElementById("tRef").value.trim();
+    const nombre = document.getElementById("tNombre").value.trim();
+    const tipo = document.getElementById("tTipo").value;
+
+    if (!ref || !nombre) return alert("Completa Referencia y Nombre.");
+
+    // Crear campo
+    const nuevo = { id: this.generateId(), ref, nombre, tipo };
+
+    if (tipo === "selector") {
+      nuevo.opciones = [];
+      nuevo._needsOptions = true; // ⭐ OBLIGA A METER OPCIONES
+    }
+
+    this.campos.push(nuevo);
+
+    // Abrir grupo del tipo
+    this[`collapsed_${tipo}`] = false;
+
+    this.sync();
+    this.render();
+  });
+}
   /* ------------------------------------------
      🗑️ Eliminar campo
   ------------------------------------------ */
@@ -334,28 +446,70 @@ render() {
     });
   });
 
-  /* ------------------------------------------
-     ➕ Añadir valor (selector)
-  ------------------------------------------ */
-  this.listDiv.querySelectorAll(".btn-add-opt").forEach(btn => {
-    btn.addEventListener("click", e => {
-      const campoId = e.currentTarget.dataset.id;
-      const item = e.currentTarget.closest(".tesauro-item");
-      const refInput = item.querySelector(".opt-ref");
-      const valorInput = item.querySelector(".opt-valor");
-      const ref = (refInput?.value || "").trim();
-      const valor = (valorInput?.value || "").trim();
-      if (!ref || !valor) return alert("Indica 'Referencia' y 'Valor'.");
+/* ------------------------------------------
+   ➕ Añadir valor (selector)
+------------------------------------------ */
+this.listDiv.querySelectorAll(".btn-add-opt").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const campoId = e.currentTarget.dataset.id;
+    const item = e.currentTarget.closest(".tesauro-item");
+    const refInput = item.querySelector(".opt-ref");
+    const valorInput = item.querySelector(".opt-valor");
 
-      const campo = this.campos.find(x => x.id === campoId);
-      if (!campo) return;
-      if (!Array.isArray(campo.opciones)) campo.opciones = [];
+    const ref = (refInput?.value || "").trim();
+    const valor = (valorInput?.value || "").trim();
+    if (!ref || !valor) return alert("Indica 'Referencia' y 'Valor'.");
 
-      campo.opciones.push({ id: this.generateId(), ref, valor });
-      this.sync();
-      this.render();
+    const campo = this.campos.find(x => x.id === campoId);
+    if (!campo) return;
+    if (!Array.isArray(campo.opciones)) campo.opciones = [];
+
+    // Añadir la opción
+    campo.opciones.push({
+      id: this.generateId(),
+      ref,
+      valor
     });
+
+    // ⭐ Si estaba marcado como needing-options y ya hay al menos 1 → limpiamos
+    if (campo._needsOptions && campo.opciones.length > 0) {
+      delete campo._needsOptions;
+    }
+
+    this.sync();
+    this.render();
   });
+});
+// ⭐ EDITAR CAMPO (edición en el panel) ⭐
+this.listDiv.querySelectorAll(".btn-editar").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const id = e.currentTarget.dataset.id;
+    const campo = this.campos.find(c => c.id === id);
+    if (!campo) return;
+
+    // Abrir panel si estaba colapsado
+    this.collapsed_crear = false;
+    this.render();
+
+    // Rellenar los campos del formulario
+    const inputNombre = document.getElementById("tNombre");
+    const inputRef    = document.getElementById("tRef");
+    const inputTipo   = document.getElementById("tTipo");
+    const btnGuardar  = document.getElementById("btnGuardarCampo");
+
+    inputNombre.value = campo.nombre;
+    inputRef.value    = campo.ref;
+    inputTipo.value   = campo.tipo;
+
+    // Cambiar botón "Guardar" → "Actualizar"
+    btnGuardar.textContent = "💾 Actualizar campo";
+    btnGuardar.dataset.editing = id; // Marcar que estamos editando
+
+    // Desplegar grupo de edición
+    this.collapsed_crear = false;
+    this.render();
+  });
+});
 
   /* ------------------------------------------
      🧲 Drag & Drop
@@ -374,6 +528,71 @@ render() {
       document.body.classList.remove("drag-tesauro-active");
     });
   });
+
+  // ------------------------------------------
+// 🎛️ Toggle edición
+// ------------------------------------------
+this.listDiv.querySelectorAll(".btn-editar").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const id = e.target.dataset.id;
+    const item = this.campos.find(x => x.id === id);
+    item._editMode = !item._editMode;
+    this.render();
+  });
+});
+
+// ------------------------------------------
+// ❌ Cancelar edición
+// ------------------------------------------
+this.listDiv.querySelectorAll(".btn-cancel-edit").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const id = e.target.dataset.id;
+    const item = this.campos.find(x => x.id === id);
+    item._editMode = false;
+    this.render();
+  });
+});
+
+// 💾 Guardar cambios
+this.listDiv.querySelectorAll(".btn-save-edit").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const id = e.target.dataset.id;
+    const item = this.campos.find(x => x.id === id);
+
+    const card = btn.closest(".tesauro-item");
+    const nombre = card.querySelector(".edit-nombre").value.trim();
+    const ref = card.querySelector(".edit-ref").value.trim();
+    const tipoNuevo = card.querySelector(".edit-tipo").value;
+    const tipoAnterior = item.tipo;
+
+    item.nombre = nombre;
+    item.ref = ref;
+
+    // ⭐ Si el tipo ha cambiado a SELECTOR → marcar necesidad de opciones
+    if (tipoNuevo === "selector" && tipoAnterior !== "selector") {
+      item.tipo = "selector";
+      item.opciones = [];
+      item._needsOptions = true;   // ⬅️💥 aquí está la magia
+    }
+
+    // ⭐ Si cambia a cualquier otra cosa → borrar opciones y marcadores
+    else if (tipoNuevo !== "selector") {
+      item.tipo = tipoNuevo;
+      item.opciones = [];
+      delete item._needsOptions;
+    }
+
+    // ⭐ Si es selector y ya lo era → mantener opciones existentes
+    else {
+      item.tipo = "selector";
+    }
+
+    item._editMode = false;
+
+    this.sync();
+    this.render();
+  });
+});
 },
 
 /* ============================================================
@@ -383,50 +602,265 @@ renderTesauroItem(c) {
   const isSelector = c.tipo === "selector";
   const opts = Array.isArray(c.opciones) ? c.opciones : [];
 
+  // Toggle edición
+  const editMode = c._editMode === true;
+
   let html = `
-  <div class="tesauro-item" data-id="${c.id}" style="border:1px solid #e5e7eb; padding:6px; border-radius:6px; margin-bottom:6px;">
-    <div class="tesauro-header" style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
+  <div class="tesauro-item" data-id="${c.id}" 
+       style="border:1px solid #e5e7eb; padding:6px; border-radius:6px; margin-bottom:6px;">
+
+    <div class="tesauro-header"
+         style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
+
+      <div style="flex:1;">
         <strong>${c.nombre}</strong>
         <span style="color:#555;">(${c.ref})</span><br>
         <small>Tipo: ${this.prettyTipo(c.tipo)}</small>
       </div>
-      <button class="btn-eliminar" data-id="${c.id}" title="Eliminar">🗑️</button>
-    </div>`;
 
-  if (isSelector) {
-    const items = opts.map(o => `
-      <li class="opt-item" data-oid="${o.id}" style="display:flex; justify-content:space-between; padding:2px 0; border-bottom:1px dashed #ddd;">
-        <div><code>${o.ref}</code> — ${o.valor}</div>
-        <button class="btn-del-opt" data-id="${c.id}" data-oid="${o.id}" title="Eliminar valor">🗑️</button>
-      </li>`).join("");
-    html += `
-      <div class="selector-add" style="margin-top:6px;">
-        <input type="text" class="opt-valor" placeholder="Valor visible" style="width:48%;">
-        <input type="text" class="opt-ref" placeholder="Ref (p.ej. ALTA)" style="width:30%;">
-        <button class="btn-add-opt" data-id="${c.id}" style="width:18%;">+</button>
+      <div style="display:flex; flex-direction:row; gap:4px; align-items:center;">
+          <button class="btn-editar" data-id="${c.id}" title="Editar"
+            style="background:#f3f4f6; border:1px solid #cbd5e1; border-radius:6px;
+                   width:26px; height:26px; display:inline-flex; justify-content:center; align-items:center; padding:0; margin:0;">⚙️</button>
+
+         <button class="btn-eliminar" data-id="${c.id}" title="Eliminar"
+            style="background:#fee2e2; border:1px solid #fca5a5; border-radius:6px;
+                   width:26px; height:26px; display:inline-flex; justify-content:center; align-items:center; padding:0; margin:0;">🗑️</button>
       </div>
-      <ul style="list-style:none; margin:4px 0; padding:0;">${items}</ul>`;
-  } else if (c.tipo === "si_no") {
+
+    </div>
+  `;
+
+  // ============================================================
+  // 🔧 FORMULARIO DE EDICIÓN INLINE
+  // ============================================================
+  if (editMode) {
     html += `
-      <div style="margin-top:6px;">
-        <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="Sí"
-              style="padding:2px 8px; border:1px solid #10b981; color:#065f46; border-radius:10px; background:#ecfdf5;">Sí</span>
-        <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="No"
-              style="padding:2px 8px; border:1px solid #ef4444; color:#7f1d1d; border-radius:10px; background:#fef2f2;">No</span>
-      </div>`;
-  } else if (c.tipo === "texto" || c.tipo === "numerico") {
-    html += `
-      <div style="margin-top:6px;">
-        <span class="drag-pill" draggable="true" data-dnd="${c.tipo}" data-campo-ref="${this.escapeAttr(c.ref)}" data-needs-input="true"
-              style="font-size:12px; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; background:#fff;">✎ Arrastrar para escribir…</span>
-      </div>`;
+      <div class="edit-block" style="margin-top:6px; padding:8px; background:#eef2ff; border-radius:6px;">
+        
+        <label style="font-size:12px; color:#374151;">Nombre</label>
+        <input type="text" class="edit-nombre" value="${c.nombre}" 
+               style="width:100%; margin-bottom:4px;">
+
+        <label style="font-size:12px; color:#374151;">Referencia</label>
+        <input type="text" class="edit-ref" value="${c.ref}" 
+               style="width:100%; margin-bottom:4px;">
+
+        <label style="font-size:12px; color:#374151;">Tipo</label>
+        <select class="edit-tipo" style="width:100%; margin-bottom:6px;">
+          <option value="selector" ${c.tipo==="selector"?"selected":""}>Selector</option>
+          <option value="si_no" ${c.tipo==="si_no"?"selected":""}>Sí / No</option>
+          <option value="texto" ${c.tipo==="texto"?"selected":""}>Texto</option>
+          <option value="numerico" ${c.tipo==="numerico"?"selected":""}>Numérico</option>
+        </select>
+
+        <div style="display:flex; gap:6px; margin-top:8px;">
+          <button class="btn-save-edit" data-id="${c.id}" 
+                  style="flex:1; background:#2563eb; color:white; border:none; padding:6px; border-radius:6px;">
+            Guardar
+          </button>
+          <button class="btn-cancel-edit" data-id="${c.id}" 
+                  style="flex:1; background:#e5e7eb; border:none; padding:6px; border-radius:6px;">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ============================================================
+  // 💬 CONTENIDO NORMAL
+  // ============================================================
+  if (!editMode) {
+
+    // ------------------------------------
+    // ⭐ SELECTOR
+    // ------------------------------------
+    if (isSelector) {
+
+      // ⭐ AVISO DE QUE FALTAN OPCIONES
+      if (c._needsOptions && opts.length === 0) {
+        html += `
+          <div style="
+            background:#fef3c7;
+            padding:6px;
+            border-radius:6px;
+            margin-bottom:8px;
+            border:1px solid #fcd34d;
+            color:#92400e;
+            font-size:12px;">
+            ⚠ Este campo es un <strong>selector vacío</strong>. Añade al menos una opción.
+          </div>
+        `;
+      }
+
+      const items = opts.map(o => `
+        <li class="opt-item" data-oid="${o.id}" 
+            style="display:flex; justify-content:space-between; padding:2px 0; border-bottom:1px dashed #ddd;">
+          <div><code>${o.ref}</code> — ${o.valor}</div>
+          <button class="btn-del-opt" data-id="${c.id}" data-oid="${o.id}" title="Eliminar valor">🗑️</button>
+        </li>`
+      ).join("");
+
+      html += `
+        <div class="selector-add" style="margin-top:6px;">
+          <input type="text" class="opt-valor" placeholder="Valor visible" style="width:48%;">
+          <input type="text" class="opt-ref" placeholder="Ref (p.ej. ALTA)" style="width:30%;">
+          <button class="btn-add-opt" data-id="${c.id}" style="width:18%;">+</button>
+        </div>
+
+        <ul style="list-style:none; margin:4px 0; padding:0;">${items}</ul>
+      `;
+    }
+
+    // ------------------------------------
+    // SI/NO
+    // ------------------------------------
+    else if (c.tipo === "si_no") {
+      html += `
+        <div style="margin-top:6px;">
+          <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="Sí"
+                style="padding:2px 8px; border:1px solid #10b981; color:#065f46; border-radius:10px; background:#ecfdf5;">Sí</span>
+          <span class="drag-pill" draggable="true" data-dnd="si_no" data-campo-ref="${this.escapeAttr(c.ref)}" data-valor="No"
+                style="padding:2px 8px; border:1px solid #ef4444; color:#7f1d1d; border-radius:10px; background:#fef2f2;">No</span>
+        </div>`;
+    }
+
+    // ------------------------------------
+    // TEXTO / NUMERICO
+    // ------------------------------------
+    else if (c.tipo === "texto" || c.tipo === "numerico") {
+      html += `
+        <div style="margin-top:6px;">
+          <span class="drag-pill" draggable="true" data-dnd="${c.tipo}" data-campo-ref="${this.escapeAttr(c.ref)}" data-needs-input="true"
+                style="font-size:12px; border:1px solid #cbd5e1; padding:2px 8px; border-radius:10px; background:#fff;">✎ Arrastrar para escribir…</span>
+        </div>`;
+    }
   }
 
   html += `</div>`;
   return html;
 }
+
+
+, // 👈 coma si no hay
+
+// 🧩 === IMPORTADOR REAL DE TESAURO (basado en CSV exportado) ===
+importTesauroFromCSV(mainCSV, valCSV = null) {
+  try {
+
+    const parse = (txt) => {
+      const lines = txt.split(/\r?\n/).filter(l => l.trim());
+      return lines.map(l => l.split(";").map(c => c.trim()));
+    };
+
+    console.log("====== 📥 IMPORT TESAURO ======");
+
+    // -----------------------------
+    // 1) PARSEAR TESAURO PRINCIPAL
+    // -----------------------------
+    const rows1 = parse(mainCSV);
+
+    if (rows1.length <= 1) {
+      throw new Error("Tesauro.csv vacío o inválido");
+    }
+
+    const campos = [];
+
+    for (let i = 1; i < rows1.length; i++) {
+      const cols = rows1[i];
+      if (!cols[4]) continue; // referencia necesaria
+
+      const ref     = cols[4];
+      const nombre  = cols[5] || ref;
+      const tipoRaw = (cols[25] || cols[24] || "").toLowerCase();
+
+      let tipo = "texto";
+      if (tipoRaw.includes("selector")) tipo = "selector";
+      else if (tipoRaw.includes("sí") || tipoRaw.includes("si/")) tipo = "si_no";
+      else if (tipoRaw.includes("num")) tipo = "numerico";
+
+      campos.push({
+        id: this.generateId(),
+        ref, nombre, tipo,
+        opciones: []
+      });
+    }
+
+    console.log("✔️ Campos importados del tesauro:", campos.length);
+    console.table(campos.map(c => ({ ref: c.ref, nombre: c.nombre, tipo: c.tipo })));
+
+
+    // ================================================
+    // 2) DETECTAR SI EXISTEN SELECTORES
+    // ================================================
+    const haySelectores = campos.some(c => c.tipo === "selector");
+
+    console.log("¿Hay campos selector?", haySelectores);
+
+
+    // ================================================
+    // 3) SI HAY SELECTOR -> NECESITAMOS VALORES
+    // ================================================
+    if (haySelectores) {
+
+      if (!valCSV) {
+        console.warn("⚠️ No hay fichero de valores pero hay selectores → los selectores quedarán VACÍOS");
+      } else {
+
+        console.log("📄 Procesando Tesauro_Valores.csv…");
+
+        const rows2 = parse(valCSV);
+
+        for (let i = 1; i < rows2.length; i++) {
+          const v = rows2[i];
+
+          const refTes = v[0];
+          const refOpt = v[1];
+          const valor  = v[3];
+
+          const campo = campos.find(c => c.ref === refTes && c.tipo === "selector");
+
+          if (campo) {
+            campo.opciones.push({
+              id: this.generateId(),
+              ref: refOpt || "",
+              valor: valor || ""
+            });
+          }
+        }
+
+        console.log("✔️ Opciones asignadas a selectores:");
+        campos
+          .filter(c => c.tipo === "selector")
+          .forEach(c =>
+            console.log(`   ${c.ref} → ${c.opciones.length} opciones`)
+          );
+      }
+    }
+
+    // ================================================
+    // 4) GUARDAR Y REFRESCAR
+    // ================================================
+    this.campos = campos;
+
+    if (window.Engine) {
+      Engine.tesauro = [...campos];
+    }
+
+    this.render();
+
+    alert(`Tesauro importado correctamente (${campos.length} campos)`);
+
+  } catch (err) {
+    console.error("❌ Error al importar Tesauro:", err);
+    alert("❌ Error al importar Tesauro: " + err.message);
+  }
+}
+
+
 ,
+
   /* ============================================================
      HELPERS DnD
   ============================================================ */
@@ -518,11 +952,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/* ============================================================
-   EXPORTAR TESAURO A CSV NORMALIZADO 
-   (Sobrescribir/Eliminar = "No", Clasificación = "5.00.00. SIN CLASIFICACIÓN",
-    Propiedad tipo campo 1 = "Botones" si es Sí/No)
-============================================================ */
 /* ============================================================
    EXPORTAR TESAURO A DOS CSVs:
    1️⃣ Tesauro.csv → todos los campos
@@ -624,6 +1053,7 @@ DataTesauro.exportTesauroCSV = function() {
   function clean(t) {
     return (t || "").toString().replace(/\n/g, " ").replace(/;/g, ",").trim();
   }
+  
 };/* ============================================================
    EXPORTAR VALORES DE CAMPOS SELECTOR A CSV (I18N)
    Formato:
@@ -673,6 +1103,7 @@ DataTesauro.exportTesauroValoresCSV = function() {
   function clean(t) {
     return (t || "").toString().replace(/\n/g, " ").replace(/;/g, ",").trim();
   }
+  
 };
 /* ============================================================
    ARRANQUE

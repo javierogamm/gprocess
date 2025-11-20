@@ -837,16 +837,6 @@ input {
   border-radius: 6px;
   position: relative;
 }
-.tesauro-item .btn-eliminar {
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: #dc2626;
-  font-size: 14px;
-}
 .btn-guardar {
   background: #2563eb;
   color: white;

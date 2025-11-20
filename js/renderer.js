@@ -821,20 +821,7 @@ hit.addEventListener("mousemove", (e) => {
     const first = pts[0];
     const last = pts[pts.length - 1];
 
-    console.log("🧭 HOVER DETECTADO EN CONEXIÓN:", conn.id);
-    console.log({
-        mouse_client: { x: e.clientX, y: e.clientY },
-        mouse_rel_container: { x: mx, y: my },
-        svg_offset_vs_container: {
-            dx: svgRect.left - contRect.left,
-            dy: svgRect.top - contRect.top,
-            svgW: svgRect.width,
-            svgH: svgRect.height,
-            contW: contRect.width,
-            contH: contRect.height
-        },
-        path_points: { from: first, to: last },
-    });
+
 });
 this.svg.appendChild(hit); // ⚠️ el hit se añade DESPUÉS → queda arriba
    
