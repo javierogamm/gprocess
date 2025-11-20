@@ -448,6 +448,28 @@ const DataTesauro = {
     return Math.random().toString(36).substring(2, 9);
   }
 };
+/* ============================================================
+   🔒 Cierra el panel del Tesauro cuando se interactúa con otra parte del editor
+============================================================ */
+document.addEventListener("click", (e) => {
+  if (!DataTesauro.panel) return;
+
+  // 🔸 Si el panel NO está visible, no hacemos nada
+  if (!DataTesauro.panel.classList.contains("visible")) return;
+
+  // 🔸 No cerrar si se hace clic dentro del propio panel o en su botón
+  if (DataTesauro.panel.contains(e.target) || e.target.id === "btnTesauro") return;
+
+  // 🔸 Si el clic fue en cualquier parte del canvas (nodos, conexiones o fondo)
+  const esNodo = e.target.closest(".node");
+  const esConexion = e.target.closest("svg path");
+  const esCanvas = e.target.closest("#canvasArea") || e.target.closest("#nodesContainer");
+  const esUI = e.target.closest("#propsEditor") || e.target.closest("#propsConn");
+
+  if (esNodo || esConexion || esCanvas || esUI) {
+    DataTesauro.panel.classList.remove("visible");
+  }
+});
 
 /* ============================================================
    ARRANQUE

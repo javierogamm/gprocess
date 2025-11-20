@@ -995,6 +995,78 @@ function getDefaultColorByType(tipo) {
     }
 }
 /* ============================================================
+   💡 Sincronizar desplazamiento de botones flotantes
+   Solo se mueven si hay algún panel lateral visible
+============================================================ */
+function syncFloatingButtons() {
+    const panels = [
+      document.querySelector("#rightPanel"),
+      document.querySelector(".assign-panel"),
+      document.querySelector(".cambios-panel"),
+      document.querySelector(".tesauro-panel")
+    ];
+  
+    const buttons = [
+      document.querySelector(".floating-assign-btn"),
+      document.querySelector(".floating-cambios-btn"),
+      document.querySelector(".floating-tesauro-btn")
+    ];
+  
+    // 🔍 Detectar si hay algún panel visible
+    const anyVisible = panels.some(p => p && p.classList.contains("visible"));
+  
+    // 🔄 Aplicar desplazamiento solo si hay alguno abierto
+    buttons.forEach(btn => {
+      if (!btn) return;
+      btn.style.transition = "right 0.3s ease";
+      btn.style.right = anyVisible ? "360px" : "20px";
+    });
+  }
+  
+  // 👂 Observar cambios de visibilidad en los paneles
+  const observer = new MutationObserver(syncFloatingButtons);
+  ["#rightPanel", ".assign-panel", ".cambios-panel", ".tesauro-panel"].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) observer.observe(el, { attributes: true, attributeFilter: ["class"] });
+  });
+  
+  // 🧩 Sincronizar también al cargar y tras clics generales
+  window.addEventListener("load", syncFloatingButtons);
+  document.addEventListener("click", syncFloatingButtons);
+  /* ============================================================
+   🔒 Cerrar paneles laterales (asignaciones / cambios / tesauro)
+   al abrir el panel derecho de propiedades
+============================================================ */
+function collapseSidePanelsWhenRightPanelOpens() {
+    const rightPanel = document.querySelector("#rightPanel");
+    const panels = [
+      document.querySelector(".assign-panel"),
+      document.querySelector(".cambios-panel"),
+      document.querySelector(".tesauro-panel")
+    ];
+  
+    if (!rightPanel) return;
+  
+    const observer = new MutationObserver(() => {
+      const isVisible = rightPanel.classList.contains("visible");
+  
+      if (isVisible) {
+        // 🔹 Cerrar todos los paneles laterales
+        panels.forEach(p => {
+          if (p && p.classList.contains("visible")) {
+            p.classList.remove("visible");
+          }
+        });
+      }
+    });
+  
+    // 👀 Observar cambios de visibilidad del panel derecho
+    observer.observe(rightPanel, { attributes: true, attributeFilter: ["class"] });
+  }
+  
+  // Activar al cargar
+  window.addEventListener("DOMContentLoaded", collapseSidePanelsWhenRightPanelOpens);
+/* ============================================================
    ARRANQUE
 ============================================================ */
 window.addEventListener("DOMContentLoaded", () => UI.init());

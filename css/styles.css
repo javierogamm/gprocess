@@ -646,7 +646,7 @@ input {
 .floating-assign-btn {
   position: fixed;
   top: 15px;
-  right:360px;
+  right:80px;
   z-index: 2000;
   background: rgba(4, 200, 144, 0.821);
   color: white;
@@ -726,7 +726,7 @@ input {
 .floating-cambios-btn {
   position: fixed;
   top: 60px;          /* 👈 justo debajo del botón de Asignaciones */
-  right: 360px;         /* mismo alineado a la izquierda */
+  right: 80px;         /* mismo alineado a la izquierda */
   z-index: 2000;
   background: rgba(2, 144, 104, 0.821); /* verde elegante */
   color: white;
@@ -805,7 +805,7 @@ input {
 .floating-tesauro-btn {
   position: fixed;
   top: 105px;           /* debajo del botón de Cambios */
-  right: 360px;
+  right: 80px;
   z-index: 2000;
   background: #475569; /* gris azulado */
   color: white;
@@ -896,25 +896,29 @@ input {
 }
 
 /* ============================================================
-   BOTONES FLOTANTES — SE MUEVEN CON SU PANEL
+   BOTONES FLOTANTES — SE MUEVEN CON CUALQUIER PANEL VISIBLE
 ============================================================ */
 
-/* Todos los botones flotantes comparten esta animación */
+/* 🔹 Transición suave para todos los botones */
 .floating-assign-btn,
 .floating-cambios-btn,
 .floating-tesauro-btn {
   transition: right 0.3s ease;
 }
 
-/* 🔹 Cuando su panel esté visible, desplaza el botón */
-.assign-panel.visible ~ .floating-assign-btn {
-  right: 300px; /* ancho del panel Assignaciones */
-}
-
-.cambios-panel.visible ~ .floating-cambios-btn {
-  right: 280px; /* ancho del panel Cambios */
-}
-
+/* 🔹 Si cualquier panel lateral (derecho, asignaciones, cambios o tesauro) está visible,
+   todos los botones flotantes se desplazan a 360px */
+#rightPanel.visible ~ .floating-assign-btn,
+#rightPanel.visible ~ .floating-cambios-btn,
+#rightPanel.visible ~ .floating-tesauro-btn,
+.assign-panel.visible ~ .floating-assign-btn,
+.assign-panel.visible ~ .floating-cambios-btn,
+.assign-panel.visible ~ .floating-tesauro-btn,
+.cambios-panel.visible ~ .floating-assign-btn,
+.cambios-panel.visible ~ .floating-cambios-btn,
+.cambios-panel.visible ~ .floating-tesauro-btn,
+.tesauro-panel.visible ~ .floating-assign-btn,
+.tesauro-panel.visible ~ .floating-cambios-btn,
 .tesauro-panel.visible ~ .floating-tesauro-btn {
-  right: 320px; /* ancho del panel Tesauro */
+  right: 360px;
 }

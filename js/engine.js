@@ -736,37 +736,71 @@ Engine.exportFlujoCSV = function() {
         if (tipoTarea === "circuito") tipoTarea = "Libre";
         else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
         else tipoTarea = capitalizeFirst(tipoTarea);
-
-        // ✅ Lógica de grupo/unidad gestora (sin cambios)
+    
         const asignado = (n.asignadoA || "").trim();
         const esUnidadGestora = asignado.toLowerCase() === "unidad gestora";
         const asignadoGrupo = esUnidadGestora ? "" : asignado;
         const asignadoUG = esUnidadGestora ? "Sí" : "No";
-
-        // ✅ **NUEVO**: campo de usuario
         const asignadoUsuario = (n.asignadoUsuario || "").trim();
-
+        const inicioManual = n.tareaManual ? "Sí" : "No";
+    
+        // 🧩 Reglas específicas por tipo
+        const esPlazo = n.tipo.toLowerCase() === "plazo";
+        const esDocumento = n.tipo.toLowerCase() === "documento";
+    
+        const plazoTramite = esPlazo ? "Plazo" : "";
+        const plazoJustificante = esPlazo ? "No" : "";
+        const tipoDocumental = esPlazo ? "Certificado" : "";
+    
+        const generarPlantilla = esDocumento ? "No" : "";
+        const cargarDocumento = esDocumento ? "No" : "";
+    
+        // 🟢 Fila alineada con headerTareas
         return [
             "", // Nombre Entidad
-            this.fichaProyecto.actividad || "", // Actividad
-            this.fichaProyecto.procedimiento || "", // Procedimiento
+            this.fichaProyecto.actividad || "", // Nombre Actividad
+            this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
             "", // Sobrescribir
             tipoTarea, // Tipo Tarea
             cleanText(n.titulo || ""), // Nombre Tarea
-            "", "", "No", // Días Alerta, Tipo de días, ✅ Prioritario = No
-            cleanHTML(n.descripcion || ""), // Descripción
-            asignadoUsuario, // ✅ "Asignado a Usuario - Nombre" (rellenado con n.asignadoUsuario)
-            asignadoGrupo,   // ✅ "Asignado a Grupo - Nombre" (igual que antes)
-            "No",            // Asignado a responsables exp
-            asignadoUG,      // ✅ "Asignado a unidad gestora" (Sí / No)
+            "", // Días Alerta
+            "", // Tipo de días
+            "No", // Prioritario
+            "Sin descripción", // Descripción Tarea
+            asignadoUsuario, // Asignado a Usuario - Nombre
+            asignadoGrupo, // Asignado a Grupo - Nombre
+            "No", // Asignado a responsables exp
+            asignadoUG, // Asignado a unidad gestora
             "No", // Asignado a Usuario - Abre Tarea
             "No", // Asignado a Usuario - Abre Exp
-            "Sí", // ✅ Permite reasignar siempre Sí
-            "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+            "Sí", // Permite reasignar
+            "No", // Inicio inmediato
+            "", // Condición inicio inmediato
+            "", "", "", // Nombre tesauro / Condición / Valor tesauro
+            inicioManual, // Inicio manual
+            "Sí", // Acceso temporal expediente
+            plazoTramite, // Plazo Trámite
+            plazoJustificante, // Plazo Justificante
+            tipoDocumental, // Tipo documental
+            "", // Tipo Circuito Resolución
+            "", // Nombre Circuito Resolución
+            "", // Órgano Circuito Resolución
+            "No", // Cambiar estado
+            "", // Nombre nuevo estado
+            generarPlantilla, // ✅ Generar plantilla (si documento → No)
+            "", // Formato plantilla
+            cargarDocumento, // ✅ Cargar documento (si documento → No)
+            "", // Circuito documento
+            "", // Título documento
+            "", // Tipo documental documento
+            "", // Texto plantilla
+            "", // Eliminar
+            "", // Finalizar en plazo
+            "", // Plazo - Número de días
+            ""  // Plazo - Tipo de días
         ];
     });
-
-    const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].join("\n");
+            const csvTareas = [headerTareas.join(";"), ...tareasRows.map(r => r.join(";"))].join("\n");
 
     // --- 3️⃣ Crear CONDICIONES (formato oficial de condiciones de flujo) ---
     const headerConds = [
