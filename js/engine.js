@@ -320,6 +320,7 @@ alignSelectedNodes() {
         if (!conn) return;
     
         UI.showConnectionProperties(connId);
+        toggleRightPanel(true); // 👈 abre el panel cuando se selecciona una conexión
         Renderer.showConnectionHandles(conn); // 👈 mostrar los drag handles
     },
     /* ============================================================

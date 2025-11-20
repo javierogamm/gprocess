@@ -50,19 +50,27 @@ body {
     background: #4b5563;
 }
 
-/* PANEL DERECHO */
+/* PANEL DERECHO — ahora deslizable */
 #rightPanel {
-    width: 180px;
-    background: #ffffff;
-    border-left: 2px solid #ccc;
-    padding: 15px;
-    box-sizing: border-box;
-    overflow-y: auto;     /* 🔥 Scroll vertical */
-    overflow-x: hidden;   /* ✅ Sin scroll horizontal */
-    max-height: 100vh;    /* ✅ Límite para no salirse de pantalla */
-    position: relative; /* ✅ NECESARIO para que el resizer funcione */
+  position: fixed;             /* 🔹 fijo al borde derecho */
+  top: 0;
+  right: 0;
+  width: 350px;                /* 🔹 tu ancho original */
+  height: 100vh;
+  background: #ffffff;
+  border-left: 2px solid #ccc;
+  padding: 15px;
+  box-sizing: border-box;
+  overflow-y: auto;            /* 🔥 scroll vertical */
+  overflow-x: hidden;          /* ✅ sin scroll horizontal */
+  z-index: 1200;               /* sobre el canvas */
+  transform: translateX(100%); /* 🔸 oculto por defecto */
+  transition: transform 0.3s ease;
 }
 
+#rightPanel.visible {
+  transform: translateX(0);    /* 🔹 visible → entra suavemente */
+}
 #rightPanel h3 {
     margin-top: 0;
 }
@@ -638,7 +646,7 @@ input {
 .floating-assign-btn {
   position: fixed;
   top: 15px;
-  right: 400px;
+  right:360px;
   z-index: 2000;
   background: rgba(4, 200, 144, 0.821);
   color: white;
@@ -718,7 +726,7 @@ input {
 .floating-cambios-btn {
   position: fixed;
   top: 60px;          /* 👈 justo debajo del botón de Asignaciones */
-  right: 400px;         /* mismo alineado a la izquierda */
+  right: 360px;         /* mismo alineado a la izquierda */
   z-index: 2000;
   background: rgba(2, 144, 104, 0.821); /* verde elegante */
   color: white;
@@ -797,7 +805,7 @@ input {
 .floating-tesauro-btn {
   position: fixed;
   top: 105px;           /* debajo del botón de Cambios */
-  right: 400px;
+  right: 360px;
   z-index: 2000;
   background: #475569; /* gris azulado */
   color: white;
@@ -885,4 +893,28 @@ input {
 .drag-tesauro-active .connection-hit {
   pointer-events: none !important; /* deja pasar el evento al path visible */
   stroke-width: 30px !important;   /* 🔥 área de detección MUCHO más grande */
+}
+
+/* ============================================================
+   BOTONES FLOTANTES — SE MUEVEN CON SU PANEL
+============================================================ */
+
+/* Todos los botones flotantes comparten esta animación */
+.floating-assign-btn,
+.floating-cambios-btn,
+.floating-tesauro-btn {
+  transition: right 0.3s ease;
+}
+
+/* 🔹 Cuando su panel esté visible, desplaza el botón */
+.assign-panel.visible ~ .floating-assign-btn {
+  right: 300px; /* ancho del panel Assignaciones */
+}
+
+.cambios-panel.visible ~ .floating-cambios-btn {
+  right: 280px; /* ancho del panel Cambios */
+}
+
+.tesauro-panel.visible ~ .floating-tesauro-btn {
+  right: 320px; /* ancho del panel Tesauro */
 }

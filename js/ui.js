@@ -568,7 +568,7 @@ showNodeProperties(id) {
 
     this.currentNodeId = id;
     this.currentConnId = null;
-
+    toggleRightPanel(true);
     const nodo = Engine.getNode(id);
     if (!nodo) return;
     // Ocultar campo AsignadoA (grupo)

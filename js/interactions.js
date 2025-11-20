@@ -78,6 +78,7 @@ const Interactions = {
     
             Engine.selectNode(nodo.id);
             Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));    });
+            toggleRightPanel(true); // 👈 muestra el panel cuando se selecciona un nodo
 
     /* --------- Inicio de drag (individual o múltiple) --------- */
     div.addEventListener("mousedown", (e) => {
@@ -207,7 +208,23 @@ const Interactions = {
         if (this.selectionRect) this.selectionRect.remove();
         this.selectionRect = null;
         this.isSelecting = false;
-    
+            if (this.selectionRect) this.selectionRect.remove();
+            this.selectionRect = null;
+            this.isSelecting = false;
+
+            // 👇 Mostrar u ocultar panel según cantidad seleccionada
+            if (this.selectedNodes.size === 0) {
+            toggleRightPanel(false); // sin selección → ocultar
+            } else {
+            toggleRightPanel(true);  // hay selección → mostrar
+            if (this.selectedNodes.size === 1) {
+                const unico = Array.from(this.selectedNodes)[0];
+                Engine.selectNode(unico);
+                Renderer.highlightConnectionsForNode([unico]);
+            } else {
+                UI.showGroupProperties();
+            }
+            }
         if (this.selectedNodes.size > 1) {
             Engine.selectedNodeId = null;
             Engine.selectedConnectionId = null;
@@ -558,12 +575,23 @@ if (area) {
             Engine.selectedNodeId = null;
             Engine.selectedConnectionId = null;
             UI.clear();
+            toggleRightPanel(false); // 👈 se oculta al hacer clic en fondo
+
 // 🔸 Limpiar también los resaltados de conexiones
 document.querySelectorAll(".connection-line").forEach(p => p.classList.remove("highlighted-conn")); // *** CAMBIO ***
             Interactions.startSelection(e);
         }
     });
     
+}
+/* ============================================================
+   👁️ FUNCIÓN AUXILIAR: Mostrar / Ocultar panel de propiedades
+============================================================ */
+function toggleRightPanel(visible) {
+  const panel = document.getElementById("rightPanel");
+  if (!panel) return;
+  if (visible) panel.classList.add("visible");
+  else panel.classList.remove("visible");
 }
 /* ============================================================
    LISTENERS GLOBALES

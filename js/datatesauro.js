@@ -256,12 +256,16 @@ const DataTesauro = {
         `).join("");
 
         html += `
-          <div class="selector-add" style="display:flex; gap:8px; margin-bottom:8px;">
-            <input type="text" class="opt-valor" placeholder="Valor visible (p.ej. Alta en el servicio)" style="flex:1 1 auto;">
-            <input type="text" class="opt-ref" placeholder="Ref (p.ej. ALTA)" style="flex:0 0 120px; text-align:center;">
-            <button class="btn-add-opt" data-id="${c.id}" style="white-space:nowrap;">➕ Añadir valor</button>
-          </div>
-            <ul class="opt-list" style="list-style:none; margin:0; padding:0;">
+<div class="selector-add" style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+  <input type="text" class="opt-valor" 
+         placeholder="Valor visible" 
+         style="flex:0 0 50%; padding:4px 6px;">
+  <input type="text" class="opt-ref" 
+         placeholder="Ref (p.ej. ALTA)" 
+         style="flex:0 0 30%; text-align:center; padding:4px 6px;">
+  <button class="btn-add-opt" data-id="${c.id}" 
+          style="flex:1; max-width:40px; padding:4px 0; font-size:16px;">+</button>
+</div>            <ul class="opt-list" style="list-style:none; margin:0; padding:0;">
               ${items || `<li style="color:#777;">(sin valores)</li>`}
             </ul>
           </div>
