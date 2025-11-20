@@ -732,7 +732,7 @@ Engine.exportFlujoCSV = function() {
 
     const tareasRows = sortedNodes.map((n) => {
         let tipoTarea = n.tipo.toLowerCase();
-        if (tipoTarea === "circuito") tipoTarea = "Circuito de Resolución";
+        if (tipoTarea === "circuito") tipoTarea = "Libre";
         else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
         else tipoTarea = capitalizeFirst(tipoTarea);
 
