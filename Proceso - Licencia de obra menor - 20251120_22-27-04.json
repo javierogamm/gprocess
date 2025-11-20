@@ -1,0 +1,1045 @@
+{
+  "fichaProyecto": {
+    "procedimiento": "Licencia de obra menor",
+    "actividad": "Licencias Urbanísticas",
+    "descripcion": "🔹 1. Naturaleza jurídica del procedimiento\n\nSe trata de un procedimiento administrativo urbanístico de naturaleza autorizatoria.\nSu fundamento jurídico se apoya en:\n\nLa normativa urbanística municipal.\n\nLey 39/2015 del Procedimiento Administrativo Común.\n\nLegislación sectorial (medio ambiente, seguridad, actividades, salud pública…).\n\nOrdenanzas fiscales municipales (ICIO y posibles bonificaciones).\n\nRégimen jurídico de informes técnicos y jurídicos preceptivos.\n\nEste procedimiento sigue la estructura típica de instrucción – informes – propuesta – resolución, con ramificaciones según cumpla requisitos o requiera intervención técnica o subsanaciones.\n\n🔹 2. Estructura general del proceso\n1️⃣ Inicio y revisión administrativa\n\nEl procedimiento comienza con el nodo \"Revisión de la solicitud\" (ALC001 – Auxiliar Administrativo).\nAquí se toman decisiones clave:\n\nSi necesita subsanar → se pasa al Requerimiento de Subsanación y su posterior revisión.\n\nSi la actuación requiere informes técnicos sectoriales:\n\nMedio Ambiente\n\nVVPP\n\nActividades\n\nSalud\n\nSi el solicitante pide bonificación ICIO → se genera Informe Técnico de Bonificación (ALC004).\n\n2️⃣ Subsanaciones\n\nSe abre un plazo de subsanación y se revisa la documentación aportada.\n\nSi no subsana → Inadmisión.\nSi subsana → se reinicia el circuito de revisión técnica necesario.\n\n3️⃣ Informes técnicos preceptivos\n\nLos informes los realiza ALC003 – Técnico, en las especialidades que correspondan.\n\nEl proceso puede requerir:\n\nInformes sectoriales independientes.\n\nEspera de todos los informes.\n\nUn informe técnico unificado.\n\n4️⃣ Propuesta de Resolución\n\nRealizada por ALC001, atendiendo al sentido del informe técnico:\n\nSi la propuesta es denegar → va al circuito de No conformidad.\n\nSi requiere liquidación tributaria → pasa por Rentas (ALC005) para emitir liquidación.\n\nSi no requiere liquidación → pasa a circuito de Resolución – Conformidad.\n\n5️⃣ Alegaciones (si procede)\n\nEn caso de no conformidad, se activa:\n\nPlazo de alegaciones\n\nRevisión jurídica (ALC002 – Jurídico)\n\nSolicitud de informes técnicos adicionales para alegaciones\n\nEmisión del Informe Jurídico sobre las alegaciones\n\nSegún su sentido:\n\nFavorable → Estimar alegaciones\n\nDesfavorable → Desestimar alegaciones\n\n6️⃣ Resolución final\n\nEl expediente queda LISTO PARA RESOLVER, según cada itinerario.\n\n🔹 3. Agentes intervinientes y su rol jurídico\n🟦 ALC001 – Auxiliar Administrativo\n\nInicia, tramita y gestiona subsanaciones.\n\nAbre plazos.\n\nIntegra informes técnicos.\n\nFormula propuesta de resolución preliminar.\n\nGestiona comunicaciones y estados.\n\n🟩 ALC003 – Técnico municipal\n\nEmite informes técnicos sectoriales:\n\nMedio ambiente\n\nVivienda/Seguridad (VVPP)\n\nActividades\n\nSalud\n\nValora la viabilidad urbanística de la obra.\n\n🟧 ALC002 – Jurídico\n\nRevisa alegaciones.\n\nEmite informe jurídico final.\n\nDetermina la validez legal de los informes técnicos y la propuesta.\n\n🟨 ALC005 – Rentas\n\nCalcula y liquida tributos asociados (ICIO).\n\nInterviene si procede liquidación complementaria.\n\n🟫 ALC004 – Ingeniería industrial/elétrica\n\nInterviene solo si se solicita bonificación del ICIO.\n\n🔹 4. Características jurídicas principales\n\nProcedimiento reglado:\nCada ramificación depende de condiciones explícitas: subsanación, informes técnicos, liquidación, alegaciones, etc.\n\nIntervención técnica multisectorial:\nGarantiza que la obra cumpla normativa aplicable.\n\nGarantías procedimentales:\n\nDerecho a subsanación.\n\nDerecho a formular alegaciones.\n\nNecesidad de informes preceptivos.\n\nPropuesta motivada antes de la resolución.\n\nTrazabilidad de estados administrativos:\nEl JSON muestra cambios como:\n\nINSTRUCCIÓN\n\nLISTO PARA RESOLVER\n\nALEGACIONES\n\nFINALIZADO\n\nEvaluación tributaria (ICIO) como parte del procedimiento.\n\n🔹 5. Resumen conceptual del flujo\n\nRevisión administrativa inicial → Subsanación (si procede) → Informes técnicos → Propuesta de resolución → Liquidación (si aplica) → Alegaciones (si procede) → Informe jurídico → Resolución final"
+  },
+  "tesauro": [
+    {
+      "id": "r1osd7q",
+      "ref": "SubsanarNecesita",
+      "nombre": "Necesita subsanar",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "m8zzov2",
+      "ref": "AmbienteMedioInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico Medio Ambiente",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "9aoug51",
+      "ref": "VvppInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico VVPP",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "a8tg87t",
+      "ref": "ActividadesInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico Actividades",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "vtnrmix",
+      "ref": "SaludInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico Salud",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "fe6qfdl",
+      "ref": "TecnicosInformesPrecisa",
+      "nombre": "Precisa de informes técnicos",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "fn9iij4",
+      "ref": "IcioTributariaBonificacionSolicita",
+      "nombre": "Solicita bonificación tributaria ICIO",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "zcpud20",
+      "ref": "SubsanadoHa",
+      "nombre": "Ha subsanado",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "pymrtau",
+      "ref": "ResolucionPropuestaSentido",
+      "nombre": "Sentido de la propuesta de resolución",
+      "tipo": "texto",
+      "opciones": []
+    },
+    {
+      "id": "ptepxmw",
+      "ref": "ComplementariaLiquidacionCabe",
+      "nombre": "Cabe liquidación complementaria",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "znstyh9",
+      "ref": "Alegaciones?Presentado¿ha",
+      "nombre": "¿Ha presentado alegaciones?",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "hg2xxdk",
+      "ref": "AlegacionesLicenciasInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico Licencias de Alegaciones",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "newvjgq",
+      "ref": "AlegacionesAmbienteMedioInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico Medio Ambiente de Alegaciones",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "ijnvm1h",
+      "ref": "AlegacionesVvppInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico VVPP de Alegaciones",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "jzpijw3",
+      "ref": "AlegacionesActividadesInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico Actividades de Alegaciones",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "2upfjrb",
+      "ref": "AlegacionesSaludInformeTecnicoPrecisa",
+      "nombre": "Precisa Informe Técnico Salud de Alegaciones",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "wo857nf",
+      "ref": "AlegacionesTecnicosInformesPrecisa",
+      "nombre": "Precisa de informes técnicos de Alegaciones",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "yuuvvbj",
+      "ref": "AlegacionesSobreJuridicoInformeSentido",
+      "nombre": "Sentido Informe Jurídico sobre las Alegaciones",
+      "tipo": "selector",
+      "opciones": [
+        {
+          "id": "psgfera",
+          "ref": "Favorable",
+          "valor": "Favorable"
+        },
+        {
+          "id": "ag3qz8n",
+          "ref": "Desfavorable",
+          "valor": "Desfavorable"
+        }
+      ]
+    }
+  ],
+  "nodos": [
+    {
+      "id": "npde9nxs",
+      "tipo": "formulario",
+      "titulo": "Revisión de la solicitud",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 480,
+      "y": 120,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "n82tqxjg",
+          "connId": "c9ywmsnu"
+        },
+        {
+          "id": "nl2fvj1q",
+          "connId": "cv3dx9br"
+        },
+        {
+          "id": "n4t86j9b",
+          "connId": "cv170hoi"
+        },
+        {
+          "id": "n03qwmcp",
+          "connId": "caroqr4y"
+        },
+        {
+          "id": "n4jp4omw",
+          "connId": "c91me4td"
+        },
+        {
+          "id": "niyajnn7",
+          "connId": "cg5krltb"
+        },
+        {
+          "id": "ntz2tlyh",
+          "connId": "cvvc79dj"
+        },
+        {
+          "id": "nkj1fy9d",
+          "connId": "cslxjya1"
+        }
+      ]
+    },
+    {
+      "id": "nkj1fy9d",
+      "tipo": "documento",
+      "titulo": "Informe Técnico bonificación",
+      "tareaManual": false,
+      "asignadoA": "ALC004 -ING. INDUSTRIAL/ELECTRICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 860,
+      "y": 240,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "n82tqxjg",
+      "tipo": "formulario",
+      "titulo": "Requerimiento de Subsanación",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 80,
+      "y": 240,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "nrn71e1g",
+          "connId": "c9gfz4bb"
+        }
+      ]
+    },
+    {
+      "id": "nrn71e1g",
+      "tipo": "plazo",
+      "titulo": "Plazo de subsanación",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 80,
+      "y": 400,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "n5ubadxw",
+          "connId": "c6txa7w8"
+        }
+      ]
+    },
+    {
+      "id": "n5ubadxw",
+      "tipo": "formulario",
+      "titulo": "Revisión de la subsanación",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 1000,
+      "y": 720,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "nfdjpciw",
+          "connId": "cnmnjlhd"
+        },
+        {
+          "id": "nl2fvj1q",
+          "connId": "czm0bttt"
+        },
+        {
+          "id": "n4t86j9b",
+          "connId": "clvipi1r"
+        },
+        {
+          "id": "n03qwmcp",
+          "connId": "c8z2lwwk"
+        },
+        {
+          "id": "n4jp4omw",
+          "connId": "c5mrbacz"
+        },
+        {
+          "id": "niyajnn7",
+          "connId": "cx26dih0"
+        },
+        {
+          "id": "ntz2tlyh",
+          "connId": "cicj8kml"
+        }
+      ],
+      "asignadoUsuario": "Paquillos"
+    },
+    {
+      "id": "nl2fvj1q",
+      "tipo": "documento",
+      "titulo": "Informe Técnico Medio Ambiente",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 480,
+      "y": 900,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "n4t86j9b",
+      "tipo": "documento",
+      "titulo": "Informe Técnico VVPP",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 1300,
+      "y": 940,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "n03qwmcp",
+      "tipo": "documento",
+      "titulo": "Informe Técnico Actividades",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 1520,
+      "y": 900,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "n4jp4omw",
+      "tipo": "documento",
+      "titulo": "Informe Técnico Salud",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 1780,
+      "y": 900,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "niyajnn7",
+      "tipo": "plazo",
+      "titulo": "Espera de informes técnicos",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 740,
+      "y": 900,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "ntz2tlyh",
+          "connId": "cocyqmyw"
+        }
+      ]
+    },
+    {
+      "id": "ntz2tlyh",
+      "tipo": "documento",
+      "titulo": "Informe Técnico",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 940,
+      "y": 920,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "n9hcd5x2",
+          "connId": "cts1v8ur"
+        }
+      ]
+    },
+    {
+      "id": "n9hcd5x2",
+      "tipo": "formulario",
+      "titulo": "Sentido de la Propuesta de Resolución",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 1000,
+      "y": 1060,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "nqq3ez03",
+          "connId": "csbhtkgh"
+        },
+        {
+          "id": "n4xwel04",
+          "connId": "c987uhew"
+        },
+        {
+          "id": "nuyp84xh",
+          "connId": "c2eabnbx"
+        }
+      ]
+    },
+    {
+      "id": "n4xwel04",
+      "tipo": "circuito",
+      "titulo": "Liquidación",
+      "tareaManual": false,
+      "asignadoA": "ALC005 - RENTAS",
+      "annex": "",
+      "pregunta": "",
+      "x": 1000,
+      "y": 1180,
+      "width": 120.9998779296875,
+      "height": 92.6666259765625,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "nuyp84xh",
+          "connId": "cbgp41w5"
+        }
+      ]
+    },
+    {
+      "id": "nuyp84xh",
+      "tipo": "circuito",
+      "titulo": "Circuito de Resolución - Conformidad",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 1260,
+      "y": 1180,
+      "width": 120,
+      "height": 100,
+      "salidas": []
+    },
+    {
+      "id": "nqq3ez03",
+      "tipo": "circuito",
+      "titulo": "Circuito de Resolución - No conformidad",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 740,
+      "y": 1180,
+      "width": 120,
+      "height": 100,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "n4ottrql",
+          "connId": "c08oxr9i"
+        }
+      ]
+    },
+    {
+      "id": "nfdjpciw",
+      "tipo": "circuito",
+      "titulo": "Circuito de Resolución - Inadmisión",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": 220,
+      "y": 900,
+      "width": 120,
+      "height": 100,
+      "salidas": []
+    },
+    {
+      "id": "n4ottrql",
+      "tipo": "plazo",
+      "titulo": "Plazo de alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": -180,
+      "y": 1260,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "nuhg7ov1",
+          "connId": "c14itavc"
+        }
+      ]
+    },
+    {
+      "id": "nuhg7ov1",
+      "tipo": "formulario",
+      "titulo": "Revisión jurídica de las alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC002 - JURÍDICO",
+      "annex": "",
+      "pregunta": "",
+      "x": -180,
+      "y": 1420,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "n9hudttp",
+          "connId": "cq7gf0m2"
+        },
+        {
+          "id": "n97i2xq1",
+          "connId": "cj02okmi"
+        },
+        {
+          "id": "nfylo02o",
+          "connId": "cd4eazpc"
+        },
+        {
+          "id": "nr51dyaf",
+          "connId": "c3pg97x7"
+        },
+        {
+          "id": "n2az17k9",
+          "connId": "c9hz0oai"
+        },
+        {
+          "id": "nt7wnmkk",
+          "connId": "c882gndp"
+        },
+        {
+          "id": "n0ehnr5j",
+          "connId": "cced3otd"
+        }
+      ]
+    },
+    {
+      "id": "n9hudttp",
+      "tipo": "documento",
+      "titulo": "Informe Técnico Licencias de Alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": -960,
+      "y": 1520,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "n97i2xq1",
+      "tipo": "documento",
+      "titulo": "Informe Técnico Medio Ambiente de Alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": -700,
+      "y": 1520,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "nfylo02o",
+      "tipo": "documento",
+      "titulo": "Informe Técnico VVPP de Alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 80,
+      "y": 1520,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "nr51dyaf",
+      "tipo": "documento",
+      "titulo": "Informe Técnico Actividades de Alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 340,
+      "y": 1520,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "n2az17k9",
+      "tipo": "documento",
+      "titulo": "Informe Técnico Salud de Alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC003 - TECNICO",
+      "annex": "",
+      "pregunta": "",
+      "x": 600,
+      "y": 1520,
+      "width": 120,
+      "height": 50,
+      "salidas": []
+    },
+    {
+      "id": "nt7wnmkk",
+      "tipo": "plazo",
+      "titulo": "Espera de informes técnicos de Alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": -440,
+      "y": 1520,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "n0ehnr5j",
+          "connId": "c02haavf"
+        }
+      ]
+    },
+    {
+      "id": "n0ehnr5j",
+      "tipo": "documento",
+      "titulo": "Informe Jurídico sobre las Alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC002 - JURÍDICO",
+      "annex": "",
+      "pregunta": "",
+      "x": -180,
+      "y": 1520,
+      "width": 120,
+      "height": 50,
+      "salidas": [],
+      "outList": [
+        {
+          "id": "nggjavcj",
+          "connId": "coylf31h"
+        },
+        {
+          "id": "n7z6gu9k",
+          "connId": "c27fzh2n"
+        }
+      ]
+    },
+    {
+      "id": "nggjavcj",
+      "tipo": "circuito",
+      "titulo": "Circuito de Resolución - Estimar alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": -300,
+      "y": 1640,
+      "width": 120,
+      "height": 100,
+      "salidas": []
+    },
+    {
+      "id": "n7z6gu9k",
+      "tipo": "circuito",
+      "titulo": "Circuito de Resolución - Desestimar alegaciones",
+      "tareaManual": false,
+      "asignadoA": "ALC001 - AUX. ADMVO",
+      "annex": "",
+      "pregunta": "",
+      "x": -40,
+      "y": 1640,
+      "width": 120,
+      "height": 100,
+      "salidas": []
+    }
+  ],
+  "conexiones": [
+    {
+      "id": "c9ywmsnu",
+      "from": "npde9nxs",
+      "to": "n82tqxjg",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Necesita subsanar",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cv3dx9br",
+      "from": "npde9nxs",
+      "to": "nl2fvj1q",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Medio Ambiente",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cv170hoi",
+      "from": "npde9nxs",
+      "to": "n4t86j9b",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico VVPP",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "caroqr4y",
+      "from": "npde9nxs",
+      "to": "n03qwmcp",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Actividades",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c91me4td",
+      "from": "npde9nxs",
+      "to": "n4jp4omw",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Salud",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cg5krltb",
+      "from": "npde9nxs",
+      "to": "niyajnn7",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Precisa de informes técnicos",
+      "condicionValor": "Sí",
+      "cambioEstado": "INSTRUCCIÓN"
+    },
+    {
+      "id": "cvvc79dj",
+      "from": "npde9nxs",
+      "to": "ntz2tlyh",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Precisa de informes técnicos",
+      "condicionValor": "No",
+      "cambioEstado": "INSTRUCCIÓN"
+    },
+    {
+      "id": "cslxjya1",
+      "from": "npde9nxs",
+      "to": "nkj1fy9d",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Necesita subsanar",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c9gfz4bb",
+      "from": "n82tqxjg",
+      "to": "nrn71e1g",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c6txa7w8",
+      "from": "nrn71e1g",
+      "to": "n5ubadxw",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cnmnjlhd",
+      "from": "n5ubadxw",
+      "to": "nfdjpciw",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Ha subsanado",
+      "condicionValor": "No",
+      "cambioEstado": "LISTO PARA RESOLVER"
+    },
+    {
+      "id": "czm0bttt",
+      "from": "n5ubadxw",
+      "to": "nl2fvj1q",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Medio Ambiente",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "clvipi1r",
+      "from": "n5ubadxw",
+      "to": "n4t86j9b",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico VVPP",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c8z2lwwk",
+      "from": "n5ubadxw",
+      "to": "n03qwmcp",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Actividades",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c5mrbacz",
+      "from": "n5ubadxw",
+      "to": "n4jp4omw",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Salud",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cx26dih0",
+      "from": "n5ubadxw",
+      "to": "niyajnn7",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Precisa de informes técnicos",
+      "condicionValor": "Sí",
+      "cambioEstado": "INSTRUCCIÓN"
+    },
+    {
+      "id": "cicj8kml",
+      "from": "n5ubadxw",
+      "to": "ntz2tlyh",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Precisa de informes técnicos",
+      "condicionValor": "No",
+      "cambioEstado": "INSTRUCCIÓN"
+    },
+    {
+      "id": "cocyqmyw",
+      "from": "niyajnn7",
+      "to": "ntz2tlyh",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cts1v8ur",
+      "from": "ntz2tlyh",
+      "to": "n9hcd5x2",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "csbhtkgh",
+      "from": "n9hcd5x2",
+      "to": "nqq3ez03",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Sentido de la propuesta de resolución",
+      "condicionValor": "denegar",
+      "cambioEstado": "LISTO PARA RESOLVER"
+    },
+    {
+      "id": "c987uhew",
+      "from": "n9hcd5x2",
+      "to": "n4xwel04",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Cabe liquidación complementaria",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c2eabnbx",
+      "from": "n9hcd5x2",
+      "to": "nuyp84xh",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Cabe liquidación complementaria",
+      "condicionValor": "No",
+      "cambioEstado": "LISTO PARA RESOLVER"
+    },
+    {
+      "id": "cbgp41w5",
+      "from": "n4xwel04",
+      "to": "nuyp84xh",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c08oxr9i",
+      "from": "nqq3ez03",
+      "to": "n4ottrql",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": "ALEGACIONES"
+    },
+    {
+      "id": "c14itavc",
+      "from": "n4ottrql",
+      "to": "nuhg7ov1",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "¿Ha presentado alegaciones?",
+      "condicionValor": "Sí",
+      "cambioEstado": "FINALIZADO"
+    },
+    {
+      "id": "cq7gf0m2",
+      "from": "nuhg7ov1",
+      "to": "n9hudttp",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Licencias de Alegaciones",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cj02okmi",
+      "from": "nuhg7ov1",
+      "to": "n97i2xq1",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Medio Ambiente de Alegaciones",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cd4eazpc",
+      "from": "nuhg7ov1",
+      "to": "nfylo02o",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico VVPP de Alegaciones",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c3pg97x7",
+      "from": "nuhg7ov1",
+      "to": "nr51dyaf",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Actividades de Alegaciones",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c9hz0oai",
+      "from": "nuhg7ov1",
+      "to": "n2az17k9",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Precisa Informe Técnico Salud de Alegaciones",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c882gndp",
+      "from": "nuhg7ov1",
+      "to": "nt7wnmkk",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Precisa de informes técnicos de Alegaciones",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cced3otd",
+      "from": "nuhg7ov1",
+      "to": "n0ehnr5j",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "Precisa de informes técnicos de Alegaciones",
+      "condicionValor": "No",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c02haavf",
+      "from": "nt7wnmkk",
+      "to": "n0ehnr5j",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "coylf31h",
+      "from": "n0ehnr5j",
+      "to": "nggjavcj",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Sentido Informe Jurídico sobre las Alegaciones",
+      "condicionValor": "Favorable",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c27fzh2n",
+      "from": "n0ehnr5j",
+      "to": "n7z6gu9k",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Sentido Informe Jurídico sobre las Alegaciones",
+      "condicionValor": "Desfavorable",
+      "cambioEstado": ""
+    }
+  ]
+}
