@@ -191,7 +191,15 @@
 <script src="js/cambiosestado.js"></script>
 <script src="js/datatesauro.js"></script>
 <script src="js/resizepanels.js"></script>
-
+<script>
+  // 🧠 Botón para abrir el GPT personalizado
+  document.getElementById("btnIAJson").addEventListener("click", () => {
+    window.open(
+      "https://chatgpt.com/g/g-6918f6f366d081918def86bc27f3c2b4-creador-json-gestiona-process",
+      "_blank"
+    );
+  });
+</script>
 
 <!-- 3️⃣ Comprobación -->
 <script>
@@ -200,6 +208,47 @@ window.addEventListener("load", () => {
     console.log("📄 docx:", window.docx ? "✅ Cargado correctamente" : "❌ undefined");
 });
 </script>
+<script>
+/* ============================================================
+   PEGAR JSON MANUALMENTE DESDE EL PORTAPAPELES
+============================================================ */
+document.getElementById("btnPasteJSON").addEventListener("click", async () => {
+  try {
+    // Intentar leer desde el portapapeles si está permitido
+    let jsonText = "";
+    try {
+      jsonText = await navigator.clipboard.readText();
+    } catch {
+      // Si el navegador no permite acceso directo, usar prompt
+      jsonText = prompt("Pega aquí el JSON del diagrama:");
+    }
 
+    if (!jsonText) {
+      alert("No se ha pegado ningún texto JSON.");
+      return;
+    }
+
+    // Validar formato básico
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch (e) {
+      alert("❌ El texto no es un JSON válido.");
+      return;
+    }
+
+    // Confirmar con el usuario
+    const ok = confirm("¿Quieres reemplazar el diagrama actual con el JSON pegado?");
+    if (!ok) return;
+
+    // Reutilizar la función existente de importación
+    Engine.importFromJSON(jsonText);
+    alert("✅ JSON pegado y cargado correctamente.");
+  } catch (err) {
+    console.error("Error al pegar JSON:", err);
+    alert("❌ No se pudo procesar el JSON. Revisa la consola.");
+  }
+});
+</script>
 </body>
 </html>

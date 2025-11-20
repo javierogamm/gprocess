@@ -203,7 +203,9 @@ render() {
     { tipo: "selector", titulo: "Selector I18N" },
     { tipo: "si_no", titulo: "Sí / No" },
     { tipo: "texto", titulo: "Texto" },
-    { tipo: "numerico", titulo: "Numérico" }
+    { tipo: "numerico", titulo: "Numérico" },
+    { tipo: "moneda",    titulo: "Moneda" },
+    { tipo: "fecha",     titulo: "Fecha" }
   ];
 
   // 🔹 Inicializar colapsables (por defecto, cerrados)
@@ -239,18 +241,53 @@ render() {
         <option value="selector">Selector</option>
         <option value="si_no">Sí / No</option>
         <option value="numerico">Numérico</option>
+        <option value="moneda">Moneda</option>
+        <option value="fecha">Fecha</option>
         <option value="texto">Texto</option>
       </select>
       <button id="btnGuardarCampo" class="btn btn-guardar" style="width:100%;">💾 Guardar campo</button>
     </div>
   </div>`;
 
-  // ===========================================================
-  // 🧩 Listado de campos agrupados
-  // ===========================================================
-  if (!this.campos || this.campos.length === 0) {
-    html += `<p style="color:#555; margin-top:10px;">No hay campos creados todavía.</p>`;
-    // 🆕 === BOTÓN Y ZONA DE IMPORTACIÓN TESAURO ===
+// ===========================================================
+// 🧩 Listado de campos agrupados
+// ===========================================================
+if (!this.campos || this.campos.length === 0) {
+  html += `<p style="color:#555; margin-top:10px;">No hay campos creados todavía.</p>`;
+}
+
+// ===========================================================
+// 📦 Renderizar grupos de tipos existentes
+// ===========================================================
+grupos.forEach(gr => {
+  const camposTipo = this.campos.filter(c => c.tipo === gr.tipo);
+  const collapsed = this[`collapsed_${gr.tipo}`];
+  const arrow = collapsed ? "▶" : "▼";
+
+  html += `
+    <div class="tesauro-group">
+      <div class="tesauro-group-header" data-group="${gr.tipo}"
+           style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+                  background:#e5e7eb; padding:6px; border-radius:6px; margin-top:6px;">
+       <strong>${gr.titulo} (${camposTipo.length})</strong>
+        <span class="arrow">${arrow}</span>
+      </div>
+      <div class="tesauro-group-body" data-body="${gr.tipo}"
+           style="display:${collapsed ? "none" : "block"}; border:1px solid #ddd;
+                  border-radius:6px; padding:6px; margin-bottom:8px;">`;
+
+  if (camposTipo.length === 0) {
+    html += `<p style="color:#777;">(sin campos ${gr.titulo})</p>`;
+  } else {
+    camposTipo.forEach(c => { html += this.renderTesauroItem(c); });
+  }
+
+  html += `</div></div>`;
+});
+
+// ===========================================================
+// 🆕 BOTONES SIEMPRE VISIBLES (importar y transformar)
+// ===========================================================
 html += `
   <div class="tesauro-import-zone" style="margin-top:16px; border-top:1px solid #ccc; padding-top:8px;">
     <button id="btnImportTesauro" class="btn btn-import" 
@@ -263,9 +300,7 @@ html += `
       Arrastra aquí <strong>Tesauro.csv</strong> y <strong>Tesauro_Valores.csv</strong>
     </div>
   </div>
-`;
-// ⚡ === BOTÓN DE TRANSFORMAR CONDICIONES A TESAUROS ===
-html += `
+
   <div class="tesauro-transform-zone" style="margin-top:10px;">
     <button id="btnTransformCondiciones" class="btn btn-transform"
             style="width:100%; background:#fef3c7; border:1px solid #f59e0b; border-radius:6px;">
@@ -275,36 +310,6 @@ html += `
            style="display:none;">
   </div>
 `;
-  } 
-  
-  else {
-    grupos.forEach(gr => {
-      const camposTipo = this.campos.filter(c => c.tipo === gr.tipo);
-      const collapsed = this[`collapsed_${gr.tipo}`];
-      const arrow = collapsed ? "▶" : "▼";
-
-      html += `
-        <div class="tesauro-group">
-          <div class="tesauro-group-header" data-group="${gr.tipo}"
-               style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;
-                      background:#e5e7eb; padding:6px; border-radius:6px; margin-top:6px;">
-            <strong>${gr.titulo}</strong>
-            <span class="arrow">${arrow}</span>
-          </div>
-          <div class="tesauro-group-body" data-body="${gr.tipo}"
-               style="display:${collapsed ? "none" : "block"}; border:1px solid #ddd;
-                      border-radius:6px; padding:6px; margin-bottom:8px;">`;
-
-      if (camposTipo.length === 0) {
-        html += `<p style="color:#777;">(sin campos ${gr.titulo})</p>`;
-      } else {
-        camposTipo.forEach(c => { html += this.renderTesauroItem(c); });
-      }
-
-      html += `</div></div>`;
-    });
-
-  }
 
   // ===========================================================
   // 🧩 Inyectar y vincular eventos dinámicos
@@ -379,16 +384,28 @@ if (btnTransform && inputTransform) {
         const refCond = this.generarReferenciaDesdeNombre(nombre);
         const lowerVals = valores.map(v => v.toLowerCase());
 
-        if (lowerVals.includes("sí") && lowerVals.includes("no")) {
-          // 🟢 Tipo Sí/No
-          nuevos.push({
-            id: this.generateId(),
-            ref: refCond,
-            nombre,
-            tipo: "si_no",
-            opciones: []
-          });
-        } else if (valores.length > 1) {
+        // 🧠 Detección robusta de tipo Sí/No aunque solo aparezca una de las dos opciones
+const normalizados = [...new Set(
+  lowerVals.map(v =>
+    (v || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // elimina tildes
+      .toLowerCase()
+      .trim()
+  )
+)];
+
+if (normalizados.includes("si") || normalizados.includes("no")) {
+  // 🟢 Tipo Sí/No (con o sin tilde, aunque solo haya uno de los valores)
+  nuevos.push({
+    id: this.generateId(),
+    ref: refCond,
+    nombre,
+    tipo: "si_no",
+    opciones: []
+  });
+}
+ else if (valores.length > 1) {
           // 🟣 Selector (varios valores)
           const opts = valores.map(v => ({
             id: this.generateId(),
@@ -419,13 +436,21 @@ if (btnTransform && inputTransform) {
         return;
       }
 
-      // Añadir nuevos tesauros
-      this.campos.push(...nuevos);
+      // 🧩 MEZCLAR SIN DUPLICAR (JSON)
+      const refsExistentes = new Set(this.campos.map(c => c.ref));
+      const nuevosUnicos = nuevos.filter(c => !refsExistentes.has(c.ref));
+
+      if (nuevosUnicos.length) {
+        this.campos.push(...nuevosUnicos);
+        console.log(`🧩 ${nuevosUnicos.length} nuevos tesauros añadidos desde JSON.`);
+      } else {
+        console.log("ℹ️ Todos los tesauros del JSON ya existían, no se añadieron duplicados.");
+      }
+
       this.sync();
       this.render();
 
-      alert(`✅ ${nuevos.length} condiciones convertidas a tesauros.`);
-    } catch (err) {
+      alert(`✅ Tesauros añadidos correctamente (${nuevosUnicos.length} nuevos).`);    } catch (err) {
       console.error(err);
       alert("❌ Error al procesar el JSON: " + err.message);
     }
@@ -874,7 +899,9 @@ else if (c.tipo === "si_no") {
 // ------------------------------------
 // TEXTO / NUMERICO
 // ------------------------------------
-else if (c.tipo === "texto" || c.tipo === "numerico") {
+else if (c.tipo === "texto" || c.tipo === "numerico" || c.tipo === "moneda" || c.tipo === "fecha") 
+  
+  {  
   html += `
     <div style="margin-top:6px;">
       <span class="drag-pill" draggable="true"
@@ -908,36 +935,43 @@ importTesauroFromCSV(mainCSV, valCSV = null) {
 
     console.log("====== 📥 IMPORT TESAURO ======");
 
-    // -----------------------------
-    // 1) PARSEAR TESAURO PRINCIPAL
-    // -----------------------------
-    const rows1 = parse(mainCSV);
+  // -----------------------------
+// 1) PARSEAR TESAURO PRINCIPAL
+// -----------------------------
+const rows1 = parse(mainCSV);
 
-    if (rows1.length <= 1) {
-      throw new Error("Tesauro.csv vacío o inválido");
-    }
+if (rows1.length <= 1) {
+  throw new Error("Tesauro.csv vacío o inválido");
+}
 
-    const campos = [];
+const campos = [];
 
-    for (let i = 1; i < rows1.length; i++) {
-      const cols = rows1[i];
-      if (!cols[4]) continue; // referencia necesaria
+for (let i = 1; i < rows1.length; i++) {
+  const cols = rows1[i];
+  if (!cols[4]) continue; // referencia necesaria
 
-      const ref     = cols[4];
-      const nombre  = cols[5] || ref;
-      const tipoRaw = (cols[25] || cols[24] || "").toLowerCase();
+  const ref    = cols[4];
+  const nombre = cols[5] || ref;
+  const tipoRaw = (cols[25] || cols[24] || "").toLowerCase();
+  const prop1   = (cols[26] || "").toLowerCase();
 
-      let tipo = "texto";
-      if (tipoRaw.includes("selector")) tipo = "selector";
-      else if (tipoRaw.includes("sí") || tipoRaw.includes("si/")) tipo = "si_no";
-      else if (tipoRaw.includes("num")) tipo = "numerico";
+  // 🧠 Detección extendida de tipos
+  let tipo = "texto";
+  if (tipoRaw.includes("selector")) tipo = "selector";
+  else if (tipoRaw.includes("sí") || tipoRaw.includes("si/")) tipo = "si_no";
+  else if (tipoRaw.includes("num")) tipo = "numerico";
+  else if (tipoRaw.includes("moneda")) tipo = "moneda";
+  else if (tipoRaw.includes("fecha")) tipo = "fecha";
+  // 🚀 Casos donde el CSV trae “Texto” pero la propiedad 1 dice “Sin hora” → forzamos fecha
+  else if (prop1.includes("sin hora")) tipo = "fecha";
 
-      campos.push({
-        id: this.generateId(),
-        ref, nombre, tipo,
-        opciones: []
-      });
-    }
+  campos.push({
+    id: this.generateId(),
+    ref, nombre, tipo,
+    opciones: []
+  });
+}
+
 
     console.log("✔️ Campos importados del tesauro:", campos.length);
     console.table(campos.map(c => ({ ref: c.ref, nombre: c.nombre, tipo: c.tipo })));
@@ -991,18 +1025,44 @@ importTesauroFromCSV(mainCSV, valCSV = null) {
       }
     }
 
-    // ================================================
-    // 4) GUARDAR Y REFRESCAR
-    // ================================================
-    this.campos = campos;
+// 🧩 MEZCLAR SIN DUPLICAR Y MANTENER TIPOS
+const refsExistentes = new Map(this.campos.map(c => [c.ref.toLowerCase(), c]));
+const nuevosUnicos = [];
 
-    if (window.Engine) {
-      Engine.tesauro = [...campos];
+for (const nuevo of campos) {
+  const refLower = nuevo.ref.toLowerCase();
+  const existente = refsExistentes.get(refLower);
+
+  if (!existente) {
+    nuevosUnicos.push(nuevo);
+  } else {
+    // 🧠 Si ya existe pero el CSV tiene tipo más específico (no "texto"), actualiza tipo
+    if (existente.tipo === "texto" && nuevo.tipo !== "texto") {
+      existente.tipo = nuevo.tipo;
+      console.log(`🔄 Actualizado tipo de ${existente.ref} → ${existente.tipo}`);
     }
+  }
+}
 
+if (nuevosUnicos.length) {
+  this.campos.push(...nuevosUnicos);
+  console.log(`🧩 ${nuevosUnicos.length} nuevos campos añadidos al tesauro.`);
+} else {
+  console.log("ℹ️ No se añadieron nuevos campos (todos ya existían).");
+}
+
+// ✅ Sincronizar y refrescar
+if (window.Engine) Engine.tesauro = [...this.campos];
+this.sync();
+this.render();
+
+alert(`✅ Tesauro importado correctamente (${nuevosUnicos.length} nuevos o actualizados).`);
+    // 4️⃣ GUARDAR Y REFRESCAR
+    if (window.Engine) Engine.tesauro = [...this.campos];
+    this.sync();
     this.render();
 
-    alert(`Tesauro importado correctamente (${campos.length} campos)`);
+    alert(`✅ Tesauro importado correctamente (${nuevosUnicos.length} campos nuevos)`);
 
   } catch (err) {
     console.error("❌ Error al importar Tesauro:", err);
@@ -1065,6 +1125,8 @@ importTesauroFromCSV(mainCSV, valCSV = null) {
       case "si_no": return "Sí / No";
       case "numerico": return "Numérico";
       case "texto": return "Texto";
+      case "fecha": return "Fecha";
+      case "moneda": return "Moneda";
       default: return tipo;
     }
   },
@@ -1135,14 +1197,17 @@ DataTesauro.exportTesauroCSV = function() {
       case "texto": return "Texto";
       case "numerico": return "Numérico";
       case "si_no": return "Sí/No";
+      case "fecha": return "Fecha";
+      case "moneda": return "Moneda";
       default: return t || "";
     }
   };
 
   const rows1 = lista.map(c => {
     const tipoVisible = traducirTipo(c.tipo);
-    const propiedad1 = (c.tipo === "si_no") ? "Botones" : ""; // ✅ Botones para Sí/No
-
+      let propiedad1 = "";
+      if (c.tipo === "si_no") propiedad1 = "Botones";
+      if (c.tipo === "fecha") propiedad1 = "Sin hora";
     return [
       "",                                // Nombre Entidad
       "No",                              // Sobrescribir
