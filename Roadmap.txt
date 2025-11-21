@@ -1,0 +1,15 @@
+FUNCIONALIDADES
+
+1. Spin OFF tesauros: 
+  1.1 import tabla nombres ---> convertir a CSV
+  1.2 Normalizar clasificación
+  1.3 Momento de captura, Agrupación
+
+2. Grupos y usuarios
+  2.1 Import y export a CSV
+  2.2 Agrupar en colapsable No asignados
+  2.3 Sugerir uno existente en la lista o crear nuevo grupo/usuario
+
+AJSUTE
+
+Import copypaste varias asignaciones
