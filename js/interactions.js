@@ -642,6 +642,17 @@ window.addEventListener("mouseup", (e) => {
   }
 
   window.addEventListener("keydown", (e) => {
+    // 🚫 BLOQUEAR WASD SI ESTÁS EDITANDO TEXTO
+const el = document.activeElement;
+const writing =
+    el &&
+    (
+        el.tagName === "INPUT" ||
+        el.tagName === "TEXTAREA" ||
+        el.isContentEditable
+    );
+
+if (writing) return;  // ❌ NO MOVER EL CANVAS
     const key = e.key.toLowerCase();
     if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "shift"].includes(key)) {
       keys.add(key);

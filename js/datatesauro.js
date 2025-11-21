@@ -1162,10 +1162,19 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   const btnTesCSV = document.getElementById("btnExportTesauro");
   if (btnTesCSV) {
-    btnTesCSV.addEventListener("click", () => DataTesauro.exportTesauroCSV());
+    btnTesCSV.addEventListener("click", () => {
+
+      // 1️⃣ Export Tesauro principal
+      DataTesauro.exportTesauroCSV();
+
+      
+
+      // 3️⃣ Export Vinculación Tesauros
+      DataTesauro.exportTesauroVinculacionCSV();
+
+    });
   }
 });
-
 /* ============================================================
    EXPORTAR TESAURO A DOS CSVs:
    1️⃣ Tesauro.csv → todos los campos
@@ -1178,6 +1187,18 @@ DataTesauro.exportTesauroCSV = function() {
     return;
   }
 
+  // === PROMPT DE ENTIDAD (igual que exportFlujoCSV) ===
+  if (window.Engine) {
+    let entidad = prompt("Informe nombre de la entidad a configurar:", Engine.fichaProyecto.entidad || "");
+    if (!entidad) entidad = "Informe nombre de la entidad a configurar";
+    Engine.fichaProyecto.entidad = entidad;
+  }
+  // === PROMPT DE AGRUPACIÓN (solo para Tesauro) ===
+  if (window.Engine) {
+    let agrup = prompt("Indique Agrupación:", Engine.fichaProyecto.agrupacion || "");
+    if (!agrup) agrup = "";
+    Engine.fichaProyecto.agrupacion = agrup;
+  }
   // ===========================================================
   // 1️⃣ TESAURO PRINCIPAL
   // ===========================================================
@@ -1205,23 +1226,30 @@ DataTesauro.exportTesauroCSV = function() {
 
   const rows1 = lista.map(c => {
     const tipoVisible = traducirTipo(c.tipo);
-      let propiedad1 = "";
-      if (c.tipo === "si_no") propiedad1 = "Botones";
-      if (c.tipo === "fecha") propiedad1 = "Sin hora";
+
+    // ⭐ CORRECCIÓN: propiedad1
+    let propiedad1 = "";
+    if (c.tipo === "selector") propiedad1 = "Desplegable";   // ⬅️ NUEVO
+    if (c.tipo === "si_no") propiedad1 = "Botones";
+    if (c.tipo === "fecha") propiedad1 = "Sin hora";
+
     return [
-      "",                                // Nombre Entidad
-      "No",                              // Sobrescribir
-      "No",                              // Eliminar
-      "5.00.00. SIN CLASIFICACIÓN",      // Clasificación
-      c.ref || "",                       // Referencia
-      c.nombre || "",                    // Nombre Castellano
-      "", "", "", "", "",                // Otros idiomas
-      "", "", "", "",                    // Idiomas extra
+      Engine.fichaProyecto.entidad || "",   // Nombre Entidad
+      "No",                                 // Sobrescribir
+      "No",                                 // Eliminar
+      "5.00.00. SIN CLASIFICACIÓN",         // Clasificación
+      c.ref || "",                          // Referencia
+      c.nombre || "",                       // Nombre Castellano
+      "", "", "", "", "",                   // Otros idiomas
+      "", "", "", "",                       // Idiomas extra
       "", "", "", "", "", "", "", "", "", "", // Ayudas
-      tipoVisible,                       // Tipo de campo
-      propiedad1,                        // Propiedad 1
-      "", "", "",                        // Propiedades 2-4
-      "", "", "", ""                     // Momento, Agrupación, Obligatorio, Campo asunto
+      tipoVisible,                           // Tipo de campo
+      propiedad1,                             // ⭐ Propiedad del tipo de campo 1
+      "", "", "",                             // Propiedades 2-4
+        "Tramitación",
+        Engine.fichaProyecto.agrupacion || "",  // ⭐ NUEVO: AGRUPACIÓN
+        "",                                      // Obligatorio
+        ""                                       // Campo asunto
     ];
   });
 
@@ -1270,8 +1298,11 @@ DataTesauro.exportTesauroCSV = function() {
   function clean(t) {
     return (t || "").toString().replace(/\n/g, " ").replace(/;/g, ",").trim();
   }
-  
-};/* ============================================================
+
+};
+
+
+/* ============================================================
    EXPORTAR VALORES DE CAMPOS SELECTOR A CSV (I18N)
    Formato:
    Referencia Tesauro | Referencia I18N | Idioma | Valor
@@ -1320,8 +1351,76 @@ DataTesauro.exportTesauroValoresCSV = function() {
   function clean(t) {
     return (t || "").toString().replace(/\n/g, " ").replace(/;/g, ",").trim();
   }
-  
+
 };
+
+/* ============================================================
+   EXPORTAR VINCULACIÓN TESAUROS
+   Formato:
+   Nombre Entidad | Sobrescribir | Eliminar | Referencia | Actividad |
+   Momento de captura | Agrupación | Obligatorio | Campo asunto
+============================================================ */
+DataTesauro.exportTesauroVinculacionCSV = function() {
+
+  const lista = (window.Engine?.tesauro?.length ? Engine.tesauro : this.campos) || [];
+
+  if (!lista.length) {
+    alert("No hay campos de tesauro definidos para exportar.");
+    return;
+  }
+
+  // Si no existe ficha proyecto, evitar errores
+  const entidad    = Engine.fichaProyecto?.entidad     || "";
+  const actividad  = Engine.fichaProyecto?.actividad   || "";
+  const agrupacion = Engine.fichaProyecto?.agrupacion  || "";
+  const momento    = "Tramitación"; // regla fija
+
+  // Cabeceras
+  const header = [
+    "Nombre Entidad",
+    "Sobrescribir",
+    "Eliminar",
+    "Referencia",
+    "Actividad",
+    "Momento de captura",
+    "Agrupación",
+    "Obligatorio",
+    "Campo asunto"
+  ];
+
+  const rows = lista.map(c => {
+    return [
+      entidad,
+      "No",
+      "No",
+      c.ref || "",
+      actividad,
+      momento,
+      agrupacion,
+      "",
+      ""
+    ];
+  });
+
+  const csv = [header.join(";"), ...rows.map(r => r.map(clean).join(";"))].join("\n");
+
+  // Descargar
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Vinculacion_Tesauros.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+
+  console.log("📄 Exportado Vinculación_Tesauros.csv");
+
+  function clean(t) {
+    return (t || "").toString().replace(/\n/g, " ").replace(/;/g, ",").trim();
+  }
+};
+
 /* ============================================================
    ARRANQUE
 ============================================================ */

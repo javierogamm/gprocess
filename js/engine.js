@@ -20,7 +20,8 @@ const Engine = {
 fichaProyecto: {
     procedimiento: "",
     actividad: "",
-    descripcion: ""
+    descripcion: "",
+    entidad: ""      // ⭐ NUEVO
 },
 // TESAURO (colección de campos personalizados)
 tesauro: [],
@@ -566,6 +567,9 @@ resizeSelectedNodes(scaleFactor) {
     
         if (data.descripcion !== undefined)
             this.fichaProyecto.descripcion = data.descripcion;
+
+        if (data.entidad !== undefined)
+            this.fichaProyecto.entidad = data.entidad;
     
         // ACTUALIZA TÍTULO
         const titleDiv = document.getElementById("projectTitle");
@@ -760,6 +764,12 @@ Engine.importFromCSV = async function(file) {
 ============================================================ */
 Engine.exportFlujoCSV = function() {
 
+        // === PEDIR NOMBRE DE ENTIDAD (dentro de ENGINE) ===
+        let entidad = prompt("Informe nombre de la entidad a configurar:", Engine.fichaProyecto.entidad || "");
+        if (!entidad) entidad = "Informe nombre de la entidad a configurar";
+
+        // guardar en ficha
+        Engine.fichaProyecto.entidad = entidad;
     // --- 1️⃣ Ordenar visualmente los nodos (por Y y luego X)
     const sortedNodes = [...this.data.nodos].sort((a, b) => {
         if (a.y === b.y) return a.x - b.x;
@@ -802,14 +812,14 @@ Engine.exportFlujoCSV = function() {
         const tipoDocumental = esPlazo ? "Certificado" : "";
     
         const generarPlantilla = esDocumento ? "No" : "";
-        const cargarDocumento = esDocumento ? "No" : "";
+        const cargarDocumento = esDocumento ? "Sí" : "";
     
         // 🟢 Fila alineada con headerTareas
         return [
-            "", // Nombre Entidad
+            this.fichaProyecto.entidad || "Informe nombre de la entidad a configurar",
             this.fichaProyecto.actividad || "", // Nombre Actividad
             this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
-            "", // Sobrescribir
+            "No", // **Sobrescribir SIEMPRE 'No'**
             tipoTarea, // Tipo Tarea
             cleanText(n.titulo || ""), // Nombre Tarea
             "", // Días Alerta
@@ -842,7 +852,7 @@ Engine.exportFlujoCSV = function() {
             "", // Circuito documento
             "", // Título documento
             "", // Tipo documental documento
-            "", // Texto plantilla
+            (n.tipo.toLowerCase() === "formulario" ? "Pendiente configurar plantilla" : ""), // Texto plantilla
             "", // Eliminar
             "", // Finalizar en plazo
             "", // Plazo - Número de días
@@ -885,7 +895,7 @@ Engine.exportFlujoCSV = function() {
 
         // 🟩 1️⃣ Fila normal → Lanzar tarea
         condRows.push([
-            "", // Nombre Entidad
+            this.fichaProyecto.entidad || "Informe nombre de la entidad a configurar", // Nombre Entidad
             this.fichaProyecto.actividad || "", // Nombre Actividad
             this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
             nombreOrigen, // Nombre Tarea (origen)
@@ -902,7 +912,7 @@ Engine.exportFlujoCSV = function() {
         // 🟨 2️⃣ Si hay cambio de estado → segunda fila
         if (c.cambioEstado && c.cambioEstado.trim() !== "") {
             condRows.push([
-                "", // Nombre Entidad
+                this.fichaProyecto.entidad || "Informe nombre de la entidad a configurar", // Nombre Entidad
                 this.fichaProyecto.actividad || "", // Nombre Actividad
                 this.fichaProyecto.procedimiento || "", // Nombre Procedimiento
                 nombreOrigen, // Nombre Tarea (origen)
@@ -912,7 +922,7 @@ Engine.exportFlujoCSV = function() {
                 cleanText(c.condicionNombre || ""),
                 (c.condicionNombre || c.condicionValor) ? "Es igual a" : "",
                 cleanText(c.condicionValor || ""),
-                "Cambiar estado", // ✅ Acción alternativa
+                "Cambiar estado del expediente a", // ✅ Acción alternativa
                 cleanText(c.cambioEstado) // ✅ Estado/Tarea = texto del nuevo estado
             ]);
         }
