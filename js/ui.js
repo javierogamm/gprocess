@@ -799,7 +799,7 @@ showGroupProperties() {
         btnAlinear.id = "btnAlignGroup";
         btnAlinear.className = "btn";
         btnAlinear.textContent = "🧭 Alinear selección";
-        btnAlinear.style.background = "#2563eb";
+        btnAlinear.style.background = "#2ab87dff";
         btnAlinear.style.color = "white";
         btnAlinear.style.width = "100%";
         btnAlinear.style.marginTop = "6px";
@@ -810,7 +810,48 @@ showGroupProperties() {
     } else {
         btnAlinear.style.display = "block";
     }
+/* ============================================================
+   BOTONES: EXPANDIR / CONTRAER NODOS
+============================================================ */
+let btnExpand = document.getElementById("btnExpandNodes");
+if (!btnExpand) {
+    btnExpand = document.createElement("button");
+    btnExpand.id = "btnExpandNodes";
+    btnExpand.className = "btn";
+    btnExpand.textContent = "⬌ Expandir nodos";
+    btnExpand.style.background = "#2ab87dff"; // verde
+    btnExpand.style.color = "white";
+    btnExpand.style.width = "100%";
+    btnExpand.style.marginTop = "6px";
 
+    btnExpand.addEventListener("click", () => {
+        Engine.adjustSelectedNodes(25);
+    });
+
+    this.propsEditor.appendChild(btnExpand);
+} else {
+    btnExpand.style.display = "block";
+}
+
+let btnContract = document.getElementById("btnContractNodes");
+if (!btnContract) {
+    btnContract = document.createElement("button");
+    btnContract.id = "btnContractNodes";
+    btnContract.className = "btn";
+    btnContract.textContent = "⬍ Contraer nodos";
+    btnContract.style.background = "#73ab93ff"; // rojo
+    btnContract.style.color = "white";
+    btnContract.style.width = "100%";
+    btnContract.style.marginTop = "6px";
+
+    btnContract.addEventListener("click", () => {
+        Engine.adjustSelectedNodes(-25);
+    });
+
+    this.propsEditor.appendChild(btnContract);
+} else {
+    btnContract.style.display = "block";
+}
 // ============================================================
 // 🔥 Botón eliminar — siempre el último elemento visible
 // ============================================================

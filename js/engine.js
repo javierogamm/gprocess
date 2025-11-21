@@ -1722,6 +1722,50 @@ document.addEventListener("click", (e) => {
           .forEach(el => el.classList.remove("selected-conn"));
     }
 });
+/* ============================================================
+   EXPANDIR / CONTRAER nodos desde su centro geométrico
+============================================================ */
+Engine.adjustSelectedNodes = function(delta) {
+    const ids = Array.from(Interactions.selectedNodes || []);
+    if (ids.length < 2) return;
+
+    // 1️⃣ Conseguir los nodos
+    const nodos = ids.map(id => Engine.getNode(id)).filter(Boolean);
+
+    // 2️⃣ Calcular centro geométrico
+    const cx = nodos.reduce((a,n)=>a+n.x+n.width/2,0) / nodos.length;
+    const cy = nodos.reduce((a,n)=>a+n.y+n.height/2,0) / nodos.length;
+
+    // 3️⃣ Ver si están alineados
+    const sameY = nodos.every(n => Math.abs((n.y+n.height/2) - cy) < 5);
+    const sameX = nodos.every(n => Math.abs((n.x+n.width/2) - cx) < 5);
+
+    nodos.forEach(n => {
+
+        // Desplazamiento en coordenadas
+        let dx = (n.x + n.width/2 - cx) === 0 ? 0 :
+                 Math.sign(n.x + n.width/2 - cx) * delta;
+
+        let dy = (n.y + n.height/2 - cy) === 0 ? 0 :
+                 Math.sign(n.y + n.height/2 - cy) * delta;
+
+        // Si están alineados solo mover en 1 eje
+        if (sameY) dy = 0;
+        if (sameX) dx = 0;
+
+        n.x += dx;
+        n.y += dy;
+
+        const div = document.getElementById(n.id);
+        if (div) {
+            div.style.left = n.x + "px";
+            div.style.top  = n.y + "px";
+        }
+    });
+
+    Renderer.redrawConnections();
+    Engine.saveHistory();
+};
 
 window.Engine = Engine; // ✅ expone Engine en window para que DataTesauro lo vea
 
