@@ -10,6 +10,6 @@ FUNCIONALIDADES
   2.2 Agrupar en colapsable No asignados
   2.3 Sugerir uno existente en la lista o crear nuevo grupo/usuario
 
-AJSUTE
+AJUSTES
 
-Import copypaste varias asignaciones
+Import copypaste varias asignaciones //DONE
