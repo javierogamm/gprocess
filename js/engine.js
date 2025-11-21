@@ -25,6 +25,12 @@ fichaProyecto: {
 },
 // TESAURO (colección de campos personalizados)
 tesauro: [],
+
+// ⭐ NUEVO — POOL GLOBAL DE ASIGNACIONES
+asignaciones: {
+    grupos: new Set(),
+    usuarios: new Set()
+},
     /* -------------------------------------------
        CONTROL DE SELECCIÓN
     -------------------------------------------- */
@@ -112,16 +118,23 @@ tesauro: [],
    EXPORTAR TODO EL DIAGRAMA A JSON
 ============================================================ */
 exportToJSON() {
-    const full = {
-        fichaProyecto: this.fichaProyecto,
-        // Tesauro: prioriza Engine; si está vacío, coge lo del panel
-        tesauro: (Array.isArray(this.tesauro) && this.tesauro.length > 0)
-            ? this.tesauro.map(x => ({...x}))
-            : (window.DataTesauro ? DataTesauro.campos.map(x => ({...x})) : []),
-        nodos: this.data.nodos,
-        conexiones: this.data.conexiones
-    };
+const full = {
+    fichaProyecto: this.fichaProyecto,
 
+    // Tesauro (igual que antes)
+    tesauro: (Array.isArray(this.tesauro) && this.tesauro.length > 0)
+        ? this.tesauro.map(x => ({...x}))
+        : (window.DataTesauro ? DataTesauro.campos.map(x => ({...x})) : []),
+
+    // ⭐ NUEVO: Pool global de asignaciones
+    asignaciones: {
+        grupos: Array.from(this.asignaciones.grupos || []),
+        usuarios: Array.from(this.asignaciones.usuarios || [])
+    },
+
+    nodos: this.data.nodos,
+    conexiones: this.data.conexiones
+};
     const dataString = JSON.stringify(full, null, 2);
 
     let nombreProceso = this.fichaProyecto.procedimiento?.trim() || "SinNombre";
@@ -163,19 +176,22 @@ importFromJSON(jsonString) {
         this.fichaProyecto = {
             procedimiento: parsed.fichaProyecto?.procedimiento || "",
             actividad:     parsed.fichaProyecto?.actividad     || "",
-            descripcion:   parsed.fichaProyecto?.descripcion   || ""
+            descripcion:   parsed.fichaProyecto?.descripcion   || "",
+            entidad:       parsed.fichaProyecto?.entidad       || ""
         };
+
         const titleDiv = document.getElementById("projectTitle");
         if (titleDiv) titleDiv.innerText = this.fichaProyecto.procedimiento || "";
 
         // 2) Validación
         if (!parsed.nodos || !parsed.conexiones) {
-            alert("❌ JSON sin nodos o conexiones."); return;
+            alert("❌ JSON sin nodos o conexiones."); 
+            return;
         }
 
         this.saveHistory();
 
-        // 3) Cargar datos
+        // 3) Cargar nodos y conexiones
         this.data = {
             nodos: parsed.nodos,
             conexiones: parsed.conexiones
@@ -187,17 +203,56 @@ importFromJSON(jsonString) {
         } else {
             this.tesauro = [];
         }
-        document.dispatchEvent(                                  // ✅
+
+        // ============================================================
+        // ⭐ 5) POOL DE ASIGNACIONES
+        // ============================================================
+
+        // Crear si no existe
+        if (!this.asignaciones) {
+            this.asignaciones = {
+                grupos: new Set(),
+                usuarios: new Set()
+            };
+        }
+
+        // 5A — Si el JSON trae listas completas → cargarlas
+        if (parsed.asignaciones) {
+            (parsed.asignaciones.grupos || []).forEach(g => 
+                this.asignaciones.grupos.add(g)
+            );
+            (parsed.asignaciones.usuarios || []).forEach(u => 
+                this.asignaciones.usuarios.add(u)
+            );
+        }
+
+        // 5B — Añadir asignaciones que vengan en los NODOS
+        this.data.nodos.forEach(n => {
+            const g = (n.asignadoA || "").trim();
+            const u = (n.asignadoUsuario || "").trim();
+            if (g) this.asignaciones.grupos.add(g);
+            if (u) this.asignaciones.usuarios.add(u);
+        });
+
+        // ------------------------------------------------------------
+        // 🔄 Actualizar los desplegables UI al terminar
+        // ------------------------------------------------------------
+        if (window.UI && typeof UI.updateAsignacionesList === "function") {
+            UI.updateAsignacionesList();
+        }
+
+        // Sincronizar Tesauro
+        document.dispatchEvent(
             new CustomEvent("tesauroUpdated", { detail: { source: "Engine:import" } })
-          );
-        // Si existe el panel, sincronizar y pintar
+        );
         if (window.DataTesauro) {
             DataTesauro.campos = this.tesauro.map(x => ({...x}));
             DataTesauro.render();
         }
+
         console.log(`📚 Tesauro cargado con ${this.tesauro.length} campos.`);
 
-        // 5) Redibujar
+        // 6) Redibujar
         Renderer.clearAll();
         this.data.nodos.forEach(n => Renderer.renderNode(n));
         this.data.conexiones.forEach(c => Renderer.drawConnection(c));
@@ -205,13 +260,40 @@ importFromJSON(jsonString) {
         this.saveHistory();
         UI.clear();
 
-        console.log("✅ Diagrama importado correctamente (incluyendo ficha y tesauro).");
+        console.log("✅ Diagrama importado correctamente (incluyendo ficha, tesauro y asignaciones).");
+
     } catch (err) {
         console.error("❌ Error al importar JSON:", err);
         alert("Error al importar el archivo JSON. Revisa la consola.");
     }
 },
 
+// ⭐ NUEVO — IMPORTAR CSV DE ASIGNACIONES (POOL)
+importarAsignacionesDesdeCSV(csvText) {
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return;
+
+    // Detectar columnas
+    const header = lines[0].split(/[,;\t]/).map(h => h.trim().toLowerCase());
+    const idxGrupo = header.indexOf("grupo");
+    const idxUsuario = header.indexOf("usuario");
+
+    if (idxGrupo === -1 && idxUsuario === -1) {
+        alert("❌ El CSV debe tener columnas 'Grupo' y/o 'Usuario'.");
+        return;
+    }
+
+    lines.slice(1).forEach(line => {
+        const cols = line.split(/[,;\t]/);
+        const grupo = cols[idxGrupo] || "";
+        const usuario = cols[idxUsuario] || "";
+
+        if (grupo.trim()) this.addGrupo(grupo.trim());
+        if (usuario.trim()) this.addUsuario(usuario.trim());
+    });
+
+    alert("✅ Asignaciones importadas correctamente.");
+},
 
 /* ============================================================
    ACTUALIZAR TODAS LAS CONEXIONES (al mover nodos)
@@ -230,9 +312,18 @@ updateConnections() {
     getConnection(id) {
         return this.data.conexiones.find(c => c.id === id);
     },
-/* ============================================================
-   ALINEAR NODOS SELECCIONADOS (X o Y)
-============================================================ */
+
+    // ⭐ NUEVO — AÑADIR GRUPO AL POOL
+addGrupo(nombre) {
+    if (!nombre) return;
+    this.asignaciones.grupos.add(nombre.trim());
+},
+
+// ⭐ NUEVO — AÑADIR USUARIO AL POOL
+addUsuario(nombre) {
+    if (!nombre) return;
+    this.asignaciones.usuarios.add(nombre.trim());
+},
 /* ============================================================
    ALINEAR NODOS SELECCIONADOS (por CENTRO en eje X o Y)
 ============================================================ */
@@ -426,11 +517,10 @@ alignSelectedNodes() {
         this.saveHistory();
     },
 
-   updateNode(id, props) {
+  updateNode(id, props) {
     const nodo = this.getNode(id);
     if (!nodo) return;
     
-    // Solo estos dos afectan al contenido visual
     let requiereActualizarTexto = false;
     
     if (props.titulo !== undefined) {
@@ -443,20 +533,26 @@ alignSelectedNodes() {
         requiereActualizarTexto = true;
     }
 
-    // 🔥 Esto NO afecta a la forma, altura ni texto
     if (props.tareaManual !== undefined) {
         nodo.tareaManual = props.tareaManual;
     }
+
     if (props.asignadoA !== undefined) {
         nodo.asignadoA = props.asignadoA;
     }
-    // Solo actualiza texto si es necesario
+
+    // ⭐ AQUI EL FALLO — NO LO TENÍAS
+    if (props.asignadoUsuario !== undefined) {
+        nodo.asignadoUsuario = props.asignadoUsuario;
+    }
+
     if (requiereActualizarTexto) {
         Renderer.updateNodeLabel(id);
     }
 
     this.saveHistory();
 },
+
 
 
     /* ============================================================

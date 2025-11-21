@@ -290,11 +290,7 @@ grupos.forEach(gr => {
 // ===========================================================
 html += `
   <div class="tesauro-import-zone" style="margin-top:16px; border-top:1px solid #ccc; padding-top:8px;">
-    <button id="btnImportTesauro" class="btn btn-import" 
-            style="width:100%; background:#e0f2fe; border:1px solid #60a5fa; border-radius:6px;">
-      📥 Importar Tesauro
-    </button>
-    <div id="dropZoneTesauro" class="drop-zone hidden"
+        <div id="dropZoneTesauro" class="drop-zone hidden"
          style="margin-top:8px; padding:20px; border:2px dashed #60a5fa; border-radius:10px; 
                 text-align:center; color:#0369a1;">
       Arrastra aquí <strong>Tesauro.csv</strong> y <strong>Tesauro_Valores.csv</strong>
@@ -306,8 +302,24 @@ html += `
             style="width:100%; background:#fef3c7; border:1px solid #f59e0b; border-radius:6px;">
       ⚡ Transformar condiciones a Tesauros
     </button>
+
     <input id="inputTransformCondiciones" type="file" accept=".json"
            style="display:none;">
+
+    <!-- ⭐ NUEVO BOTÓN VERDE -->
+    <button id="btnTesauroManager" class="btn btn-manager"
+            style="
+              width:100%;
+              margin-top:8px;
+              background:#d1fae5;
+              border:1px solid #10b981;
+              border-radius:6px;
+              color:#065f46;
+              font-weight:bold;
+            ">
+      🧩 Gestor Completo de Tesauros
+    </button>
+
   </div>
 `;
 
@@ -315,6 +327,18 @@ html += `
   // 🧩 Inyectar y vincular eventos dinámicos
   // ===========================================================
   this.listDiv.innerHTML = html;
+
+  const btnManager = this.listDiv.querySelector("#btnTesauroManager");
+if (btnManager) {
+    btnManager.addEventListener("click", () => {
+        console.log("🧩 Abriendo TesauroManager…");
+        if (window.TesauroManager?.open) {
+            TesauroManager.open();
+        } else {
+            alert("TesauroManager.js no está cargado.");
+        }
+    });
+}
 
   /* ------------------------------------------
      🎛️ Colapsar/expandir grupos

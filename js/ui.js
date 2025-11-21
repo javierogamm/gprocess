@@ -36,6 +36,30 @@ const UI = {
         this.inputDescripcion = document.getElementById("propDescripcion");
         this.inputTareaManual = document.getElementById("propTareaManual");
         this.inputAsignadoA = document.getElementById("propAsignadoA");
+
+                    /* ========================================================
+            AUTOCOMPLETAR PARA GRUPOS Y USUARIOS
+            ======================================================== */
+
+            // Crear <datalist> para grupos si no existe
+            if (!document.getElementById("dlGrupos")) {
+                const dlG = document.createElement("datalist");
+                dlG.id = "dlGrupos";
+                document.body.appendChild(dlG);
+            }
+
+            // Crear <datalist> para usuarios si no existe
+            if (!document.getElementById("dlUsuarios")) {
+                const dlU = document.createElement("datalist");
+                dlU.id = "dlUsuarios";
+                document.body.appendChild(dlU);
+            }
+
+            // Asociar datalist al input de Grupo
+            if (this.inputAsignadoA) {
+                this.inputAsignadoA.setAttribute("list", "dlGrupos");
+            }
+
         /* ========================================================
    RENOMBRAR EL CAMPO EXISTENTE → "Asignado a Grupo"
    Y CREAR "Asignado a Usuario" (dinámico)
@@ -72,23 +96,22 @@ const UI = {
         this.propsEditor.appendChild(inputUsuario);
     }
 
-    this.inputAsignadoUsuario = inputUsuario;
+this.inputAsignadoUsuario = inputUsuario;
 
-   this.inputAsignadoUsuario.addEventListener("input", () => {
+// ⭐ Asignar datalist AHORA (aquí sí existe el input)
+this.inputAsignadoUsuario.setAttribute("list", "dlUsuarios");
+
+// ⭐ Guardar usuario en el nodo
+this.inputAsignadoUsuario.addEventListener("change", () => {
     if (!this.currentNodeId) return;
 
-    const nodo = Engine.getNode(this.currentNodeId);
-    if (!nodo) return;
+    const valor = this.inputAsignadoUsuario.value.trim();
+    Engine.updateNode(this.currentNodeId, { asignadoUsuario: valor });
 
-    // 💾 Guardar directamente en el nodo (igual que hace AsignadoA)
-    nodo.asignadoUsuario = this.inputAsignadoUsuario.value.trim();
-
-    // 🔁 Actualizar Engine e historial
-    Engine.updateNode(this.currentNodeId, { asignadoUsuario: nodo.asignadoUsuario });
-    Engine.saveHistory(); // 👈 ESTO FALTABA
-
-    console.log("💾 Guardado asignadoUsuario:", nodo.asignadoUsuario);
+    if (valor) Engine.addUsuario(valor);   // añade al pool global
+    UI.updateAsignacionesList();           // refresca autocompletar
 });
+
 })();
 /* ========================================================
    CONTROL DE COLOR DE NODO 🎨
@@ -334,14 +357,15 @@ colorBtn.addEventListener("click", async () => {
                 /* ========================================================
         INPUT TEXTO — Asignado A
         ======================================================== */
-        this.inputAsignadoA.addEventListener("input", () => {
-            if (this.currentNodeId) {
-                Engine.updateNode(this.currentNodeId, {
-                    asignadoA: this.inputAsignadoA.value.trim()
-                });
-            }
-        });
-   
+            this.inputAsignadoA.addEventListener("change", () => {
+                if (!this.currentNodeId) return;
+                const valor = this.inputAsignadoA.value.trim();
+
+                Engine.updateNode(this.currentNodeId, { asignadoA: valor });
+
+                if (valor) Engine.addGrupo(valor);   // ⭐ añade al pool
+                UI.updateAsignacionesList();         // ⭐ refresca autocomplete
+            });   
 
         /* ========================================================
            BOTONES DESHACER / REHACER
@@ -497,7 +521,23 @@ canvas.addEventListener("drop", (e) => {
 });
 
     },
+/* ========================================================
+   RELLENAR AUTOCOMPLETAR GRUPOS / USUARIOS
+======================================================== */
+updateAsignacionesList() {
+    const dlG = document.getElementById("dlGrupos");
+    const dlU = document.getElementById("dlUsuarios");
 
+    if (!dlG || !dlU) return;
+
+    dlG.innerHTML = Array.from(Engine.asignaciones.grupos || [])
+        .map(g => `<option value="${g}">`)
+        .join("");
+
+    dlU.innerHTML = Array.from(Engine.asignaciones.usuarios || [])
+        .map(u => `<option value="${u}">`)
+        .join("");
+},
     /* ========================================================
        PANEL PARA CONEXIONES — con botón Eliminar
     ======================================================== */
@@ -570,6 +610,7 @@ showNodeProperties(id) {
     this.currentConnId = null;
     toggleRightPanel(true);
     const nodo = Engine.getNode(id);
+    UI.updateAsignacionesList();
     if (!nodo) return;
     // Ocultar campo AsignadoA (grupo)
     const labelAsignadoGroup = document.getElementById("lblAsignadoGroup");
@@ -689,7 +730,7 @@ btnEliminar.style.display = "block";
 showGroupProperties() {
     this.currentNodeId = null;
     this.currentConnId = null;
-
+    UI.updateAsignacionesList();
     // Mostrar el panel principal y ocultar los otros
     this.propsEmpty.style.display = "none";
     this.propsEditor.style.display = "block";

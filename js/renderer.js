@@ -791,11 +791,34 @@ if (!path.__dndBound) {
 
 // 🟦 Área de clic invisible (gruesa, encima)
 const hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
+// --- HABILITAR DROP TAMBIÉN EN EL HIT ---
+if (!hit.__dndBound) {
+
+    hit.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        hit.classList.add("conn-drop-over");
+    });
+
+    hit.addEventListener("dragleave", () => {
+        hit.classList.remove("conn-drop-over");
+    });
+
+    hit.addEventListener("drop", (e) => {
+        hit.classList.remove("conn-drop-over");
+        if (window.handleTesauroDrop) {
+            window.handleTesauroDrop(e, conn.id);
+        }
+    });
+
+    hit.__dndBound = true;
+}
 hit.setAttribute("d", d);
 hit.setAttribute("stroke", "rgba(0,0,0,0.001)"); // casi invisible pero capta eventos
 hit.setAttribute("stroke-width", "30");
 hit.setAttribute("fill", "none");
-hit.setAttribute("pointer-events", "all");
+hit.setAttribute("pointer-events", "stroke");
+hit.setAttribute("stroke-width", "40");
 hit.classList.add("connection-hit");
 hit.style.cursor = "pointer";
 

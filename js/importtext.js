@@ -219,7 +219,15 @@ import(texto) {
         if (!nodoActualId) return;
 
         const txt = linea.trim();
-
+// ❌ Ignorar cualquier línea indentada que NO sea acción real
+// (parche: ignoramos segundas asignaciones, nombres, unidades, basura)
+if (
+    !/^Sólo si/i.test(txt) &&
+    !/^Lanzar tarea/i.test(txt) &&
+    !/^Cambiar estado/i.test(txt)
+) {
+    return; // ignorar completamente la línea
+}
         // 1) Condición
         if (/^Sólo si/i.test(txt)) {
             const match = txt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
