@@ -1083,20 +1083,26 @@ Engine.importFlujoCSV = async function(files) {
         alert("Error al importar el flujo. Revisa la consola para más detalles.");
     }
 };
-// Escucha clic del botón
-document.getElementById("btnImportFlujo").addEventListener("click", () => {
-    const input = document.getElementById("inputFlujoCSV");
-    input.value = ""; // limpiar selección anterior
-    input.click();    // abrir selector de archivos
-});
+// Escucha clic del botón (solo si existe)  **CAMBIO**
+const btnImportFlujo = document.getElementById("btnImportFlujo");
+if (btnImportFlujo) {                              // **CAMBIO**
+    btnImportFlujo.addEventListener("click", () => {
+        const input = document.getElementById("inputFlujoCSV");
+        if (!input) return;                        // **CAMBIO** seguridad extra
+        input.value = ""; // limpiar selección anterior
+        input.click();    // abrir selector de archivos
+    });
+}
 
-// Escucha selección de archivos CSV
-document.getElementById("inputFlujoCSV").addEventListener("change", (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    Engine.importFlujoCSV(files); // 👈 usa la función que te di antes
-});
-
+// Escucha selección de archivos CSV (solo si existe)  **CAMBIO**
+const inputFlujoCSV = document.getElementById("inputFlujoCSV");
+if (inputFlujoCSV) {                               // **CAMBIO**
+    inputFlujoCSV.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        Engine.importFlujoCSV(files); // 👈 usa la función que te di antes
+    });
+}
 
 // VISUALIZACIÓN DE TAREAS
 document.getElementById("btnVerCSV").addEventListener("click", () => {
@@ -1244,12 +1250,6 @@ modal.classList.remove("hidden");
 
 };
 
-document.getElementById("csvCerrar").addEventListener("click", () => {
-    document.getElementById("csvModal").classList.add("hidden");
-});
-document.getElementById("btnExportDocx").addEventListener("click", () => {
-    Engine.exportToDOCX();
-});
 
 Engine.exportToDOCX = async function() {
     // 🔒 Cargar docx si no está en window
@@ -1725,3 +1725,21 @@ document.addEventListener("click", (e) => {
 
 window.Engine = Engine; // ✅ expone Engine en window para que DataTesauro lo vea
 
+window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("btnExportDocx").addEventListener("click", () => {
+        Engine.exportToDOCX();
+    });
+
+    document.getElementById("btnVerCSV").addEventListener("click", () => {
+        Engine.showCSVPreview();
+    });
+
+    // **NUEVO**: cerrar el modal de vista previa CSV
+    const btnCsvCerrar = document.getElementById("csvCerrar");   // **NUEVO**
+    if (btnCsvCerrar) {                                          // **NUEVO**
+        btnCsvCerrar.addEventListener("click", () => {           // **NUEVO**
+            const modal = document.getElementById("csvModal");   // **NUEVO**
+            if (modal) modal.classList.add("hidden");            // **NUEVO**
+        });                                                      // **NUEVO**
+    }                                                            // **NUEVO**
+});

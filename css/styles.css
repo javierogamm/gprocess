@@ -407,6 +407,8 @@ input {
     z-index: 9999;
     opacity: 0.80;
 }
+
+/* Este es el modal popup de ver CSV */
 .modal {
     position: fixed;
     inset: 0;
@@ -416,6 +418,38 @@ input {
     align-items: center;
     z-index: 9999;
   }
+
+  /* Cabecera del modal (título + X roja a la derecha) */
+.csv-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+/* Botón X roja */
+.csv-close-btn {
+    border: none;
+    background: transparent;
+    font-size: 26px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    color: #dc2626; /* rojo */
+    padding: 0 6px;
+}
+
+.csv-close-btn:hover {
+    color: #b91c1c;
+    transform: scale(1.15);
+}
+
+/* Aseguramos que el contenido es desplazable */
+.csv-content {
+    overflow-y: auto;
+    max-height: calc(85vh - 70px);
+    padding-right: 6px;
+}
   .modal.hidden {
     display: none;
   }

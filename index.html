@@ -51,7 +51,7 @@
                      </script>
      <hr>
      <!-- Botón de Export WORD comentado para evitar uso de librerias de momento -->
-     <button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX
+     <button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX</button>
      <button class="btn" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
      <button class="btn" id="btnExportTesauro">📤 Exportar tesauro CSV</button>
 
@@ -86,8 +86,10 @@
             <svg id="svgConnections"></svg>
             <div id="nodesContainer"></div>
     </div>
-        <div id="projectTitle"></div>
+    <div id="projectTitle">
+
     </div>
+    
     <!-- 🔘 Botón flotante -->
     <button id="btnAsignaciones" class="floating-assign-btn">📋 Asignaciones</button>
     <button id="btnCambiosEstado" class="floating-cambios-btn">🔄 Cambios de estado</button>
@@ -162,15 +164,20 @@
     <!-- =========================
         POPUP PREVISUALIZAR CSV
     ========================= -->
-    <div id="csvModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Vista previa del flujo (CSV)</h2>
-            <div id="csvContent" class="csv-content"></div>
-            <button id="csvCerrar" class="btn">Cerrar</button>
-        </div>
-    </div>
+<div id="csvModal" class="modal hidden">
+    <div class="modal-content">
 
-   <!-- =========================
+        <!-- 🔹 CABECERA -->
+        <div class="csv-modal-header">
+            <h2>Vista previa del flujo (CSV)</h2>
+            <button id="csvCerrar" class="csv-close-btn" aria-label="Cerrar">&times;</button>
+        </div>
+
+        <!-- 🔹 CONTENIDO -->
+        <div id="csvContent" class="csv-content"></div>
+
+    </div>
+</div>   <!-- =========================
     SCRIPTS (ORDEN CORRECTO)
 ========================= -->
  <!-- 1️⃣ Librerías externas  -->
