@@ -5,11 +5,11 @@ FUNCIONALIDADES
   1.2 Normalizar clasificación
   1.3 Momento de captura, Agrupación
 
-2. Grupos y usuarios
-  2.1 Import y export a CSV
-  2.2 Agrupar en colapsable No asignados
-  2.3 Sugerir uno existente en la lista o crear nuevo grupo/usuario
+2. Grupos y usuarios 
+  2.1 Import y export a CSV // DONE copypaste
+  2.3 Sugerir uno existente en la lista o crear nuevo grupo/usuario // DONE
 
 AJUSTES
 
 Import copypaste varias asignaciones //DONE
+Grupos y usuarios 2.2 Agrupar en colapsable No asignados 
