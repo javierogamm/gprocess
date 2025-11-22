@@ -290,11 +290,19 @@ grupos.forEach(gr => {
 // ===========================================================
 html += `
   <div class="tesauro-import-zone" style="margin-top:16px; border-top:1px solid #ccc; padding-top:8px;">
-        <div id="dropZoneTesauro" class="drop-zone hidden"
-         style="margin-top:8px; padding:20px; border:2px dashed #60a5fa; border-radius:10px; 
-                text-align:center; color:#0369a1;">
-      Arrastra aquí <strong>Tesauro.csv</strong> y <strong>Tesauro_Valores.csv</strong>
-    </div>
+            <!-- ⭐ NUEVO BOTÓN: Importar Tesauro CSV -->
+    <button id="btnImportTesauro" class="btn"
+            style="width:100%; margin-top:8px; background:#e0f2fe; border:1px solid #38bdf8; border-radius:6px; color:#0369a1; font-weight:bold;">
+      📥 Importar Tesauro CSV
+    </button>
+
+    <!-- Input oculto real (1 o 2 archivos) -->
+    <input 
+        type="file" 
+        id="inputTesauroFiles" 
+        accept=".csv" 
+        multiple 
+        style="display:none;">
   </div>
 
   <div class="tesauro-transform-zone" style="margin-top:10px;">
@@ -481,87 +489,79 @@ if (normalizados.includes("si") || normalizados.includes("no")) {
   });
 }
 
-// 🆕 === IMPORTACIÓN TESAURO: botón + drag & drop ===
+// 🆕 === IMPORTACIÓN TESAURO: botón + selector de archivos ===
 const btnImport = this.listDiv.querySelector("#btnImportTesauro");
-const dropZone  = this.listDiv.querySelector("#dropZoneTesauro");
 
-if (btnImport && dropZone) {
+if (btnImport) {
 
-  // Mostrar / ocultar zona de importación
+  // Crear input file oculto
+  let inputFiles = document.getElementById("inputTesauroFiles");
+  if (!inputFiles) {
+    inputFiles = document.createElement("input");
+    inputFiles.id = "inputTesauroFiles";
+    inputFiles.type = "file";
+    inputFiles.accept = ".csv";
+    inputFiles.multiple = true;  // ⭐ Permite seleccionar 1 o 2 archivos
+    inputFiles.style.display = "none";
+    document.body.appendChild(inputFiles);
+  }
+
+  // Al pulsar el botón → abrir selector
   btnImport.addEventListener("click", () => {
-    dropZone.classList.toggle("hidden");
+    inputFiles.value = "";
+    inputFiles.click();
   });
 
-  // Efectos visuales
-  ["dragenter","dragover"].forEach(evt => {
-    dropZone.addEventListener(evt, e => {
-      e.preventDefault();
-      dropZone.style.background = "#e0f7ff";
-    });
-  });
-  ["dragleave","drop"].forEach(evt => {
-    dropZone.addEventListener(evt, e => {
-      e.preventDefault();
-      dropZone.style.background = "transparent";
-    });
-  });
-
-  // Al soltar archivos
-dropZone.addEventListener("drop", async e => {
-  e.preventDefault();
-
-  const files = [...e.dataTransfer.files];
-if (files.length < 1) {
-    console.warn("❌ Debes soltar al menos un CSV.");
-    return;
-}
-  console.log("🔥 Archivos recibidos:");
-  files.forEach(f => console.log(" - ", f.name));
-
-  // Leer todos los CSV
-  const contents = await Promise.all(files.map(f => f.text()));
-
-  let mainCSV = null;
-  let valCSV  = null;
-
-  // Detectar qué CSV es cuál por su cabecera
-  for (let i = 0; i < contents.length; i++) {
-    const text = contents[i].trimStart().split("\n")[0].toLowerCase();
-
-    if (text.includes("nombre entidad") && text.includes("referencia") && text.includes("castellano")) {
-      mainCSV = contents[i];
-      console.log("📄 Detectado como Tesauro PRINCIPAL:", files[i].name);
+  // Procesar archivos seleccionados
+  inputFiles.addEventListener("change", async (e) => {
+    const files = [...e.target.files];
+    if (files.length < 1) {
+      console.warn("❌ Debes seleccionar al menos un CSV.");
+      return;
     }
 
-    if (text.startsWith("referencia tesauro;") || text.startsWith("referencia;i18n") || text.includes("idioma;valor")) {
-      valCSV = contents[i];
-      console.log("📄 Detectado como Tesauro VALORES:", files[i].name);
+    console.log("🔥 Archivos seleccionados:");
+    files.forEach(f => console.log(" - ", f.name));
+
+    const contents = await Promise.all(files.map(f => f.text()));
+
+    let mainCSV = null;
+    let valCSV  = null;
+
+    // Detectar qué CSV es cuál
+    for (let i = 0; i < contents.length; i++) {
+      const text = contents[i].trimStart().split("\n")[0].toLowerCase();
+
+      if (text.includes("nombre entidad") && text.includes("referencia") && text.includes("castellano")) {
+        mainCSV = contents[i];
+        console.log("📄 Detectado como Tesauro PRINCIPAL:", files[i].name);
+      }
+
+      if (text.startsWith("referencia tesauro;") || 
+          text.startsWith("referencia;i18n") || 
+          text.includes("idioma;valor")) {
+        valCSV = contents[i];
+        console.log("📄 Detectado como Tesauro VALORES:", files[i].name);
+      }
     }
-  }
 
-// Si no hay CSV principal → error
-if (!mainCSV) {
-    console.warn("❌ No se ha encontrado el archivo principal de tesauros.");
-    return;
+    // Si no hay CSV principal → error
+    if (!mainCSV) {
+      console.warn("❌ No se ha encontrado el archivo principal de tesauros.");
+      alert("❌ Debes seleccionar al menos el archivo Tesauro.csv");
+      return;
+    }
+
+    // Si no hay valores → sigue OK pero avisa
+    if (!valCSV) {
+      console.warn("⚠ No se detectó archivo de valores. Los selectores quedarán sin opciones.");
+    }
+
+    console.log("🔥 LLAMANDO A importTesauroFromCSV() (modo selector)");
+    DataTesauro.importTesauroFromCSV(mainCSV, valCSV);
+  });
 }
 
-// SI hay principal PERO NO hay valores → OK
-// solo marcamos aviso, pero continuamos
-if (!valCSV) {
-    console.warn("⚠ No hay archivo de valores. Se importarán TESAUROS sin opciones.");
-}
-  console.log("🔥 LLAMANDO A importTesauroFromCSV()");
-  DataTesauro.importTesauroFromCSV(mainCSV, valCSV);
-});
-
-  function readFile(file) {
-    return new Promise(res => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.readAsText(file, "utf-8");
-    });
-  }
-}
 /* ------------------------------------------
    💾 Guardar nuevo campo
 ------------------------------------------ */
@@ -1270,9 +1270,8 @@ DataTesauro.exportTesauroCSV = function() {
       tipoVisible,                           // Tipo de campo
       propiedad1,                             // ⭐ Propiedad del tipo de campo 1
       "", "", "",                             // Propiedades 2-4
-        "Tramitación",
-        Engine.fichaProyecto.agrupacion || "",  // ⭐ NUEVO: AGRUPACIÓN
-        "",                                      // Obligatorio
+      c.momento || "Solicitud",           // ← Momento real del tesauro
+      c.agrupacion || "Agrupación",       // ← Agrupación real del tesauro        "",                                      // Obligatorio
         ""                                       // Campo asunto
     ];
   });
@@ -1412,15 +1411,15 @@ DataTesauro.exportTesauroVinculacionCSV = function() {
     "Campo asunto"
   ];
 
-  const rows = lista.map(c => {
+    const rows = lista.map(c => {
     return [
       entidad,
       "No",
       "No",
       c.ref || "",
       actividad,
-      momento,
-      agrupacion,
+      c.momento || "Solicitud",       // ← Momento real del tesauro
+      c.agrupacion || "Agrupación",   // ← Agrupación real
       "",
       ""
     ];
