@@ -577,6 +577,109 @@ div.innerHTML += `
     });
 
     // ============================================================
+    // ⭐ Gestión de opciones de SELECTOR (añadir / borrar / editar)
+    // ============================================================
+    // ➕ Añadir opción
+    this.modal.querySelectorAll(".tm-opt-add").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const box = btn.closest(".tm-opt-box");
+            if (!box) return;
+
+            const idCampo = box.dataset.id;
+            const item = DataTesauro.campos.find(x => x.id === idCampo);
+            if (!item) return;
+
+            const inpRef = box.querySelector(".tm-new-opt-ref");
+            const inpVal = box.querySelector(".tm-new-opt-valor");
+
+            const ref = (inpRef?.value || "").trim();
+            const valor = (inpVal?.value || "").trim();
+
+            if (!ref && !valor) {
+                alert("Indica al menos referencia o valor para la opción.");
+                return;
+            }
+
+            if (!Array.isArray(item.opciones)) item.opciones = [];
+
+            const nuevo = {
+                id: TesauroManager.generateId(),
+                ref: ref || valor,
+                valor: valor || ref
+            };
+
+            item.opciones.push(nuevo);
+
+            if (inpRef) inpRef.value = "";
+            if (inpVal) inpVal.value = "";
+
+            // Re-render para ver la nueva opción
+            this.render();
+        });
+    });
+
+    // 🗑️ Eliminar opción
+    this.modal.querySelectorAll(".tm-opt-del").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const row = btn.closest(".tm-opt-row");
+            const box = btn.closest(".tm-opt-box");
+            if (!row || !box) return;
+
+            const idCampo = box.dataset.id;
+            const idOpt = row.dataset.oid;
+
+            const item = DataTesauro.campos.find(x => x.id === idCampo);
+            if (!item || !Array.isArray(item.opciones)) return;
+
+            item.opciones = item.opciones.filter(o => o.id !== idOpt);
+
+            this.render();
+        });
+    });
+
+    // ✏️ Editar referencia de opción
+    this.modal.querySelectorAll(".tm-opt-ref").forEach(inp => {
+        inp.addEventListener("input", (e) => {
+            const row = inp.closest(".tm-opt-row");
+            const box = inp.closest(".tm-opt-box");
+            if (!row || !box) return;
+
+            const idCampo = box.dataset.id;
+            const idOpt = row.dataset.oid;
+
+            const item = DataTesauro.campos.find(x => x.id === idCampo);
+            if (!item || !Array.isArray(item.opciones)) return;
+
+            const opt = item.opciones.find(o => o.id === idOpt);
+            if (!opt) return;
+
+            opt.ref = inp.value;
+        });
+    });
+
+    // ✏️ Editar valor de opción
+    this.modal.querySelectorAll(".tm-opt-valor").forEach(inp => {
+        inp.addEventListener("input", (e) => {
+            const row = inp.closest(".tm-opt-row");
+            const box = inp.closest(".tm-opt-box");
+            if (!row || !box) return;
+
+            const idCampo = box.dataset.id;
+            const idOpt = row.dataset.oid;
+
+            const item = DataTesauro.campos.find(x => x.id === idCampo);
+            if (!item || !Array.isArray(item.opciones)) return;
+
+            const opt = item.opciones.find(o => o.id === idOpt);
+            if (!opt) return;
+
+            opt.valor = inp.value;
+        });
+    });
+
+    // ============================================================
     // ⭐ CAMBIO INDIVIDUAL DE TIPO (con soporte masivo si hay varios)
     // ============================================================
     this.modal.querySelectorAll(".tmTipoSelect").forEach(sel => {
@@ -701,66 +804,66 @@ div.innerHTML += `
     });
 
     /* ============================================================
-   ⭐ ACCIONES MASIVAS (Tipo, Momento, Agrupación)
-============================================================ */
-const massApply = this.modal.querySelector("#tmMassApply");
-const massSelect = this.modal.querySelector("#tmMassTipo");
-const massMomento = this.modal.querySelector("#tmMassMomento");
-const massAgr = this.modal.querySelector("#tmMassAgr");
+       ⭐ ACCIONES MASIVAS (Tipo, Momento, Agrupación)
+    ============================================================ */
+    const massApply = this.modal.querySelector("#tmMassApply");
+    const massSelect = this.modal.querySelector("#tmMassTipo");
+    const massMomento = this.modal.querySelector("#tmMassMomento");
+    const massAgr = this.modal.querySelector("#tmMassAgr");
 
-if (massApply) {
-    massApply.onclick = () => {
+    if (massApply) {
+        massApply.onclick = () => {
 
-        const tipo = massSelect ? massSelect.value : "";
-        const momento = massMomento ? massMomento.value : "";
-        const agrupacion = massAgr ? massAgr.value.trim() : "";
+            const tipo = massSelect ? massSelect.value : "";
+            const momento = massMomento ? massMomento.value : "";
+            const agrupacion = massAgr ? massAgr.value.trim() : "";
 
-        if (!tipo && !momento && !agrupacion) {
-            alert("Selecciona al menos un valor para aplicar.");
-            return;
-        }
+            if (!tipo && !momento && !agrupacion) {
+                alert("Selecciona al menos un valor para aplicar.");
+                return;
+            }
 
-        TesauroManager.selectedRows.forEach(id => {
-            const item = DataTesauro.campos.find(x => x.id === id);
-            if (!item) return;
+            TesauroManager.selectedRows.forEach(id => {
+                const item = DataTesauro.campos.find(x => x.id === id);
+                if (!item) return;
 
-            // --- CAMBIAR TIPO ---
-            if (tipo) {
-                item.tipo = tipo;
-                if (tipo === "selector") {
-                    if (!Array.isArray(item.opciones)) item.opciones = [];
-                } else {
-                    item.opciones = [];
+                // --- CAMBIAR TIPO ---
+                if (tipo) {
+                    item.tipo = tipo;
+                    if (tipo === "selector") {
+                        if (!Array.isArray(item.opciones)) item.opciones = [];
+                    } else {
+                        item.opciones = [];
+                    }
                 }
-            }
 
-            // --- CAMBIAR MOMENTO ---
-            if (momento) {
-                item.momento = momento;
-            }
+                // --- CAMBIAR MOMENTO ---
+                if (momento) {
+                    item.momento = momento;
+                }
 
-            // --- CAMBIAR AGRUPACIÓN ---
-            if (agrupacion) {
-                item.agrupacion = agrupacion;
-            }
-        });
+                // --- CAMBIAR AGRUPACIÓN ---
+                if (agrupacion) {
+                    item.agrupacion = agrupacion;
+                }
+            });
 
-        // Refrescar tabla
-        this.render();
+            // Refrescar tabla
+            this.render();
 
-        // Restaurar selección
-        TesauroManager.selectedRows.forEach(id => {
-            const row = TesauroManager.modal.querySelector(`tr[data-id='${id}']`);
-            if (row) row.classList.add("tm-row-selected");
-        });
+            // Restaurar selección
+            TesauroManager.selectedRows.forEach(id => {
+                const row = TesauroManager.modal.querySelector(`tr[data-id='${id}']`);
+                if (row) row.classList.add("tm-row-selected");
+            });
 
-        // Ocultar panel
-        const massPanel = this.modal.querySelector("#tmMassPanel");
-        if (massPanel) massPanel.style.top = "-200px";
+            // Ocultar panel
+            const massPanel = this.modal.querySelector("#tmMassPanel");
+            if (massPanel) massPanel.style.top = "-200px";
 
-        alert("✔ Cambios masivos aplicados correctamente.");
-    };
-}
+            alert("✔ Cambios masivos aplicados correctamente.");
+        };
+    }
 
 }
 ,
