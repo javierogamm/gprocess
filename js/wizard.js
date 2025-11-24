@@ -799,6 +799,9 @@ const Wizard = {
     }
 };
 
+// Exponer el asistente para que los manejadores inline puedan resolverlo
+window.Wizard = Wizard;
+
 /* ============================================================
    INICIALIZACIÓN AUTOMÁTICA
 ============================================================ */
