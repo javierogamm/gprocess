@@ -15,6 +15,8 @@ const Assistant = {
   pendingFromId: null,
   pendingCondition: null,
   pendingLayoutHint: null,
+  workingNodeId: null,
+  activeOutputsFor: null,
   currentStep: "idle",
   draft: null,
   closedEnds: new Set(),
@@ -83,10 +85,14 @@ const Assistant = {
     this.pendingFromId = null;
     this.pendingCondition = null;
     this.pendingLayoutHint = null;
+    this.workingNodeId = null;
+    this.activeOutputsFor = null;
     this.currentStep = "idle";
     this.closedEnds = new Set();
     this.postOutputsCallbacks = [];
     this.multiFlowContext = null;
+
+    this.setWorkingNode(null);
 
     this.addMessage("Hola 👋. Antes de empezar prepara los Grupos y Usuarios para autocompletar.");
     this.renderInitialSetup();
@@ -160,6 +166,15 @@ const Assistant = {
   },
 
   startNodeFlow(connectFromId = null, condition = null, layoutHint = null) {
+    if (this.activeOutputsFor && connectFromId !== this.activeOutputsFor) {
+      const bloqueado = Engine.getNode(this.activeOutputsFor);
+      this.addMessage(
+        `⚠️ Termina primero las salidas del nodo "${bloqueado?.titulo || this.activeOutputsFor}".`
+      );
+      this.askOutputsForNode(this.activeOutputsFor);
+      return;
+    }
+
     this.pendingFromId = connectFromId;
     this.pendingCondition = condition;
     this.pendingLayoutHint = layoutHint;
@@ -167,7 +182,9 @@ const Assistant = {
       titulo: "",
       tipo: "formulario",
       descripcion: "",
-      tareaManual: false
+      tareaManual: false,
+      asignadoA: "",
+      asignadoUsuario: ""
     };
     this.currentStep = "tipo";
     this.renderStep();
@@ -312,7 +329,7 @@ const Assistant = {
           </label>
           <div class="assistant-actions">
             <button type="button" class="assistant-secondary" id="assistantBackTipo">Atrás</button>
-            <button type="submit" class="assistant-primary">Crear nodo</button>
+            <button type="submit" class="assistant-primary">Siguiente</button>
           </div>
         </form>
       `;
@@ -321,7 +338,8 @@ const Assistant = {
         e.preventDefault();
         this.draft.descripcion = this.formArea.querySelector("#assistantDescripcion").value.trim();
         this.draft.tareaManual = this.formArea.querySelector("#assistantTareaManual").checked;
-        this.finalizarNodo();
+        this.currentStep = "asignacion";
+        this.renderStep();
       });
 
       this.formArea.querySelector("#assistantBackTipo")
@@ -329,6 +347,45 @@ const Assistant = {
             this.currentStep = "tipo";
             this.renderStep();
           });
+      return;
+    }
+
+    if (this.currentStep === "asignacion") {
+      const grupos = Array.from(Engine.asignaciones?.grupos || []);
+      const usuarios = Array.from(Engine.asignaciones?.usuarios || []);
+
+      this.formArea.innerHTML = `
+        <form class="assistant-form-step">
+          <label>¿A qué grupo se asigna?</label>
+          <input list="assistantGruposList" id="assistantAsignGrupo" placeholder="Selecciona o escribe" />
+          <datalist id="assistantGruposList">
+            ${grupos.map((g) => `<option value="${g}"></option>`).join("")}
+          </datalist>
+          <label>¿A qué usuario se asigna?</label>
+          <input list="assistantUsuariosList" id="assistantAsignUsuario" placeholder="Selecciona o escribe" />
+          <datalist id="assistantUsuariosList">
+            ${usuarios.map((u) => `<option value="${u}"></option>`).join("")}
+          </datalist>
+          <div class="assistant-actions">
+            <button type="button" class="assistant-secondary" id="assistantBackDescripcion">Atrás</button>
+            <button type="submit" class="assistant-primary">Crear nodo</button>
+          </div>
+        </form>
+      `;
+
+      this.formArea.querySelector("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.draft.asignadoA = this.formArea.querySelector("#assistantAsignGrupo")?.value.trim();
+        this.draft.asignadoUsuario = this.formArea.querySelector("#assistantAsignUsuario")?.value.trim();
+        this.finalizarNodo();
+      });
+
+      this.formArea.querySelector("#assistantBackDescripcion")
+          .addEventListener("click", () => {
+            this.currentStep = "descripcion";
+            this.renderStep();
+          });
+      return;
     }
   },
 
@@ -338,8 +395,16 @@ const Assistant = {
     Engine.updateNode(nodo.id, {
       titulo: this.draft.titulo,
       descripcion: this.draft.descripcion,
-      tareaManual: this.draft.tareaManual
+      tareaManual: this.draft.tareaManual,
+      asignadoA: this.draft.asignadoA,
+      asignadoUsuario: this.draft.asignadoUsuario
     });
+
+    if (this.draft.asignadoA) Engine.asignaciones.grupos.add(this.draft.asignadoA);
+    if (this.draft.asignadoUsuario) Engine.asignaciones.usuarios.add(this.draft.asignadoUsuario);
+    if (window.UI && typeof UI.updateAsignacionesList === "function") {
+      UI.updateAsignacionesList();
+    }
 
     this.addMessage(`✅ Nodo creado: ${this.draft.titulo}`);
 
@@ -366,6 +431,7 @@ const Assistant = {
     }
 
     this.lastNodeId = nodo.id;
+    this.setWorkingNode(nodo.id);
     this.currentStep = "salidas";
     this.askOutputsForNode(nodo.id);
   },
@@ -374,8 +440,14 @@ const Assistant = {
     const nodo = Engine.data.nodos.find((n) => n.id === nodeId);
     if (!nodo) return this.renderIdleActions();
 
+    this.activeOutputsFor = nodeId;
+    this.setWorkingNode(nodeId);
+
+    const context = this.renderNodeContext(nodo);
+
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
+        ${context}
         <label>¿Cuántas salidas tiene "${nodo.titulo}"?</label>
         <div class="assistant-grid">
           <label><input type="radio" name="salidas" value="0" /> 0 (finaliza aquí)</label>
@@ -408,11 +480,15 @@ const Assistant = {
   handleSingleOutput(nodeId) {
     const options = Engine.data.nodos
       .filter((n) => n.id !== nodeId)
-      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`) 
+      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`)
       .join("");
+
+    const nodo = Engine.getNode(nodeId);
+    const context = nodo ? this.renderNodeContext(nodo) : "";
 
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
+        ${context}
         <label>Condición de salida</label>
         <input id="assistantCondNombre" placeholder="Nombre de condición" />
         <input id="assistantCondValor" placeholder="Valor o respuesta" />
@@ -455,8 +531,11 @@ const Assistant = {
 
   handleMultipleOutputs(nodeId) {
     this.multiFlowContext = { fromId: nodeId, total: 0, completed: 0 };
+    const nodo = Engine.getNode(nodeId);
+    const context = nodo ? this.renderNodeContext(nodo) : "";
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
+        ${context}
         <label>Número de salidas</label>
         <input id="assistantNumeroSalidas" type="number" min="2" value="2" />
         <div class="assistant-actions">
@@ -482,13 +561,20 @@ const Assistant = {
       return;
     }
 
+    this.activeOutputsFor = ctx.fromId;
+    this.setWorkingNode(ctx.fromId);
+
     const options = Engine.data.nodos
       .filter((n) => n.id !== ctx.fromId)
-      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`) 
+      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`)
       .join("");
+
+    const nodo = Engine.getNode(ctx.fromId);
+    const context = nodo ? this.renderNodeContext(nodo, ctx) : "";
 
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
+        ${context}
         <label>Salida ${ctx.completed + 1} de ${ctx.total}</label>
         <input id="assistantCondNombre" placeholder="Condición" />
         <input id="assistantCondValor" placeholder="Valor" />
@@ -534,6 +620,8 @@ const Assistant = {
   },
 
   afterOutputsComplete(nodeId) {
+    this.activeOutputsFor = null;
+    this.setWorkingNode(null);
     const callbacks = [...this.postOutputsCallbacks];
     this.postOutputsCallbacks = [];
     if (callbacks.length) {
@@ -576,6 +664,35 @@ const Assistant = {
     this.formArea.querySelector("#assistantConectar").addEventListener("click", () => {
       this.askOutputsForNode(siguiente.id);
     });
+  },
+
+  renderNodeContext(nodo, ctx = null) {
+    const branch = ctx?.total
+      ? `<span class="assistant-context-badge">${ctx.completed + 1}/${ctx.total}</span>`
+      : "";
+    return `
+      <div class="assistant-context">
+        <span class="assistant-context-label">Nodo actual</span>
+        <strong>${nodo.titulo || nodo.id}</strong>
+        ${branch}
+      </div>
+    `;
+  },
+
+  setWorkingNode(nodeId) {
+    if (this.workingNodeId === nodeId) return;
+    document.querySelectorAll(".node.assistant-focus").forEach((el) =>
+      el.classList.remove("assistant-focus")
+    );
+    this.workingNodeId = nodeId;
+    if (!nodeId) return;
+    const el = document.getElementById(nodeId);
+    if (el) {
+      el.classList.add("assistant-focus");
+    }
+    if (Engine && typeof Engine.selectNode === "function") {
+      Engine.selectNode(nodeId);
+    }
   }
 };
 

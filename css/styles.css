@@ -1646,3 +1646,38 @@ body.panel-locked #canvasArea {
 .assistant-chip:hover {
     background: #e2e8f0;
 }
+
+.assistant-context {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: linear-gradient(120deg, #ecfeff 0%, #f8fbff 100%);
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.assistant-context-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #0ea5e9;
+}
+
+.assistant-context-badge {
+    margin-left: auto;
+    background: #0ea5e9;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+.node.assistant-focus {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35), 0 14px 28px rgba(15, 23, 42, 0.15);
+    transform: translateY(-2px);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    border-color: #0ea5e9;
+}
