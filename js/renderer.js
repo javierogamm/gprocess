@@ -815,10 +815,9 @@ if (!hit.__dndBound) {
 }
 hit.setAttribute("d", d);
 hit.setAttribute("stroke", "rgba(0,0,0,0.001)"); // casi invisible pero capta eventos
-hit.setAttribute("stroke-width", "30");
+hit.setAttribute("stroke-width", "15");
 hit.setAttribute("fill", "none");
 hit.setAttribute("pointer-events", "stroke");
-hit.setAttribute("stroke-width", "40");
 hit.classList.add("connection-hit");
 hit.style.cursor = "pointer";
 

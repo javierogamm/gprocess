@@ -191,11 +191,30 @@ importFromJSON(jsonString) {
 
         this.saveHistory();
 
-        // 3) Cargar nodos y conexiones
-        this.data = {
-            nodos: parsed.nodos,
-            conexiones: parsed.conexiones
-        };
+        // 3) Validar y clonar nodos / conexiones
+        const nodos = (parsed.nodos || []).map((nodo, idx) => {
+            const safe = { ...nodo };
+            safe.id = safe.id || `n${this.generateId()}_${idx}`;
+            safe.tipo = safe.tipo || "formulario";
+            safe.titulo = safe.titulo || safe.tipo.toUpperCase();
+            safe.x = Number.isFinite(safe.x) ? safe.x : 100;
+            safe.y = Number.isFinite(safe.y) ? safe.y : 100;
+            safe.width = Number.isFinite(safe.width) ? safe.width : 120;
+            safe.height = Number.isFinite(safe.height) ? safe.height : 50;
+            return safe;
+        });
+
+        const conexiones = (parsed.conexiones || [])
+            .map((conn, idx) => {
+                const safe = { ...conn };
+                safe.id = safe.id || `c${this.generateId()}_${idx}`;
+                safe.fromPos = safe.fromPos || "right";
+                safe.toPos = safe.toPos || "left";
+                return safe;
+            })
+            .filter(conn => nodos.find(n => n.id === conn.from) && nodos.find(n => n.id === conn.to));
+
+        this.data = { nodos, conexiones };
 
         // 4) Tesauro (retrocompatible)
         if (Array.isArray(parsed.tesauro)) {
@@ -253,6 +272,10 @@ importFromJSON(jsonString) {
         console.log(`📚 Tesauro cargado con ${this.tesauro.length} campos.`);
 
         // 6) Redibujar
+        if (!Renderer.container || !Renderer.svg) {
+            Renderer.init();
+        }
+
         Renderer.clearAll();
         this.data.nodos.forEach(n => Renderer.renderNode(n));
         this.data.conexiones.forEach(c => Renderer.drawConnection(c));
@@ -719,6 +742,10 @@ resizeSelectedNodes(scaleFactor) {
     loadFromSnapshot(snapshot) {
         const state = JSON.parse(snapshot);
         this.data = state;
+
+        if (!Renderer.container || !Renderer.svg) {
+            Renderer.init();
+        }
 
         Renderer.clearAll();
         this.data.nodos.forEach(n => Renderer.renderNode(n));
