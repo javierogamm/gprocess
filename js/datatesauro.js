@@ -100,15 +100,6 @@ const DataTesauro = {
 });
     }
 
-    // 🧠 Autogenerar referencia al escribir el nombre
-    const inputRef = document.getElementById("tRef");
-    const inputNombre = document.getElementById("tNombre");
-    inputNombre.addEventListener("input", () => {
-      const nombre = inputNombre.value.trim();
-      const refAuto = this.generarReferenciaDesdeNombre(nombre);
-      inputRef.value = refAuto;
-    });
-
     // Al cargar, si Engine ya trae tesauro → sincroniza vista
     if (window.Engine && Array.isArray(Engine.tesauro) && Engine.tesauro.length) {
       this.campos = [...Engine.tesauro];
