@@ -62,6 +62,11 @@ const Wizard = {
         this.modalBody = document.getElementById("wizardTemplatesBody");
         this.modalCloseBtn = document.getElementById("wizardTemplatesClose");
 
+        const floatingGroup = document.getElementById("floatingControlGroup");
+        if (floatingGroup && this.btn && this.btn.parentElement !== floatingGroup) {
+            floatingGroup.appendChild(this.btn);
+        }
+
         console.log("🔗 [Wizard.init] Referencias DOM:", {
             btn: this.btn,
             modal: this.modal,

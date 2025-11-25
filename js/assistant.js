@@ -24,6 +24,7 @@ const Assistant = {
   multiFlowContext: null,
   exampleFlows: [],
   examplesLoaded: false,
+  suggestionsByType: {},
 
   init() {
     // Crear botón flotante
@@ -64,6 +65,35 @@ const Assistant = {
 
     this.reset();
     this.loadExampleFlows();
+    this.attachFloatingButtons();
+  },
+
+  attachFloatingButtons() {
+    let group = document.getElementById("floatingControlGroup");
+    if (!group) {
+      group = document.createElement("div");
+      group.id = "floatingControlGroup";
+      group.className = "floating-control-group";
+      document.body.appendChild(group);
+    }
+
+    const wizardBtn = document.getElementById("btnWizard");
+    if (wizardBtn && wizardBtn.parentElement !== group) {
+      group.appendChild(wizardBtn);
+    }
+
+    if (!wizardBtn) {
+      setTimeout(() => {
+        const maybeWizard = document.getElementById("btnWizard");
+        if (maybeWizard && maybeWizard.parentElement !== group) {
+          group.appendChild(maybeWizard);
+        }
+      }, 200);
+    }
+
+    if (this.btn.parentElement !== group) {
+      group.appendChild(this.btn);
+    }
   },
 
   togglePanel() {
@@ -150,6 +180,19 @@ const Assistant = {
       });
 
       this.exampleFlows = dedup;
+      this.suggestionsByType = dedup.reduce((map, item) => {
+        const key = item.tipo || "cualquiera";
+        if (!map[key]) map[key] = [];
+        if (!map[key].includes(item.titulo)) {
+          map[key].push(item.titulo);
+        }
+        return map;
+      }, {});
+      Object.keys(this.suggestionsByType).forEach((key) => {
+        this.suggestionsByType[key] = this.suggestionsByType[key].sort((a, b) =>
+          a.localeCompare(b, "es", { sensitivity: "base" })
+        );
+      });
       this.examplesLoaded = dedup.length > 0;
       if (this.examplesLoaded) {
         const tipos = new Set(dedup.map((d) => d.tipo || "cualquiera"));
@@ -272,11 +315,12 @@ const Assistant = {
   },
 
   nombreSugerido(tipo) {
-    const fromExamples = this.exampleFlows
-      .filter((e) => !tipo || e.tipo === tipo)
-      .map((e) => e.titulo);
+    const typed = (this.suggestionsByType?.[tipo] || []).slice();
+    const generales = (this.suggestionsByType?.cualquiera || [])
+      .filter((t) => !typed.includes(t));
 
-    if (fromExamples.length) return fromExamples;
+    const combinadas = [...typed, ...generales];
+    if (combinadas.length) return combinadas;
 
     return ["Tarea administrativa", "Paso del expediente"];
   },
