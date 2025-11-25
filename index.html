@@ -15,6 +15,15 @@
         <div class="panel-hero">
             <h1>CODEX</h1>
             <p>Rediseño luminoso para mantener cada flujo claro, sin alterar la lógica.</p>
+            <div class="font-picker">
+                <label for="fontSelector">Tipografía elegante</label>
+                <select id="fontSelector">
+                    <option value="'Inter', 'Manrope', 'Poppins', 'Space Grotesk', 'Segoe UI', system-ui, sans-serif" selected>Inter</option>
+                    <option value="'Manrope', 'Inter', 'Poppins', 'Space Grotesk', 'Segoe UI', system-ui, sans-serif">Manrope</option>
+                    <option value="'Poppins', 'Inter', 'Manrope', 'Space Grotesk', 'Segoe UI', system-ui, sans-serif">Poppins</option>
+                    <option value="'Space Grotesk', 'Inter', 'Manrope', 'Poppins', 'Segoe UI', system-ui, sans-serif">Space Grotesk</option>
+                </select>
+            </div>
         </div>
 
         <div class="panel-section">
@@ -209,9 +218,20 @@
 <script src="js/cambiosestado.js"></script>
 <script src="js/datatesauro.js"></script>
 <script src="js/tesauroManager.js"></script>
-<script src="js/wizard.js"></script>
-<script src="js/resizepanels.js"></script>
-<script>
+ <script src="js/wizard.js"></script>
+ <script src="js/resizepanels.js"></script>
+ <script>
+  const fontSelector = document.getElementById("fontSelector");
+  const applySelectedFont = (family) => {
+    document.documentElement.style.setProperty("--font-main", family);
+  };
+
+  if (fontSelector) {
+    applySelectedFont(fontSelector.value);
+    fontSelector.addEventListener("change", (e) => applySelectedFont(e.target.value));
+  }
+ </script>
+ <script>
   // 🧠 Botón para abrir el GPT personalizado
   document.getElementById("btnIAJson").addEventListener("click", () => {
     window.open(
