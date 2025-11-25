@@ -1,0 +1,12 @@
+[
+  { "tipo": "formulario", "titulo": "Registro de solicitud de subvención" },
+  { "tipo": "formulario", "titulo": "Declaración responsable de obras menores" },
+  { "tipo": "documento", "titulo": "Emisión de resolución de licencia urbanística" },
+  { "tipo": "documento", "titulo": "Notificación electrónica al interesado" },
+  { "tipo": "decision", "titulo": "Valoración de alegaciones del expediente" },
+  { "tipo": "plazo", "titulo": "Periodo de exposición pública" },
+  { "tipo": "circuito", "titulo": "Circuito de firmas de resolución" },
+  { "tipo": "operacion_externa", "titulo": "Consulta automática al padrón" },
+  { "tipo": "libre", "titulo": "Coordinación con mesa de contratación" },
+  { "tipo": "notas", "titulo": "Nota interna de seguimiento" }
+]

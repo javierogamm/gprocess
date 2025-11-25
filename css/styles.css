@@ -1475,11 +1475,11 @@ body.panel-locked #canvasArea {
 .assistant-panel {
     position: fixed;
     inset: 0 auto 0 0;
-    width: 460px;
-    max-width: 92vw;
+    width: 920px;
+    max-width: 96vw;
     background: linear-gradient(180deg, #f7fbff 0%, #ffffff 35%);
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.14);
-    z-index: 1800;
+    z-index: 3200;
     display: flex;
     flex-direction: column;
     transform: translateX(-110%);
@@ -1522,19 +1522,9 @@ body.panel-locked #canvasArea {
     flex-direction: column;
     height: 100%;
     padding: 0 18px 18px;
-    gap: 10px;
+    gap: 12px;
     justify-content: flex-start;
     overflow-y: auto;
-}
-
-.assistant-messages {
-    overflow-y: auto;
-    padding: 12px;
-    background: #f8fafc;
-    border-radius: 10px;
-    border: 1px solid #e2e8f0;
-    max-height: 46vh;
-    min-height: 180px;
 }
 
 .assistant-message {
@@ -1555,6 +1545,9 @@ body.panel-locked #canvasArea {
     padding: 14px;
     box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(4px);
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .assistant-form-step label {
@@ -1673,6 +1666,33 @@ body.panel-locked #canvasArea {
     padding: 4px 8px;
     border-radius: 999px;
     font-size: 12px;
+}
+
+.assistant-log {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-height: 200px;
+    margin-top: auto;
+}
+
+.assistant-log-title {
+    font-size: 13px;
+    color: #475569;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.assistant-messages {
+    overflow-y: auto;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+    min-height: 140px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .node.assistant-focus {

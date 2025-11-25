@@ -22,6 +22,8 @@ const Assistant = {
   closedEnds: new Set(),
   postOutputsCallbacks: [],
   multiFlowContext: null,
+  exampleFlows: [],
+  examplesLoaded: false,
 
   init() {
     // Crear botón flotante
@@ -44,8 +46,11 @@ const Assistant = {
         <button class="assistant-close" aria-label="Cerrar">×</button>
       </div>
       <div class="assistant-body">
-        <div class="assistant-messages"></div>
         <div class="assistant-form"></div>
+        <div class="assistant-log">
+          <div class="assistant-log-title">Log de acciones</div>
+          <div class="assistant-messages"></div>
+        </div>
       </div>
     `;
     document.body.appendChild(this.panel);
@@ -58,6 +63,7 @@ const Assistant = {
         .addEventListener("click", () => this.close());
 
     this.reset();
+    this.loadExampleFlows();
   },
 
   togglePanel() {
@@ -91,11 +97,31 @@ const Assistant = {
     this.closedEnds = new Set();
     this.postOutputsCallbacks = [];
     this.multiFlowContext = null;
+    this.exampleFlows = this.exampleFlows || [];
 
     this.setWorkingNode(null);
 
     this.addMessage("Hola 👋. Antes de empezar prepara los Grupos y Usuarios para autocompletar.");
     this.renderInitialSetup();
+  },
+
+  async loadExampleFlows() {
+    try {
+      const res = await fetch("examples/index.json");
+      if (!res.ok) throw new Error("No se pudo cargar examples/index.json");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        this.exampleFlows = data;
+        this.examplesLoaded = true;
+        this.addMessage(`📁 Sugerencias cargadas desde /examples (${data.length}).`);
+        if (this.currentStep === "titulo") {
+          this.renderStep();
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudieron cargar los ejemplos de /examples", e);
+      this.examplesLoaded = false;
+    }
   },
 
   addMessage(text) {
@@ -191,54 +217,32 @@ const Assistant = {
   },
 
   nombreSugerido(tipo) {
-    const sugerencias = {
-      formulario: [
-        "Recepción de solicitud",
-        "Subsanación documental",
-        "Revisión de expediente",
-        "Informe técnico",
-        "Validación de requisitos"
-      ],
-      documento: [
-        "Emisión de resolución",
-        "Notificación al interesado",
-        "Publicación en tablón",
-        "Generación de certificado",
-        "Redacción de informe jurídico"
-      ],
-      decision: [
-        "Evaluar alegaciones",
-        "Determinar adjudicatario",
-        "Valorar cumplimiento",
-        "Resolver recurso",
-        "Aprobar expedición"
-      ],
-      plazo: [
-        "Esperar plazo de alegaciones",
-        "Plazo de publicación",
-        "Periodo de exposición pública"
-      ],
-      circuito: [
-        "Circuito de firmas",
-        "Revisión colegiada",
-        "Validación múltiple",
-        "Mesa de contratación"
-      ],
-      operacion_externa: [
-        "Interoperar con registro",
-        "Consulta padrón",
-        "Cruce con catastro",
-        "Integración con ORVE"
-      ],
-      notas: ["Nota interna", "Recordatorio de expediente", "Checklist del técnico"],
-      libre: [
-        "Comunicación interna",
-        "Reunión de seguimiento",
-        "Coordinación con interesados"
-      ]
-    };
+    const fromExamples = this.exampleFlows
+      .filter((e) => !tipo || e.tipo === tipo)
+      .map((e) => e.titulo);
 
-    return sugerencias[tipo] || ["Tarea administrativa", "Paso del expediente"];
+    if (fromExamples.length) return fromExamples;
+
+    return ["Tarea administrativa", "Paso del expediente"];
+  },
+
+  renderConditionInputs() {
+    const tesauro = Array.from(Engine.tesauro || []);
+    const opcionesNombre = tesauro
+      .map((t) => `<option value="${t.nombre}">${t.tipo || "campo"}</option>`)
+      .join("");
+    const opcionesValor = tesauro
+      .flatMap((t) => t.opciones || [])
+      .map((op) => `<option value="${op}"></option>`)
+      .join("");
+
+    return `
+      <label>Condición de salida</label>
+      <input id="assistantCondNombre" list="assistantTesauroNombres" placeholder="Nombre de condición" />
+      <datalist id="assistantTesauroNombres">${opcionesNombre}</datalist>
+      <input id="assistantCondValor" list="assistantTesauroValores" placeholder="Valor o respuesta" />
+      <datalist id="assistantTesauroValores">${opcionesValor}</datalist>
+    `;
   },
 
   renderStep() {
@@ -489,9 +493,7 @@ const Assistant = {
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
         ${context}
-        <label>Condición de salida</label>
-        <input id="assistantCondNombre" placeholder="Nombre de condición" />
-        <input id="assistantCondValor" placeholder="Valor o respuesta" />
+        ${this.renderConditionInputs()}
         <label>Destino</label>
         <select id="assistantDestino">
           <option value="new">Crear nuevo nodo</option>
@@ -576,8 +578,7 @@ const Assistant = {
       <form class="assistant-form-step">
         ${context}
         <label>Salida ${ctx.completed + 1} de ${ctx.total}</label>
-        <input id="assistantCondNombre" placeholder="Condición" />
-        <input id="assistantCondValor" placeholder="Valor" />
+        ${this.renderConditionInputs()}
         <label>Destino</label>
         <select id="assistantDestino">
           <option value="new">Crear nuevo nodo</option>
@@ -736,6 +737,7 @@ Assistant.getCanvasCenter = function () {
 };
 
 Assistant.ensureTesauroForCondition = function (nombre, valor) {
+  if (!nombre && valor) nombre = valor;
   if (!nombre) return null;
   const list = Engine.tesauro || [];
   const existing = list.find(
