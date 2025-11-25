@@ -1,0 +1,12 @@
+{
+  "nombre": "Contratación menor de suministro",
+  "nodos": [
+    { "tipo": "formulario", "titulo": "Solicitud de inicio de contratación menor" },
+    { "tipo": "operacion_externa", "titulo": "Petición de ofertas a proveedores" },
+    { "tipo": "decision", "titulo": "Valoración de ofertas recibidas" },
+    { "tipo": "documento", "titulo": "Informe de adjudicación" },
+    { "tipo": "circuito", "titulo": "Circuito de firmas del contrato" },
+    { "tipo": "documento", "titulo": "Notificación de adjudicación al adjudicatario" },
+    { "tipo": "plazo", "titulo": "Control de recepción del suministro" }
+  ]
+}

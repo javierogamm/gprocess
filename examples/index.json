@@ -1,4 +1,7 @@
 [
+  { "file": "licencia_obras_menores.json" },
+  { "file": "contratacion_menor.json" },
+  { "file": "subvenciones_culturales.json" },
   { "tipo": "formulario", "titulo": "Registro de solicitud de subvención" },
   { "tipo": "formulario", "titulo": "Declaración responsable de obras menores" },
   { "tipo": "documento", "titulo": "Emisión de resolución de licencia urbanística" },

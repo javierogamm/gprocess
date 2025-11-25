@@ -1463,7 +1463,7 @@ body.panel-locked #canvasArea {
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 14px 30px rgba(14, 165, 233, 0.35);
-    z-index: 1700;
+    z-index: 5400;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -1475,11 +1475,11 @@ body.panel-locked #canvasArea {
 .assistant-panel {
     position: fixed;
     inset: 0 auto 0 0;
-    width: 920px;
+    width: 1120px;
     max-width: 96vw;
     background: linear-gradient(180deg, #f7fbff 0%, #ffffff 35%);
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.14);
-    z-index: 3200;
+    box-shadow: 14px 0 40px rgba(0, 0, 0, 0.14);
+    z-index: 5200;
     display: flex;
     flex-direction: column;
     transform: translateX(-110%);
@@ -1521,8 +1521,8 @@ body.panel-locked #canvasArea {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 0 18px 18px;
-    gap: 12px;
+    padding: 4px 22px 22px;
+    gap: 14px;
     justify-content: flex-start;
     overflow-y: auto;
 }
@@ -1547,7 +1547,8 @@ body.panel-locked #canvasArea {
     backdrop-filter: blur(4px);
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 2;
+    border-top: 6px solid #0ea5e9;
 }
 
 .assistant-form-step label {
@@ -1618,6 +1619,54 @@ body.panel-locked #canvasArea {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+}
+
+.assistant-prompt {
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
+
+.assistant-prompt p {
+    margin: 0;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.assistant-prompt span {
+    color: #475569;
+    font-size: 13px;
+}
+
+.assistant-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.assistant-choice-card {
+    border: 1px solid #dce5f3;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border 0.15s ease, box-shadow 0.15s ease;
+}
+
+.assistant-choice-card input {
+    width: 20px;
+    height: 20px;
+    accent-color: #0ea5e9;
+}
+
+.assistant-choice-card:hover {
+    border-color: #0ea5e9;
+    box-shadow: 0 6px 14px rgba(14, 165, 233, 0.12);
 }
 
 .assistant-suggestions {

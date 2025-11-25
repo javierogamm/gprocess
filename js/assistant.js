@@ -110,10 +110,52 @@ const Assistant = {
       const res = await fetch("examples/index.json");
       if (!res.ok) throw new Error("No se pudo cargar examples/index.json");
       const data = await res.json();
-      if (Array.isArray(data)) {
-        this.exampleFlows = data;
-        this.examplesLoaded = true;
-        this.addMessage(`📁 Sugerencias cargadas desde /examples (${data.length}).`);
+      const entries = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.files)
+          ? data.files
+          : [];
+
+      const directTitles = entries
+        .filter((e) => e?.titulo)
+        .map((e) => ({ tipo: e.tipo || null, titulo: e.titulo }));
+
+      const fileEntries = entries
+        .map((e) => e?.file)
+        .filter(Boolean);
+
+      const fileTitles = (await Promise.all(
+        fileEntries.map(async (file) => {
+          try {
+            const flowRes = await fetch(`examples/${file}`);
+            if (!flowRes.ok) throw new Error(`No se pudo abrir ${file}`);
+            const flowJson = await flowRes.json();
+            return this.extractTitlesFromFlow(flowJson);
+          } catch (err) {
+            console.warn(`No se pudo leer ${file}`, err);
+            return [];
+          }
+        })
+      )).flat();
+
+      const merged = [...directTitles, ...fileTitles];
+      const dedup = [];
+      const seen = new Set();
+      merged.forEach((m) => {
+        if (!m?.titulo) return;
+        const key = `${m.tipo || "cualquiera"}::${m.titulo}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        dedup.push(m);
+      });
+
+      this.exampleFlows = dedup;
+      this.examplesLoaded = dedup.length > 0;
+      if (this.examplesLoaded) {
+        const tipos = new Set(dedup.map((d) => d.tipo || "cualquiera"));
+        this.addMessage(
+          `📁 Sugerencias cargadas (${dedup.length} nodos de ejemplo en ${tipos.size} familias).`
+        );
         if (this.currentStep === "titulo") {
           this.renderStep();
         }
@@ -122,6 +164,19 @@ const Assistant = {
       console.warn("No se pudieron cargar los ejemplos de /examples", e);
       this.examplesLoaded = false;
     }
+  },
+
+  extractTitlesFromFlow(flowJson) {
+    if (!flowJson) return [];
+    const nodes = [];
+    const candidates = [flowJson?.nodos, flowJson?.nodes, flowJson];
+    candidates.forEach((arr) => {
+      if (Array.isArray(arr)) nodes.push(...arr);
+    });
+
+    return nodes
+      .filter((n) => n && n.titulo)
+      .map((n) => ({ tipo: n.tipo || n.kind || null, titulo: n.titulo }));
   },
 
   addMessage(text) {
@@ -452,11 +507,32 @@ const Assistant = {
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
         ${context}
-        <label>¿Cuántas salidas tiene "${nodo.titulo}"?</label>
-        <div class="assistant-grid">
-          <label><input type="radio" name="salidas" value="0" /> 0 (finaliza aquí)</label>
-          <label><input type="radio" name="salidas" value="1" /> 1 salida</label>
-          <label><input type="radio" name="salidas" value="2" /> 2 o más</label>
+        <div class="assistant-prompt">
+          <p>¿Cuántas salidas tiene "${nodo.titulo}"?</p>
+          <span>Primero terminamos este nodo antes de crear el siguiente</span>
+        </div>
+        <div class="assistant-choice-grid">
+          <label class="assistant-choice-card">
+            <input type="radio" name="salidas" value="0" />
+            <div>
+              <strong>0</strong>
+              <p>Finaliza aquí</p>
+            </div>
+          </label>
+          <label class="assistant-choice-card">
+            <input type="radio" name="salidas" value="1" />
+            <div>
+              <strong>1 salida</strong>
+              <p>Indicamos condición y destino</p>
+            </div>
+          </label>
+          <label class="assistant-choice-card">
+            <input type="radio" name="salidas" value="2" />
+            <div>
+              <strong>2 o más</strong>
+              <p>Configura bifurcaciones</p>
+            </div>
+          </label>
         </div>
         <div class="assistant-actions">
           <button type="submit" class="assistant-primary">Definir salidas</button>
