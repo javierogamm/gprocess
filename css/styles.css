@@ -1,207 +1,368 @@
-/* ============================================
-   ESTILOS GENERALES DE LA INTERFAZ
-============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+:root {
+  --bg: #0f172a;
+  --bg-alt: #0b1224;
+  --panel: rgba(255, 255, 255, 0.06);
+  --panel-strong: rgba(15, 23, 42, 0.7);
+  --card: #0e162a;
+  --surface: rgba(255, 255, 255, 0.08);
+  --stroke: rgba(255, 255, 255, 0.08);
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #7c3aed;
+  --accent-2: #22d3ee;
+  --accent-3: #0ea5e9;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  --radius: 14px;
+  --transition: 0.22s ease;
+}
 
-.node {
-    width: var(--w, auto);
-    height: var(--h, auto);
+* {
+  box-sizing: border-box;
 }
 
 body {
-    margin: 0;
-    display: flex;
-    height: 100vh;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 15% 20%, rgba(124, 58, 237, 0.12), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(34, 211, 238, 0.12), transparent 28%),
+    linear-gradient(140deg, var(--bg) 0%, var(--bg-alt) 50%, #0a0f1f 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* PANEL IZQUIERDO */
+.background-visual {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 16px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 16px);
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+.app-header {
+  position: relative;
+  z-index: 2;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(120deg, rgba(124, 58, 237, 0.12), rgba(14, 165, 233, 0.08));
+  border-bottom: 1px solid var(--stroke);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #0b1020;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.35);
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.4px;
+}
+
+.brand small {
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pill-btn {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: var(--transition);
+}
+
+.pill-btn:hover {
+  border-color: rgba(124, 58, 237, 0.5);
+  color: white;
+  background: rgba(124, 58, 237, 0.16);
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  gap: 18px;
+  padding: 18px;
+  overflow: hidden;
+}
+
 #leftPanel {
-    width: 180px;
-    background: #1f2937;
-    color: white;
-    padding: 15px;
-    box-sizing: border-box;
-    overflow-y: auto;     /* 🔥 Scroll vertical */
-    overflow-x: hidden;   /* ✅ Sin scroll horizontal */
-    max-height: 100vh;    /* ✅ Límite para no salirse de pantalla */
-    position: relative; /* ✅ NECESARIO para que el resizer funcione */
+  width: 260px;
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  padding: 18px 16px 22px;
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+  color: var(--text);
 }
 
 #leftPanel h2 {
-    font-size: 14px;
-    margin-top: 0;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 8px 0 12px;
 }
 
-.btn {
-    width: 100%;
-    margin-bottom: 10px;
-    padding: 10px;
-    background: #374151;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 12px;
-    border-radius: 5px;
+.panel-section {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--stroke);
 }
 
-.btn:hover {
-    background: #4b5563;
+.panel-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
-/* PANEL DERECHO — ahora deslizable */
-#rightPanel {
-  position: fixed;             /* 🔹 fijo al borde derecho */
-  top: 0;
-  right: 0;
-  width: 350px;                /* 🔹 tu ancho original */
-  height: 100vh;
-  background: #ffffff;
-  border-left: 2px solid #ccc;
-  padding: 15px;
-  box-sizing: border-box;
-  overflow-y: auto;            /* 🔥 scroll vertical */
-  overflow-x: hidden;          /* ✅ sin scroll horizontal */
-  z-index: 1200;               /* sobre el canvas */
-  transform: translateX(100%); /* 🔸 oculto por defecto */
-  transition: transform 0.3s ease;
+.btn,
+.json-buttons-row button {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.9), rgba(14, 165, 233, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.25);
+  transition: var(--transition);
 }
 
-#rightPanel.visible {
-  transform: translateX(0);    /* 🔹 visible → entra suavemente */
-}
-#rightPanel h3 {
-    margin-top: 0;
-}
-
-label {
-    font-weight: bold;
-    display: block;
-    margin-top: 8px;
+.btn:hover,
+.json-buttons-row button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 36px rgba(124, 58, 237, 0.32);
 }
 
-input {
-    width: 100%;
-    padding: 6px;
-    margin-top: 5px;
-    box-sizing: border-box;
+.btn.btn-secundario {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  box-shadow: none;
 }
 
-#salidasList {
-    margin-top: 10px;
+#btnDeleteNode,
+#btnUndo,
+#btnRedo {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--stroke);
+  color: white;
+  box-shadow: none;
 }
 
-/* ============================================
-   CANVAS DE TRABAJO
-============================================ */
+#btnDeleteNode:hover,
+#btnUndo:hover,
+#btnRedo:hover,
+.btn.btn-secundario:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.json-buttons-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+textarea,
+input,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+textarea:focus,
+input:focus,
+select:focus,
+.prop-wysi:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.8);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+
 #canvasArea {
-    flex: 1;
-    background: #f3f4f6;
-    position: relative;
-    overflow: auto;
-     width: 100%;
-    height: 100%;
+  flex: 1;
+  position: relative;
+  border-radius: var(--radius);
+  border: 1px solid var(--stroke);
+  background: radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.08), transparent 30%),
+    radial-gradient(circle at 80% 10%, rgba(124, 58, 237, 0.07), transparent 25%),
+    linear-gradient(#11182c, #0d1325);
+  overflow: auto;
+  width: 100%;
+  height: 100%;
+  box-shadow: var(--shadow);
+}
+
+#canvasArea::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
 }
 
 #nodesContainer {
-    position: relative;
-    min-width: 8000px;     /* 🔥 ancho ampliado del canvas lógico */
-    min-height: 4000px;    /* 🔥 alto ampliado para subárboles grandes */
-    z-index: 20;
-    pointer-events: none !important; /* deja pasar eventos */
-    overflow: visible;     /* 🔥 permite que los loops se vean aunque salgan del marco */
-}
-.node {
-    position: absolute;
-    cursor: move;
-    user-select: none;
-    width: 200px;
-    height: 100px;
-    pointer-events: auto;    /* ✅ los nodos sí siguen siendo interactivos */
+  position: relative;
+  min-width: 8000px;
+  min-height: 4000px;
+  z-index: 20;
+  pointer-events: none !important;
+  overflow: visible;
 }
 
-/* ============================================
-   SHAPE (SVG) — DEBE IR DETRÁS
-============================================ */
+.node {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+  width: 220px;
+  height: 120px;
+  pointer-events: auto;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
 .node .shape {
-    position: relative; /* detrás del texto */
-    overflow: visible !important; /* ← permite que se vea el icono fuera del borde */
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    height: 100%;
+  position: relative;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  height: 100%;
 }
 
 .node svg {
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    overflow: visible !important;   /* ← 🔥 Esto desbloquea el emoji */
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible !important;
 }
 
-/* ============================================
-   TEXTO DEL NODO (editable y dentro del nodo)
-============================================ */
 .node-content {
-    position: absolute;
-    font-weight: bold; 
-    font-family: "Segoe UI", sans-serif;
-    top: 10px;
-        left: 12px;
-    right: 12px;
-    z-index: 2;
-
-    background: transparent;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;             /* <-- centrado */
-    justify-content: center;   /* <-- centrado horizontal */
-    text-align: center;        /* <-- centrado del texto */
-    
-    pointer-events: auto;
-    white-space: pre-wrap;
-    overflow: visible;
-
-    min-height: 20px;
-    line-height: 1.2;
-    outline: none;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 2;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  color: #f8fafc;
+  white-space: pre-wrap;
+  line-height: 1.3;
+  pointer-events: auto;
+  background: transparent;
 }
-/* Ajuste especial para nodos de tipo "Circuito de resolución" */
+
 .node.circuito .node-content {
-    top: 25px !important;
+  top: 26px !important;
 }
 
-/* ============================================
-   HANDLES DE CONEXIÓN
-============================================ */
+.node-description {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(22px + 18px);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  z-index: 3;
+  color: #dbeafe;
+  text-align: center;
+  pointer-events: auto;
+  display: block !important;
+}
+
 .handle {
-    width: 14px;
-    height: 14px;
-    background: #4a7f84;
-    border-radius: 50%;
-    position: absolute;
-    cursor: crosshair;
-    transform: translate(-50%, -50%);
-    opacity: 0;
-    transition: opacity 0.15s;
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-3));
+  border-radius: 50%;
+  position: absolute;
+  cursor: crosshair;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.15s;
+  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
 }
 
 .node:hover .handle {
-    opacity: 1;
+  opacity: 1;
 }
 
-.handle.top { left: 50%; top: -5%; }
-.handle.bottom { left: 50%; top: 105%; }
-.handle.left { left: -5%; top: 50%; }
-.handle.right { left: 105%; top: 50%; }
+.handle.top {
+  left: 50%;
+  top: -5%;
+}
 
-/* ============================================
-   SVG DE LAS CONEXIONES
-============================================ */
-/* ============================================
-   SVG DE LAS CONEXIONES
-============================================ */
+.handle.bottom {
+  left: 50%;
+  top: 105%;
+}
+
+.handle.left {
+  left: -5%;
+  top: 50%;
+}
+
+.handle.right {
+  left: 105%;
+  top: 50%;
+}
+
 #svgConnections {
   position: absolute;
   top: 0;
@@ -209,123 +370,399 @@ input {
   width: 8000px;
   height: 4000px;
   overflow: visible;
-  pointer-events: none; /* ✅ deja pasar hover a las líneas */
+  pointer-events: none;
 }
 
-
-
-/* 🔧 Área de clic invisible (paths auxiliares) */
 .connection-hit {
-  stroke: transparent;           /* evita tapar nada visualmente */
-  stroke-width: 12px;            /* área razonable */
+  stroke: transparent;
+  stroke-width: 12px;
   fill: none;
-  pointer-events: stroke;        /* solo activa en el trazo */
+  pointer-events: visibleStroke;
   cursor: pointer;
-  stroke-linecap: round;         /* centrado visual correcto */
+  stroke-linecap: round;
   stroke-linejoin: round;
-  pointer-events: visibleStroke;  /* ⚡ permite pasar hover a la línea visible */
 }
-/* 🔧 FIX para que los clics lleguen al SVG sin bloquear los nodos */
-/*#nodesContainer {
-  z-index: 20;
-  pointer-events: none !important; /* deja pasar eventos }*/
 
-
-#nodesContainer .node {
-  pointer-events: all !important; /* pero los nodos sí clicables */
-}
 .temp-line {
-    stroke: #045570;
-    stroke-width: 2;
-    stroke-dasharray: 5, 5;
+  stroke: #22d3ee;
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
 }
 
-/* ============================================
-   LABELS SOBRE CONEXIONES
-============================================ */
 .connection-label {
-    font-size: 13px;
-    font-weight: 600;
-    text-shadow: 0 0 3px rgba(0,0,0,0.6);
-    pointer-events: none;
-    user-select: none;
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  user-select: none;
+  fill: #f8fafc;
 }
-/* ============================================
-   RESIZER EN ESQUINA
-============================================ */
+
 .node-resizer {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    bottom: 2px;
-    right: 2px;
-    background: #4a7f84;      /* mismo tono que los handles */
-    border-radius: 2px;
-    cursor: se-resize;
-    z-index: 30;
-    opacity: 0;               /* 🔹 oculto por defecto */
-    transition: opacity 0.15s;
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  bottom: 4px;
+  right: 4px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-3));
+  border-radius: 3px;
+  cursor: se-resize;
+  z-index: 30;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
 .node:hover .node-resizer {
-    opacity: 1;               /* 🔹 visible al pasar el ratón */
-}/* ============================================
-   NODO SELECCIONADO
-============================================ */
-.node.selected {
-    outline: 4px solid #003352;
+  opacity: 1;
 }
-.node-description {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    top: calc(20px + 16px);
-    font-family: "Segoe UI", sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
-    outline: none;
-    z-index: 3;
-    pointer-events: auto;
 
-    /* ✅ centrado visual */
-    text-align: center;
+.node.selected {
+  outline: 3px solid rgba(34, 211, 238, 0.8);
+  box-shadow: 0 0 0 5px rgba(34, 211, 238, 0.18);
+}
 
-    /* ✅ evita que el caret salte al principio */
-    display: block !important;
-}/* ============================================
-   SELECCIÓN MÚLTIPLE (RECTÁNGULO Y NODOS)
-============================================ */
 #selectionBox {
-    position: absolute;
-    border: 2px dashed #4a7f84;
-    background: rgba(37, 99, 235, 0.15);
-    z-index: 9999;
-    pointer-events: none;
+  position: absolute;
+  border: 2px dashed rgba(34, 211, 238, 0.9);
+  background: rgba(34, 211, 238, 0.15);
+  z-index: 9999;
+  pointer-events: none;
 }
 
 .node.selected-multi {
-    outline: 3px solid #041f59;
-    background-color: rgba(37, 99, 235, 0.08);
+  outline: 3px solid rgba(124, 58, 237, 0.8);
+  background-color: rgba(124, 58, 237, 0.12);
 }
-/* ============================================================
-   📁 PANEL FLOTANTE: FICHA DEL PROYECTO
-============================================================ */
+
+#rightPanel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.92);
+  border-left: 1px solid var(--stroke);
+  padding: 18px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 1200;
+  transform: translateX(100%);
+  transition: transform var(--transition);
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.35);
+}
+
+#rightPanel.visible {
+  transform: translateX(0);
+}
+
+#rightPanel h3 {
+  margin-top: 0;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+}
+
+label {
+  font-weight: 700;
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.prop-toolbar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.prop-toolbar button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.prop-toolbar button:hover {
+  background: rgba(124, 58, 237, 0.16);
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.prop-wysi {
+  min-height: 110px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+#salidasList {
+  margin-top: 10px;
+}
+
+#projectTitle {
+  position: absolute;
+  top: 24px;
+  left: 20%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  z-index: 9999;
+  letter-spacing: 1px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 11, 22, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.csv-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.csv-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  color: #fca5a5;
+  padding: 0 6px;
+  transition: var(--transition);
+}
+
+.csv-close-btn:hover {
+  color: #fecaca;
+  transform: scale(1.08);
+}
+
+.csv-content {
+  overflow-y: auto;
+  max-height: calc(85vh - 70px);
+  padding-right: 6px;
+}
+
+.modal-content {
+  background: rgba(15, 23, 42, 0.95);
+  padding: 20px;
+  border-radius: 16px;
+  max-width: 90%;
+  max-height: 85%;
+  overflow: auto;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--stroke);
+  color: var(--text);
+}
+
+.csv-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.csv-content th,
+.csv-content td {
+  border: 1px solid var(--stroke);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.csv-content th {
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 700;
+}
+
+.nota-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 10px;
+  cursor: text;
+  resize: none;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  user-select: text;
+}
+
+.nota-texto {
+  width: 100%;
+  height: 100%;
+  outline: none;
+  border: none;
+  background: transparent;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  color: #e2e8f0;
+}
+
+.floating-assign-btn,
+.floating-cambios-btn {
+  position: fixed;
+  right: 80px;
+  z-index: 2000;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.9), rgba(14, 165, 233, 0.9));
+  color: #0b1224;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 32px rgba(14, 165, 233, 0.3);
+  transition: var(--transition);
+}
+
+.floating-assign-btn {
+  top: 20px;
+}
+
+.floating-cambios-btn {
+  top: 70px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.9), rgba(14, 165, 233, 0.9));
+}
+
+.floating-assign-btn:hover,
+.floating-cambios-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 36px rgba(124, 58, 237, 0.35);
+}
+
+.assign-panel,
+.cambios-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 320px;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform var(--transition);
+  z-index: 1999;
+  padding: 20px;
+  border-left: 1px solid var(--stroke);
+}
+
+.assign-panel.visible,
+.cambios-panel.visible {
+  transform: translateX(0);
+}
+
+.assign-panel h3,
+.cambios-panel h3 {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+  color: #e0f2fe;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.assign-section {
+  margin-bottom: 20px;
+}
+
+.assign-section h4 {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.95em;
+}
+
+.assign-item,
+.cambio-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--stroke);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  color: var(--text);
+}
+
+.assign-item:hover,
+.cambio-item:hover {
+  background: rgba(124, 58, 237, 0.1);
+  transform: translateY(-1px);
+}
+
+.assign-item.active {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.6);
+  font-weight: 700;
+}
+
+.node-highlight {
+  outline: 3px solid rgba(34, 211, 238, 0.95) !important;
+  background-color: rgba(34, 211, 238, 0.12) !important;
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.6);
+  transition: all 0.2s ease;
+  z-index: 1500;
+}
+
+.cambios-panel.visible {
+  transform: translateX(0);
+}
+
+.cambios-panel h4 {
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+
+.cambio-item {
+  border: 1px solid rgba(14, 165, 233, 0.35);
+}
+
+.cambio-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .ficha-panel {
   position: fixed;
   top: 0;
   right: 0;
   width: 360px;
   height: 100vh;
-  background: #f9fafb;
-  box-shadow: -4px 0 8px rgba(0,0,0,0.15);
-  border-left: 1px solid #e2e8f0;
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.25);
+  border-left: 1px solid var(--stroke);
   transform: translateX(100%);
-  transition: transform 0.3s ease;
+  transition: transform var(--transition);
   z-index: 2500;
-  padding: 20px;
+  padding: 22px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -338,9 +775,9 @@ input {
 .ficha-panel h2 {
   text-align: center;
   font-size: 1.3em;
-  color: #1e293b;
+  color: #e0e7ff;
   margin-bottom: 20px;
-  border-bottom: 2px solid #cbd5e1;
+  border-bottom: 1px solid var(--stroke);
   padding-bottom: 8px;
 }
 
@@ -348,18 +785,18 @@ input {
   font-weight: 600;
   font-size: 0.9em;
   margin-bottom: 4px;
-  color: #334155;
+  color: var(--muted);
 }
 
 .ficha-panel input,
 .ficha-panel textarea {
   width: 100%;
   margin-bottom: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 10px;
   font-size: 0.95em;
-  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .ficha-panel textarea {
@@ -367,1082 +804,53 @@ input {
   resize: vertical;
 }
 
-/* Botones dentro del panel */
-.ficha-panel button {
-  width: 100%;
-  margin-top: 8px;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
 #fpGuardar {
-  background: #2563eb;
-  color: white;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.9), rgba(14, 165, 233, 0.9));
+  color: #0b1224;
 }
 
 #fpCerrar {
-  background: #e2e8f0;
-  color: #111;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
 }
 
-#fpGuardar:hover { background: #1e40af; }
-#fpCerrar:hover { background: #cbd5e1; }
-
-.btn-secundario {
-  background: #6b7280;
-  color: white;
-}#projectTitle {
-    position: absolute;
-    top: 20px;              /* separación superior */
-    left: 20%;
-    transform: translateX(-50%);
-    font-size: 32px;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: #1f2937;
-    pointer-events: none;   /* no bloquea clicks */
-    z-index: 9999;
-    opacity: 0.80;
+#fpGuardar:hover,
+#fpCerrar:hover {
+  transform: translateY(-1px);
 }
 
-/* Este es el modal popup de ver CSV */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-  }
-
-  /* Cabecera del modal (título + X roja a la derecha) */
-.csv-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+#importFromTextBlock {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--stroke);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-/* Botón X roja */
-.csv-close-btn {
-    border: none;
-    background: transparent;
-    font-size: 26px;
-    font-weight: bold;
-    line-height: 1;
-    cursor: pointer;
-    color: #dc2626; /* rojo */
-    padding: 0 6px;
+#btnImportarTexto {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.9), rgba(59, 130, 246, 0.9));
 }
 
-.csv-close-btn:hover {
-    color: #b91c1c;
-    transform: scale(1.15);
+.prop-toolbar .separator {
+  width: 1px;
+  height: 32px;
+  background: var(--stroke);
+  margin: 0 4px;
 }
 
-/* Aseguramos que el contenido es desplazable */
-.csv-content {
-    overflow-y: auto;
-    max-height: calc(85vh - 70px);
-    padding-right: 6px;
-}
-  .modal.hidden {
-    display: none;
-  }
-  .modal-content {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    max-width: 90%;
-    max-height: 85%;
-    overflow: auto;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
-  .csv-content table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-bottom: 20px;
-  }
-  .csv-content th, .csv-content td {
-    border: 1px solid #ccc;
-    padding: 6px 10px;
-    text-align: left;
-    font-size: 13px;
-  }
-  .csv-content th {
-    background: #f0f0f0;
-    font-weight: bold;
-  }
-  /* ============================================================
-   NODOS DE TIPO "NOTAS"
-   - No interactúan con conexiones
-   - Solo sirven como recordatorio visual
-   - Fondo gris claro, texto libre editable
-============================================================ */
-
-.nota-box {
-    background: #f3f4f6;           /* gris clarito */
-    border: 1px solid #d1d5db;     /* gris medio */
-    border-radius: 6px;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-    color: #111827;
-    font-family: "Calibri", sans-serif;
-    font-size: 14px;
-    line-height: 1.4;
-    padding: 8px 10px;
-    box-sizing: border-box;
-    cursor: text;
-    resize: none;
-    overflow: hidden;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    user-select: text;
-}
-
-.nota-box:hover {
-    box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
-    border-color: #9ca3af;
-}
-
-/* Texto interior editable */
-.nota-texto {
-    width: 100%;
-    height: 100%;
-    outline: none;
-    border: none;
-    background: transparent;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
-    color: #111827;
-}
-
-/* Si quieres que las notas no muestren los "handles" */
-.node.notas .handle {
-    display: none !important;
-}
-
-/* Y si quieres que el resizer no aparezca */
-.node.notas .node-resizer {
-    display: none !important;
-}
-/* ============================================================
-   TOOLBAR FLOTANTE DE DESCRIPCIÓN DE NODOS
-============================================================ */
-.node-toolbar {
-    position: fixed;
-    background: #f9fafb;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    padding: 3px 4px;
-    z-index: 9999;
-    gap: 4px;
-    display: none;
-}
-
-.node-toolbar button {
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-    padding: 2px 4px;
-    font-size: 12px;
-}
-.node-toolbar button:hover {
-    background: #e5e7eb;
-    border-radius: 4px;
-}
-.node-toolbar .separator {
-    width: 1px;
-    background: #d1d5db;
-    margin: 0 4px;
-}
-
-/* Campo descripción del panel derecho */
-.prop-wysi {
-    min-height: 80px;
-    border: 1px solid #cbd5e1;
-    border-radius: 5px;
-    padding: 6px;
-    font-family: inherit;
-    line-height: 1.4;
-    overflow-y: auto;
-}
-/* ============================================================
-   BOTONES DE JSON (IA izquierda + Pegar derecha)
-============================================================ */
-.json-buttons-row {
-    display: flex;
-    flex-direction: row-reverse;   /* 🔥 invierte el orden visual */
-    gap: 6px;
-    justify-content: space-between;
-    align-items: stretch;
-    margin-bottom: 10px;
-}
-
-.json-buttons-row button {
-    flex: 1;
-    background: #374151;
-    border: none;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-    padding: 10px 0;
-    border-radius: 4px;
-    transition: background 0.2s;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.json-buttons-row button:hover {
-    background: #4b5563;
-}
-/* ============================================================
-   AJUSTE GLOBAL DE FUENTE PARA EL PANEL DERECHO (UI)
-============================================================ */
-#rightPanel,
-#rightPanel input,
-#rightPanel select,
-#rightPanel button,
-#rightPanel label,
-#rightPanel textarea,
-#rightPanel h3 {
-    font-size: 13px !important;     /* 🔹 más pequeño (puedes bajar a 12 si quieres aún más compacto) */
-    line-height: 1.2;
-}
-
-#rightPanel label {
-    margin-bottom: 3px;
-}
-
-#rightPanel input[type="color"] {
-    height: 28px !important;
-}
-
-#rightPanel h3 {
-    font-size: 14px;
-    margin-top: 8px;
-    margin-bottom: 6px;
-}
-/* ============================================================
-   PANELES LATERALES REDIMENSIONABLES
-============================================================ */
-.panel-resizer {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 6px;
-    background: transparent;
-    cursor: ew-resize;
-    z-index: 9999;
-}
-
-/* Bordes de cada panel */
-#leftPanel .panel-resizer {
-    right: 0;
-}
-#rightPanel .panel-resizer {
-    left: 0;
-}
-
-/* Sutil feedback visual al pasar el ratón */
-.panel-resizer:hover {
-    background: rgba(0, 0, 0, 0.08);
-}
-.connection-path.highlighted-conn {
-  stroke: #50a1a2 !important;
-  stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
-  transition: stroke 0.2s ease;
-}
-.connection-line.highlighted-conn {
-  stroke: #50a1a2 !important;
-  stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
-  transition: stroke 0.2s ease;
-}
-/* 🔘 Botón flotante */
-.floating-assign-btn {
-  position: fixed;
-  top: 15px;
-  right:80px;
-  z-index: 2000;
-  background: rgba(4, 200, 144, 0.821);
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
-}
-.floating-assign-btn:hover {
-  background: rgba(2, 65, 47, 0.821);
-}
-
-/* 📜 Panel lateral */
-.assign-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 300px;
-  background: #f9fafb;
-  box-shadow: -4px 0 8px rgba(0,0,0,0.15);
-  overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  z-index: 1999;
-  padding: 20px;
-}
-.assign-panel.visible {
-  transform: translateX(0);
-}
-.assign-panel h3 {
-  text-align: center;
-  margin-bottom: 15px;
-  font-size: 1.1em;
-  color: #1e293b;
-  border-bottom: 2px solid #cbd5e1;
-  padding-bottom: 6px;
-}
-
-/* Bloques de asignación */
-.assign-section {
-  margin-bottom: 20px;
-}
-.assign-section h4 {
-  margin-bottom: 8px;
-  color: #334155;
-  font-size: 1em;
-}
-.assign-item {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-.assign-item:hover {
-  background: #e0f2fe;
-  transform: scale(1.02);
-}
-.assign-item.active {
-  background: #bfdbfe;
-  border-color: #3b82f6;
-  font-weight: bold;
-}
-
-/* ✨ Resaltado de nodos */
-.node-highlight {
-  outline: 3px solid rgba(4, 200, 144, 0.821) !important;
-  background-color: rgba(4, 200, 144, 0.08) !important; /* 🔹 leve tono de fondo */
-  box-shadow: 0 0 15px rgba(4, 200, 144, 0.6);          /* 🔹 resplandor visible */
-  transition: all 0.2s ease;
-  z-index: 1500;                                        /* 🔹 sobre otros elementos */
-}
-/* 🔘 Botón flotante Cambios */
-.floating-cambios-btn {
-  position: fixed;
-  top: 60px;          /* 👈 justo debajo del botón de Asignaciones */
-  right: 80px;         /* mismo alineado a la izquierda */
-  z-index: 2000;
-  background: rgba(2, 144, 104, 0.821); /* verde elegante */
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
-}
-.floating-cambios-btn:hover { background: #047857; }
-
-/* 📜 Panel lateral Cambios */
-.cambios-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 280px;
-  background: #f9fafb;
-  box-shadow: -4px 0 8px rgba(0,0,0,0.15);
-  overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  z-index: 1999;
-  padding: 20px;
-}
-.cambios-panel.visible { transform: translateX(0); }
-
-.cambios-panel h3 {
-  text-align: center;
-  margin-bottom: 15px;
-  font-size: 1.1em;
-  color: #065f46;
-  border-bottom: 2px solid #a7f3d0;
-  padding-bottom: 6px;
-}
-
-.cambio-item {
-  background: #fff;
-  border: 1px solid #d1fae5;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-}
-.cambio-item:hover { background: #d1fae5; transform: scale(1.02); }
-.cambio-item.active {
-  background: #6ee7b7;
-  border-color: #059669;
-  font-weight: bold;
-}
-
-/* ✨ Iluminado de nodos destino (borde + fondo) */
-.node-highlight-cambio {
-  outline: 3px solid #10b981 !important;                /* borde verde esmeralda */
-  background-color: rgba(16, 185, 129, 0.15) !important; /* fondo suave */
-  box-shadow: 0 0 12px rgba(12, 247, 118, 0.6);          /* brillo exterior */
-  transition: all 0.25s ease-in-out;
-}
-
-/* ============================================================
-   EFECTO VISUAL AL ARRASTRAR NODOS SOBRE EL CANVAS
-============================================================ */
-#canvasArea.dragover {
-  background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
-  transition: background 0.3s ease;
-}
-/* ============================================================
-   TESAURO: Botón flotante y panel lateral
-============================================================ */
-.floating-tesauro-btn {
-  position: fixed;
-  top: 105px;           /* debajo del botón de Cambios */
-  right: 80px;
-  z-index: 2000;
-  background: #475569; /* gris azulado */
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
-}
-.floating-tesauro-btn:hover { background: #334155; }
-
-.tesauro-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 320px;
-  background: #f9fafb;
-  box-shadow: -4px 0 8px rgba(0,0,0,0.15);
-  overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  z-index: 1999;
-  padding: 20px;
-}
-.tesauro-panel.visible { transform: translateX(0); }
-
-.tesauro-panel h3 {
-  text-align: center;
-  margin-bottom: 15px;
-  font-size: 1.1em;
-  color: #1e293b;
-  border-bottom: 2px solid #cbd5e1;
-  padding-bottom: 6px;
-}
-.tesauro-item {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  position: relative;
-}
-.btn-guardar {
-  background: #2563eb;
-  color: white;
-  margin-top: 10px;
-  width: 100%;
-  border-radius: 6px;
-  padding: 10px;
-}
-.btn-guardar:hover { background: #1e40af; }
-.conn-drop-over {
-  stroke: #10b981 !important;
-  stroke-width: 3 !important;
-  filter: brightness(1.2);
-}
-/* ===============================
-   EFECTO VISUAL DE DRAG-OVER EN CONEXIÓN
-=============================== */
-.conn-path.conn-drop-over {
-  stroke: #10b981 !important;         /* verde vivo */
-  stroke-width: 4 !important;         /* un poco más gruesa */
-  filter: drop-shadow(0 0 3px #10b981);
-  transition: all 0.15s ease;
-  
-}
-/* ==========================================================
-   🔸 Desactivar área invisible de clic durante arrastre Tesauro
-   (para que las líneas reales puedan iluminarse correctamente)
-   y mantener una gran zona de drop.
-========================================================== */
-.drag-tesauro-active .connection-hit {
-  pointer-events: none !important; /* deja pasar el evento al path visible */
-  stroke-width: 30px !important;   /* 🔥 área de detección MUCHO más grande */
-}
-
-/* ============================================================
-   BOTONES FLOTANTES — SE MUEVEN CON CUALQUIER PANEL VISIBLE
-============================================================ */
-
-/* 🔹 Transición suave para todos los botones */
-.floating-assign-btn,
-.floating-cambios-btn,
-.floating-tesauro-btn {
-  transition: right 0.3s ease;
-}
-
-/* 🔹 Si cualquier panel lateral (derecho, asignaciones, cambios o tesauro) está visible,
-   todos los botones flotantes se desplazan a 360px */
-#rightPanel.visible ~ .floating-assign-btn,
-#rightPanel.visible ~ .floating-cambios-btn,
-#rightPanel.visible ~ .floating-tesauro-btn,
-.assign-panel.visible ~ .floating-assign-btn,
-.assign-panel.visible ~ .floating-cambios-btn,
-.assign-panel.visible ~ .floating-tesauro-btn,
-.cambios-panel.visible ~ .floating-assign-btn,
-.cambios-panel.visible ~ .floating-cambios-btn,
-.cambios-panel.visible ~ .floating-tesauro-btn,
-.tesauro-panel.visible ~ .floating-assign-btn,
-.tesauro-panel.visible ~ .floating-cambios-btn,
-.tesauro-panel.visible ~ .floating-tesauro-btn {
-  right: 360px;
-}
-/* ============================================================
-   🔒 BLOQUEAR DESPLAZAMIENTO DEL VIEWPORT AL ABRIR PANEL LATERAL
-   (evita que el canvas se mueva y desincronice las líneas)
-============================================================ */
-body.panel-locked {
-  overflow: hidden !important; /* bloquea movimiento */
-}
-
-body.panel-locked #canvasArea {
-  pointer-events: none; /* previene scrolls mientras se abre */
-}
-
-/* 🔹 Hover — efecto más luminoso */
-
-#svgConnections {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 8000px;
-  height: 4000px;
-  overflow: visible;
-}
-
-.connection-line {
-  stroke: #4a7f84;
-  stroke-width: 2;
-  fill: none;
-  cursor: pointer;
-  pointer-events: stroke;
-  transition: stroke-width 0.15s ease;
-}
-
-/* 🔹 Solo efecto de selección, sin hover */
-.connection-line.selected,
-.connection-line.highlighted-conn {
-  stroke: #50a1a2 !important;
-  stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
-}
-
-.connection-hit {
-  stroke: transparent;
-  stroke-width: 20px;
-  fill: none;
-  pointer-events: stroke;
-  cursor: pointer;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-/* ============================================================
-   ✨ SELECCIÓN DE CONEXIÓN — LÍNEA + NODOS ORIGEN/DESTINO
-============================================================ */
-
-/* 🔹 Línea seleccionada (ya coherente con tu gama) */
-.connection-line.selected-conn {
-  stroke: #00b4d8 !important;
-  stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(0,180,216,0.8));
-  transition: stroke 0.2s ease, filter 0.2s ease;
-}
-
-/* 🔹 Nodos conectados (resaltados con tono compatible) */
-.node.selected-conn {
-  outline: 3px solid rgba(0,180,216,0.8) !important;
-  box-shadow: 0 0 10px rgba(0,180,216,0.6);
-  z-index: 1200;
-  transition: box-shadow 0.2s ease, outline 0.2s ease;
-}
-/* 🔧 Fix visual para resaltado de asignaciones */
-.node.node-highlight .shape,
-.node.node-highlight svg {
-  filter: drop-shadow(0 0 10px rgba(4, 200, 144, 0.6));
-}
-
-.node.node-highlight {
-  background-color: rgba(4, 200, 144, 0.12) !important;
-  outline: 3px solid rgba(4, 200, 144, 0.9) !important;
-  box-shadow: 0 0 12px rgba(4, 200, 144, 0.7);
-}
-
-/* ===== Popup de pegar grupos/usuarios ===== */
-.assign-paste-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.assign-paste-modal.hidden {
-    display: none !important;
-}
-
-.assign-paste-box {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    width: 380px;
-    max-width: 90%;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-    display: flex;
+@media (max-width: 1100px) {
+  .app-shell {
     flex-direction: column;
-    gap: 12px;
-}
+  }
 
-#assignPasteTextarea {
+  #leftPanel {
     width: 100%;
-    height: 200px;
-    resize: vertical;
-    padding: 10px;
-    box-sizing: border-box;
-}
-
-.assign-paste-buttons {
-    display: flex;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 10px;
-}
+  }
 
-.btn-import {
-    background: #08d17a;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-}
-
-.btn-cancel {
-    background: #aaa;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-}
-.tm-row-selected {
-    background: #dbeafe !important;
-}
-
-/* ============================================================
-   WIZARD - ASISTENTE GUIADO
-============================================================ */
-
-/* Botón flotante del wizard */
-.floating-wizard-btn {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 14px 28px;
-    border-radius: 30px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    z-index: 1500;
-    transition: all 0.3s ease;
-}
-
-.floating-wizard-btn:hover {
-    transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
-
-/* Panel lateral del wizard */
-.wizard-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 400px;
-    height: 100vh;
-    background: white;
-    border-right: 2px solid #e2e8f0;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 1600;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.wizard-panel.visible {
-    transform: translateX(0);
-}
-
-.wizard-header {
-    padding: 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.wizard-header h3 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.wizard-close-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 24px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
-
-.wizard-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.wizard-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 20px;
-}
-
-/* Menú principal del wizard */
-.wizard-menu h4 {
-    margin: 0 0 12px 0;
-    color: #1f2937;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.wizard-btn {
-    width: 100%;
-    padding: 12px 16px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #1f2937;
-    cursor: pointer;
-    font-size: 14px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    text-align: left;
-    transition: all 0.2s;
-}
-
-.wizard-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    transform: translateX(4px);
-}
-
-.wizard-btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    font-weight: bold;
-}
-
-.wizard-btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.wizard-divider {
-    border: none;
-    border-top: 1px solid #e2e8f0;
-    margin: 20px 0;
-}
-
-/* Botón de volver */
-.wizard-back-btn {
-    background: transparent;
-    border: none;
-    color: #667eea;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 8px 0;
-    margin-bottom: 16px;
-    text-align: left;
-    font-weight: 600;
-}
-
-.wizard-back-btn:hover {
-    color: #764ba2;
-    text-decoration: underline;
-}
-
-/* Importación */
-.wizard-import-options {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.wizard-input,
-.wizard-textarea,
-.wizard-select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 14px;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
-
-.wizard-input-large {
-    font-size: 16px;
-    padding: 14px;
-}
-
-.wizard-textarea {
-    resize: vertical;
-    min-height: 120px;
-}
-
-.wizard-select {
-    cursor: pointer;
-}
-
-.wizard-help {
-    margin-top: 8px;
-    padding: 10px;
-    background: #fef3c7;
-    border: 1px solid #fbbf24;
-    border-radius: 6px;
-}
-
-.wizard-help small {
-    color: #92400e;
-    font-size: 12px;
-}
-
-/* Acciones (botones de confirmar/cancelar) */
-.wizard-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.wizard-actions button {
-    flex: 1;
-}
-
-.wizard-btn-cancel {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-}
-
-.wizard-btn-cancel:hover {
-    background: #e2e8f0;
-}
-
-/* Wizard de nodos paso a paso */
-.wizard-progress {
-    background: #f1f5f9;
-    padding: 8px 12px;
-    border-radius: 6px;
-    text-align: center;
-    font-size: 12px;
-    color: #64748b;
-    margin-bottom: 16px;
-    font-weight: 600;
-}
-
-.wizard-step-content {
-    margin: 20px 0;
-}
-
-.wizard-yesno {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-}
-
-.wizard-btn-yesno {
-    flex: 1;
-    padding: 20px;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-
-.wizard-btn-yesno:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-}
-
-.wizard-btn-yesno.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-color: #667eea;
-}
-
-/* Plantillas de flujo */
-.wizard-template-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.wizard-template-card {
-    padding: 16px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.wizard-template-card:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.wizard-template-card h5 {
-    margin: 0 0 8px 0;
-    color: #1f2937;
-    font-size: 16px;
-}
-
-.wizard-template-card p {
-    margin: 0;
-    color: #64748b;
-    font-size: 13px;
-}
-
-.wizard-template-description {
-    color: #64748b;
-    font-size: 14px;
-    line-height: 1.6;
-    margin: 12px 0 20px 0;
-}
-
-.wizard-template-preview {
-    background: #f8fafc;
-    padding: 16px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.wizard-template-preview h5 {
-    margin: 0 0 12px 0;
-    color: #1f2937;
-    font-size: 14px;
-}
-
-.wizard-template-nodes {
-    margin: 0;
-    padding-left: 20px;
-}
-
-.wizard-template-nodes li {
-    margin-bottom: 12px;
-    line-height: 1.6;
-}
-
-.wizard-node-type {
-    color: #64748b;
-    font-size: 12px;
-    font-style: italic;
-    margin-left: 8px;
-}
-
-.wizard-template-nodes small {
-    color: #64748b;
-    font-size: 12px;
-}
-
-/* Modal del wizard (si se necesita) */
-.wizard-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
-.wizard-modal.hidden {
-    display: none;
-}
-
-.wizard-modal-content {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  #canvasArea {
+    min-height: 65vh;
+  }
 }

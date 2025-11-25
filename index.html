@@ -11,87 +11,108 @@
 
 <body>
 
-    <!-- PANEL IZQUIERDO -->
-    <div id="leftPanel">
-        <h2>Procedimiento</h2>
-        <button class="btn" id="btnFichaProyecto">Ficha del proyecto</button>
-        <button class="btn" id="btnToggleRightPanel">⚙️ Panel de propiedades</button>
-        <button class="btn" id="btnVerCSV">📋 Ver procedimiento</button>
+    <div class="background-visual"></div>
 
-        <h2>Nodos</h2>
-        <button class="btn" onclick="Engine.createNode('formulario')">+ Formulario</button>
-        <button class="btn" onclick="Engine.createNode('documento')">+ Documento</button>
-        <button class="btn" onclick="Engine.createNode('libre')">+ Libre</button>
-        <button class="btn" onclick="Engine.createNode('decision')">+ Decisión</button>
-        <button class="btn" onclick="Engine.createNode('circuito')">+ Circuito Resolución</button>
-        <button class="btn" onclick="Engine.createNode('plazo')">+ Añadir Plazo</button>
-        <button class="btn" onclick="Engine.createNode('operacion_externa')">+ Operación Externa</button>
-        <button class="btn" onclick="Engine.createNode('notas')">+ Nota</button>
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-mark">GF</div>
+            <div>
+                <h1>GestioFlow Studio</h1>
+                <small>Diagramador inteligente</small>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="pill-btn" onclick="Engine.exportToJSON()">💾 Guardar rápido</button>
+            <button class="pill-btn" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo</button>
+            <button class="pill-btn" onclick="document.getElementById('btnIAJson').click()">🤖 IA JSON</button>
+        </div>
+    </header>
 
-                     <!--  Cargar guardar -->
-                     <hr>
-                     <button class="btn" onclick="Engine.exportToJSON()">💾 Guardar JSON</button>
-                     <input type="file" id="fileLoader" accept=".json" style="display:none" onchange="loadJSONFile(event)">
-                     <button class="btn" onclick="document.getElementById('fileLoader').click()">📂 Cargar JSON</button>
-                     <div class="json-buttons-row">
-                        <button id="btnPasteJSON">📋 Pegar JSON</button>
-                        <button id="btnIAJson" title="Abrir asistente IA JSON">
-                            🤖 IA JSON
-                        </button>
-                    </div>     
-                     <script>
-                     function loadJSONFile(e) {
-                         const file = e.target.files[0];
-                         if (!file) return;
-     
-                         const reader = new FileReader();
-                         reader.onload = (evt) => {
-                             Engine.importFromJSON(evt.target.result);
-                         };
-                         reader.readAsText(file);
-                     }
-                     </script>
-     <hr>
-     <!-- Botón de Export WORD comentado para evitar uso de librerias de momento -->
-     <button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX</button>
-     <button class="btn" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
-     <button class="btn" id="btnExportTesauro">📤 Exportar tesauro CSV</button>
+    <div class="app-shell">
+        <!-- PANEL IZQUIERDO -->
+        <div id="leftPanel">
+            <div class="panel-section">
+                <h2>Procedimiento</h2>
+                <button class="btn" id="btnFichaProyecto">Ficha del proyecto</button>
+                <button class="btn" id="btnToggleRightPanel">⚙️ Panel de propiedades</button>
+                <button class="btn" id="btnVerCSV">📋 Ver procedimiento</button>
+            </div>
 
-<!-- Botón de importación -->
-<!--<button id="btnImportFlujo" class="btn">📥 Importar Flujo CSV</button>-->
-<!-- Botón ver copypaste -->
+            <div class="panel-section">
+                <h2>Nodos</h2>
+                <button class="btn" onclick="Engine.createNode('formulario')">+ Formulario</button>
+                <button class="btn" onclick="Engine.createNode('documento')">+ Documento</button>
+                <button class="btn" onclick="Engine.createNode('libre')">+ Libre</button>
+                <button class="btn" onclick="Engine.createNode('decision')">+ Decisión</button>
+                <button class="btn" onclick="Engine.createNode('circuito')">+ Circuito Resolución</button>
+                <button class="btn" onclick="Engine.createNode('plazo')">+ Añadir Plazo</button>
+                <button class="btn" onclick="Engine.createNode('operacion_externa')">+ Operación Externa</button>
+                <button class="btn" onclick="Engine.createNode('notas')">+ Nota</button>
+            </div>
 
-<div id="importFromTextBlock" style="margin-top:20px; padding:10px; border-top:1px solid #ccc;">
-    <h3 style="margin-top:0;">Copypaste</h3>
+            <div class="panel-section">
+                <h2>Guardado y carga</h2>
+                <button class="btn" onclick="Engine.exportToJSON()">💾 Guardar JSON</button>
+                <input type="file" id="fileLoader" accept=".json" style="display:none" onchange="loadJSONFile(event)">
+                <button class="btn" onclick="document.getElementById('fileLoader').click()">📂 Cargar JSON</button>
+                <div class="json-buttons-row">
+                    <button id="btnPasteJSON">📋 Pegar JSON</button>
+                    <button id="btnIAJson" title="Abrir asistente IA JSON">
+                        🤖 IA JSON
+                    </button>
+                </div>
+                <script>
+                function loadJSONFile(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
 
-    <textarea id="txtImportar"
-        placeholder="Pega aquí la definición de tareas…"
-        style="width:100%; height:150px; margin-bottom:10px; box-sizing:border-box;"></textarea>
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        Engine.importFromJSON(evt.target.result);
+                    };
+                    reader.readAsText(file);
+                }
+                </script>
+            </div>
 
-    <button id="btnImportarTexto"
-        class="btn"
-        style="width:100%; background:#2563eb; color:white;">
-        Importar diagrama desde texto
-    </button>
-</div>
-<!-- Input oculto para seleccionar los dos archivos -->
-<input 
-    type="file" 
-    id="inputFlujoCSV" 
-    accept=".csv" 
-    multiple 
-    style="display: none;">
+            <div class="panel-section">
+                <h2>Exportar</h2>
+                <button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX</button>
+                <button class="btn" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
+                <button class="btn" id="btnExportTesauro">📤 Exportar tesauro CSV</button>
+            </div>
+
+            <div id="importFromTextBlock">
+                <h3 style="margin-top:0;">Copypaste</h3>
+
+                <textarea id="txtImportar"
+                    placeholder="Pega aquí la definición de tareas…"
+                    style="width:100%; height:150px; margin-bottom:10px; box-sizing:border-box;"></textarea>
+
+                <button id="btnImportarTexto"
+                    class="btn"
+                    style="width:100%;">
+                    Importar diagrama desde texto
+                </button>
+            </div>
+
+            <!-- Input oculto para seleccionar los dos archivos -->
+            <input
+                type="file"
+                id="inputFlujoCSV"
+                accept=".csv"
+                multiple
+                style="display: none;">
+        </div>
+
+        <!-- ZONA DE DIBUJO -->
+        <div id="canvasArea">
+                <svg id="svgConnections"></svg>
+                <div id="nodesContainer"></div>
+        </div>
+        <div id="projectTitle"></div>
     </div>
 
-    <!-- ZONA DE DIBUJO -->
-    <div id="canvasArea">
-            <svg id="svgConnections"></svg>
-            <div id="nodesContainer"></div>
-    </div>
-    <div id="projectTitle">
-
-    </div>
-    
     <!-- 🔘 Botón flotante -->
     <button id="btnAsignaciones" class="floating-assign-btn">📋 Asignaciones</button>
     <button id="btnCambiosEstado" class="floating-cambios-btn">🔄 Cambios de estado</button>
@@ -99,7 +120,7 @@
     <div id="rightPanel">
         <h3>Propiedades</h3>
         <div id="propsEmpty">Selecciona un nodo.</div>
-    
+
         <div id="propsEditor" style="display:none;">
             <label>Título</label>
             <input id="propTitulo" />
@@ -116,7 +137,7 @@
             </select>
             <label>Descripción</label>
             <div id="propToolbar" class="prop-toolbar">
-                <button data-cmd="bold" title="Negrita"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 5h7a3 3 0 010 6H7zm0 6h8a3 3 0 010 6H7z" fill="currentColor"/></svg></button>
+                <button data-cmd="bold" title="Negrita"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M7 5h7a3 3 0 01 0 6H7zm0 6h8a3 3 0 010 6H7z" fill="currentColor"/></svg></button>
                 <button data-cmd="italic" title="Cursiva"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M10 5v2h2.58l-3.16 10H7v2h7v-2h-2.58l3.16-10H17V5z" fill="currentColor"/></svg></button>
                 <button data-cmd="underline" title="Subrayado"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 17a5 5 0 005-5V5h-2v7a3 3 0 01-6 0V5H7v7a5 5 0 005 5zM5 19h14v2H5z" fill="currentColor"/></svg></button>
                 <span class="separator"></span>
@@ -124,7 +145,7 @@
                 <button data-cmd="justifyCenter" title="Centro"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm2 4h12v2H6zm-2 4h16v2H4zm2 4h12v2H6z" fill="currentColor"/></svg></button>
                 <button data-cmd="justifyRight" title="Derecha"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm6 4h12v2H9zm-6 4h18v2H3zm6 4h12v2H9z" fill="currentColor"/></svg></button>
             </div>
-            
+
             <div id="propDescripcion" contenteditable="true" class="prop-wysi"></div>
             <label style="margin-top:10px;">Tarea manual</label>
             <input type="checkbox" id="propTareaManual">
@@ -134,32 +155,32 @@
 
             <h4>Salidas</h4>
             <div id="salidasList"></div>
-    
+
             <!-- 🗑️ Nuevo botón -->
-            <button id="btnDeleteNode" class="btn" style="background:#dc2626; color:white; margin-top:15px;">
+            <button id="btnDeleteNode" class="btn" style="margin-top:15px;">
                 🗑️ Eliminar nodo
             </button>
-          
+
         </div>
-        <div style="margin-top:10px;">
-            <button id="btnUndo" class="btn" style="background:#6b7280; color:white;">↩️ Deshacer</button>
-            <button id="btnRedo" class="btn" style="background:#6b7280; color:white;">↪️ Rehacer</button>
+        <div style="margin-top:10px; display:flex; gap:10px;">
+            <button id="btnUndo" class="btn">↩️ Deshacer</button>
+            <button id="btnRedo" class="btn">↪️ Rehacer</button>
         </div>
-                    
+
 
     </div>
     <div id="fichaProyecto" class="ficha-panel hidden">
         <h2>Ficha del proyecto</h2>
-    
+
         <label>Procedimiento</label>
         <input type="text" id="fpProcedimiento">
-    
+
         <label>Actividad</label>
         <input type="text" id="fpActividad">
-    
+
         <label>Descripción del procedimiento</label>
         <textarea id="fpDescripcion"></textarea>
-    
+
         <button id="fpGuardar" class="btn">Guardar</button>
         <button id="fpCerrar" class="btn btn-secundario">Cerrar</button>
     </div>
@@ -179,7 +200,7 @@
         <div id="csvContent" class="csv-content"></div>
 
     </div>
-</div>   
+</div>
 
 <!-- ============================================================
      LISTAS AUTOCOMPLETAR (Grupos / Usuarios)
@@ -193,10 +214,9 @@
 ========================= -->
  <!-- 1️⃣ Librerías externas  -->
  <script src="js/html2canvas.min.js"></script>
- <!-- 
+ <!--
  ✅ DOCX versión estable, expone window.docx correctamente -->
- <script src="js/docx-8.2.2.umd.js"></script> 
-
+ <script src="js/docx-8.2.2.umd.js"></script>
 
 
 <!-- 2️⃣ Archivos de tu app -->
@@ -208,7 +228,7 @@
 <script src="js/asignaciones.js"></script>
 <script src="js/cambiosestado.js"></script>
 <script src="js/datatesauro.js"></script>
-<script src="js/tesauroManager.js"></script>
+<script src="js/tesauromanager.js"></script>
 <script src="js/wizard.js"></script>
 <script src="js/guidedassistant.js"></script>
 <script src="js/resizepanels.js"></script>
