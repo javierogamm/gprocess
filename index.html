@@ -82,6 +82,11 @@
                 <button class="btn" id="btnExportTesauro">📤 Exportar tesauro CSV</button>
             </div>
 
+            <div class="panel-section">
+                <h2>Tesauros</h2>
+                <button class="btn" id="btnAbrirTesauro">📚 Abrir tesauros</button>
+            </div>
+
             <div id="importFromTextBlock">
                 <h3 style="margin-top:0;">Copypaste</h3>
 
@@ -288,6 +293,22 @@ document.getElementById("btnPasteJSON").addEventListener("click", async () => {
   } catch (err) {
     console.error("Error al pegar JSON:", err);
     alert("❌ No se pudo procesar el JSON. Revisa la consola.");
+  }
+});
+
+// 🔗 Abrir panel de Tesauros desde el menú lateral
+document.addEventListener("DOMContentLoaded", () => {
+  const btnAbrirTesauro = document.getElementById("btnAbrirTesauro");
+  if (btnAbrirTesauro) {
+    btnAbrirTesauro.addEventListener("click", () => {
+      if (window.DataTesauro?.panel) {
+        DataTesauro.panel.classList.toggle("visible");
+        DataTesauro.panel.classList.remove("hidden");
+        if (DataTesauro.panel.classList.contains("visible")) {
+          DataTesauro.render();
+        }
+      }
+    });
   }
 });
 </script>
