@@ -133,7 +133,6 @@ const GuidedAssistant = {
             modal.style.bottom = "0";
             modal.style.width = "420px";
             modal.style.zIndex = "99998";
-            modal.style.display = "flex";
             modal.style.alignItems = "stretch";
             modal.style.justifyContent = "flex-end";
             modal.style.background = "transparent";
@@ -182,6 +181,7 @@ const GuidedAssistant = {
         this.isVisible = show;
         this.modal.classList.toggle("hidden", !show);
         this.modal.setAttribute("aria-hidden", show ? "false" : "true");
+        this.modal.style.display = show ? "flex" : "none";
 
         if (!show && !skipReset) {
             this.resetState();
