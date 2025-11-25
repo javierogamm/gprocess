@@ -1196,64 +1196,12 @@ const GuidedAssistant = {
     renderPreview(forceUpdate = false) {
         if (!window.Engine || !window.Renderer) return;
 
-        const idMap = this.state.canvasMap;
-
         this.state.nodos.forEach((nodoTemp) => {
-            const pos = this.getAutoPosition(nodoTemp.tempId);
-
-            if (!idMap[nodoTemp.tempId]) {
-                const nodo = Engine.createNode(nodoTemp.tipo, pos.x, pos.y);
-                idMap[nodoTemp.tempId] = nodo.id;
-            }
-
-            const nodeId = idMap[nodoTemp.tempId];
-            const nodoCanvas = Engine.getNode(nodeId);
-            if (nodoCanvas) {
-                nodoCanvas.x = pos.x;
-                nodoCanvas.y = pos.y;
-
-                const updates = {};
-                if (nodoCanvas.titulo !== nodoTemp.titulo) updates.titulo = nodoTemp.titulo;
-                if (!!nodoCanvas.tareaManual !== !!nodoTemp.tareaManual) updates.tareaManual = nodoTemp.tareaManual;
-                if ((nodoCanvas.asignadoA || "") !== (nodoTemp.asignadoA || "")) updates.asignadoA = nodoTemp.asignadoA;
-                if ((nodoCanvas.asignadoUsuario || "") !== (nodoTemp.asignadoUsuario || "")) updates.asignadoUsuario = nodoTemp.asignadoUsuario;
-
-                if (Object.keys(updates).length) {
-                    Engine.updateNode(nodeId, updates);
-                }
-
-                const div = document.getElementById(nodeId);
-                if (div) {
-                    div.style.left = pos.x + "px";
-                    div.style.top = pos.y + "px";
-                }
-            }
+            this.commitNodeToCanvas(nodoTemp, { forceUpdate });
         });
 
         this.state.conexiones.forEach(connTemp => {
-            const fromId = idMap[connTemp.from];
-            const toId = idMap[connTemp.to];
-
-            if (!fromId || !toId) return;
-
-            let existing = Engine.data.conexiones.find(c =>
-                c.from === fromId &&
-                c.to === toId &&
-                c.fromPos === "bottom" &&
-                c.toPos === "top"
-            );
-
-            if (!existing) {
-                existing = Engine.createConnection(fromId, toId, "bottom", "top");
-            }
-
-            if (existing && (forceUpdate || connTemp.conditionName || connTemp.conditionValue)) {
-                Engine.updateConnectionCondition(
-                    existing.id,
-                    connTemp.conditionName || "",
-                    connTemp.conditionValue || ""
-                );
-            }
+            this.commitConnectionToCanvas(connTemp, { forceUpdate });
         });
 
         Renderer.redrawConnections();
@@ -1261,6 +1209,80 @@ const GuidedAssistant = {
         if (window.UI && typeof UI.updateAsignacionesList === "function") {
             UI.updateAsignacionesList();
         }
+    },
+
+    commitNodeToCanvas(nodoTemp, { forceUpdate = false } = {}) {
+        const idMap = this.state.canvasMap;
+        const pos = this.getAutoPosition(nodoTemp.tempId);
+
+        if (!idMap[nodoTemp.tempId]) {
+            const nodo = Engine.createNode(nodoTemp.tipo, pos.x, pos.y);
+            idMap[nodoTemp.tempId] = nodo.id;
+        }
+
+        const nodeId = idMap[nodoTemp.tempId];
+        const nodoCanvas = Engine.getNode(nodeId);
+        if (!nodoCanvas) return null;
+
+        nodoCanvas.x = pos.x;
+        nodoCanvas.y = pos.y;
+
+        const updates = {};
+        if (nodoCanvas.titulo !== nodoTemp.titulo || forceUpdate) updates.titulo = nodoTemp.titulo;
+        if (!!nodoCanvas.tareaManual !== !!nodoTemp.tareaManual || forceUpdate) updates.tareaManual = nodoTemp.tareaManual;
+        if ((nodoCanvas.asignadoA || "") !== (nodoTemp.asignadoA || "") || forceUpdate) updates.asignadoA = nodoTemp.asignadoA;
+        if ((nodoCanvas.asignadoUsuario || "") !== (nodoTemp.asignadoUsuario || "") || forceUpdate) updates.asignadoUsuario = nodoTemp.asignadoUsuario;
+
+        if (Object.keys(updates).length) {
+            Engine.updateNode(nodeId, updates);
+        }
+
+        const div = document.getElementById(nodeId);
+        if (div) {
+            div.style.left = pos.x + "px";
+            div.style.top = pos.y + "px";
+        }
+
+        return nodeId;
+    },
+
+    commitConnectionToCanvas(connTemp, { forceUpdate = false } = {}) {
+        const idMap = this.state.canvasMap;
+
+        if (!idMap[connTemp.from]) {
+            const fromTempNode = this.state.nodos.find(n => n.tempId === connTemp.from);
+            if (fromTempNode) this.commitNodeToCanvas(fromTempNode, { forceUpdate });
+        }
+        if (!idMap[connTemp.to]) {
+            const toTempNode = this.state.nodos.find(n => n.tempId === connTemp.to);
+            if (toTempNode) this.commitNodeToCanvas(toTempNode, { forceUpdate });
+        }
+
+        const fromId = idMap[connTemp.from];
+        const toId = idMap[connTemp.to];
+
+        if (!fromId || !toId) return null;
+
+        let existing = Engine.data.conexiones.find(c =>
+            c.from === fromId &&
+            c.to === toId &&
+            c.fromPos === "bottom" &&
+            c.toPos === "top"
+        );
+
+        if (!existing) {
+            existing = Engine.createConnection(fromId, toId, "bottom", "top");
+        }
+
+        if (existing && (forceUpdate || connTemp.conditionName || connTemp.conditionValue)) {
+            Engine.updateConnectionCondition(
+                existing.id,
+                connTemp.conditionName || "",
+                connTemp.conditionValue || ""
+            );
+        }
+
+        return existing;
     },
 
     /* ============================================================
