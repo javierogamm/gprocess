@@ -1194,7 +1194,10 @@ const GuidedAssistant = {
        VISTA PREVIA EN VIVO
     ============================================================ */
     renderPreview(forceUpdate = false) {
-        if (!window.Engine || !window.Renderer) return;
+        if (!window.Engine || !window.Renderer) {
+            console.warn("⚠️ [GuidedAssistant] Engine o Renderer no disponibles todavía");
+            return;
+        }
 
         this.state.nodos.forEach((nodoTemp) => {
             this.commitNodeToCanvas(nodoTemp, { forceUpdate });
@@ -1291,9 +1294,12 @@ const GuidedAssistant = {
     applyToCanvas() {
         console.log("🚀 Aplicando procedimiento al canvas...");
 
-        Engine.updateFichaProyecto(this.state.fichaProyecto);
-
+        // Forzar sincronización completa antes de cerrar
         this.renderPreview(true);
+        if (window.Engine && typeof Engine.updateConnections === "function") {
+            Engine.updateConnections();
+        }
+        Engine.updateFichaProyecto(this.state.fichaProyecto);
         Engine.saveHistory();
 
         if (window.DataTesauro) {
