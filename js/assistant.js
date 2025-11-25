@@ -27,12 +27,15 @@ const Assistant = {
   suggestionsByType: {},
 
   init() {
-    // Crear botón flotante
-    this.btn = document.createElement("button");
-    this.btn.id = "btnAssistant";
-    this.btn.className = "floating-assistant-btn";
-    this.btn.textContent = "🤖 Assistant";
-    document.body.appendChild(this.btn);
+    // Reutilizar o crear botón flotante
+    this.btn = document.getElementById("btnAssistant");
+    if (!this.btn) {
+      this.btn = document.createElement("button");
+      this.btn.id = "btnAssistant";
+      this.btn.className = "floating-assistant-btn";
+      this.btn.textContent = "🤖 Assistant";
+      document.body.appendChild(this.btn);
+    }
 
     // Crear panel lateral
     this.panel = document.createElement("div");
