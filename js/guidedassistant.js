@@ -14,6 +14,7 @@ const GuidedAssistant = {
     modal: null,
     content: null,
     progressBar: null,
+    isVisible: false,
 
     // Estado del asistente
     state: {
@@ -155,6 +156,9 @@ const GuidedAssistant = {
         this.content = document.getElementById("guidedContent");
         this.progressBar = document.getElementById("guidedProgressBar");
 
+        // Asegurar que el panel arranca oculto y sin interferir en el layout
+        this.setVisibility(false, { skipReset: true });
+
         // Eventos
         this.btn.addEventListener("click", () => this.open());
 
@@ -172,20 +176,37 @@ const GuidedAssistant = {
     /* ============================================================
        ABRIR / CERRAR MODAL
     ============================================================ */
+    setVisibility(show, { skipReset = false } = {}) {
+        if (!this.modal) return;
+
+        this.isVisible = show;
+        this.modal.classList.toggle("hidden", !show);
+        this.modal.setAttribute("aria-hidden", show ? "false" : "true");
+
+        if (!show && !skipReset) {
+            this.resetState();
+        }
+    },
+
     open() {
         this.resetState();
-        this.modal.classList.remove("hidden");
+        this.setVisibility(true, { skipReset: true });
         this.showStep0_Welcome();
     },
 
-    close() {
-        if (this.state.step > 0 && this.state.nodos.length > 0) {
+    close(options = {}) {
+        const { skipConfirm = false, preserveState = false } = options;
+
+        if (!skipConfirm && this.state.step > 0 && this.state.nodos.length > 0) {
             if (!confirm("¿Seguro que quieres salir? Se perderá el progreso del asistente.")) {
                 return;
             }
         }
-        this.modal.classList.add("hidden");
-        this.resetState();
+
+        this.setVisibility(false, { skipReset: preserveState });
+        if (!preserveState) {
+            this.resetState();
+        }
     },
 
     resetState() {
@@ -1260,7 +1281,8 @@ const GuidedAssistant = {
 
         alert(`✅ Procedimiento creado correctamente:\n\n• ${this.state.nodos.length} tareas\n• ${this.state.conexiones.length} conexiones\n• ${this.state.tesaurosCreados.size} campos de tesauro`);
 
-        this.close();
+        // Cerrar sin confirmaciones adicionales; los cambios ya están en el lienzo
+        this.close({ skipConfirm: true });
     },
 
     /* ============================================================
