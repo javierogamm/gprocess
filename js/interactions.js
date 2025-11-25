@@ -70,15 +70,16 @@ const Interactions = {
                 if (nd) nd.classList.remove("selected-multi");
             });
             Interactions.selectedNodes.clear();
-    
+
             // Añadir este nodo como único seleccionado
             Interactions.selectedNodes.add(nodo.id);
             div.classList.add("selected-multi");
         }
-    
-            Engine.selectNode(nodo.id);
-            Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));    });
-            toggleRightPanel(true); // 👈 muestra el panel cuando se selecciona un nodo
+
+        Engine.selectNode(nodo.id);
+        Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));
+        toggleRightPanel(true); // 👈 muestra el panel cuando se selecciona un nodo
+    });
 
     /* --------- Inicio de drag (individual o múltiple) --------- */
     div.addEventListener("mousedown", (e) => {
@@ -585,14 +586,41 @@ document.querySelectorAll(".connection-line").forEach(p => p.classList.remove("h
     
 }
 /* ============================================================
-   👁️ FUNCIÓN AUXILIAR: Mostrar / Ocultar panel de propiedades
+   👁️ CONTROL DEL PANEL DE PROPIEDADES (solo al pulsar botón)
 ============================================================ */
-function toggleRightPanel(visible) {
+const RightPanelState = { userEnabled: false };
+
+function toggleRightPanel(visible, options = {}) {
   const panel = document.getElementById("rightPanel");
   if (!panel) return;
-  if (visible) panel.classList.add("visible");
-  else panel.classList.remove("visible");
+
+  const { force = false, persistPreference = true } = options;
+
+  if (force) {
+    RightPanelState.userEnabled = visible;
+  }
+
+  if (visible) {
+    if (!RightPanelState.userEnabled) return;
+    panel.classList.add("visible");
+  } else {
+    panel.classList.remove("visible");
+    if (!persistPreference) {
+      RightPanelState.userEnabled = false;
+    }
+  }
 }
+
+window.addEventListener("DOMContentLoaded", () => {
+  const btnToggleRightPanel = document.getElementById("btnToggleRightPanel");
+  if (!btnToggleRightPanel) return;
+
+  btnToggleRightPanel.addEventListener("click", () => {
+    const panel = document.getElementById("rightPanel");
+    const willShow = !(panel && panel.classList.contains("visible"));
+    toggleRightPanel(willShow, { force: true });
+  });
+});
 /* ============================================================
    LISTENERS GLOBALES
 ============================================================ */

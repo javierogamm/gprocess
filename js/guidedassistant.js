@@ -28,7 +28,12 @@ const GuidedAssistant = {
         conexiones: [],
         currentNode: null,
         nextNodes: [],
-        tesaurosCreados: new Set()
+        tesaurosCreados: new Set(),
+        canvasMap: {},
+        nodePositions: {},
+        layoutCursorY: 100,
+        finalizedNodes: new Set(),
+        pendingManualContinuation: null
     },
 
     // Sugerencias de títulos por tipo de nodo
@@ -196,7 +201,12 @@ const GuidedAssistant = {
             conexiones: [],
             currentNode: null,
             nextNodes: [],
-            tesaurosCreados: new Set()
+            tesaurosCreados: new Set(),
+            canvasMap: {},
+            nodePositions: {},
+            layoutCursorY: 100,
+            finalizedNodes: new Set(),
+            pendingManualContinuation: null
         };
     },
 
@@ -204,6 +214,26 @@ const GuidedAssistant = {
         if (this.progressBar) {
             this.progressBar.style.width = percent + "%";
         }
+    },
+
+    parseList(text) {
+        return Array.from(new Set(
+            text
+                .split(/[,;\n]+/)
+                .map(t => t.trim())
+                .filter(Boolean)
+        ));
+    },
+
+    getAutoPosition(tempId) {
+        if (!this.state.nodePositions[tempId]) {
+            this.state.nodePositions[tempId] = {
+                x: 400,
+                y: this.state.layoutCursorY
+            };
+            this.state.layoutCursorY += 140;
+        }
+        return this.state.nodePositions[tempId];
     },
 
     /* ============================================================
@@ -259,6 +289,53 @@ const GuidedAssistant = {
             descripcion: document.getElementById("inputDescripcion").value.trim(),
             entidad: document.getElementById("inputEntidad").value.trim()
         };
+
+        this.state.step = 0.5;
+        this.showStep0b_Asignaciones();
+    },
+
+    /* ============================================================
+       PASO 0B: LISTAS DE GRUPOS / USUARIOS
+    ============================================================ */
+    showStep0b_Asignaciones() {
+        this.updateProgress(10);
+        this.content.innerHTML = `
+            <div class="guided-step">
+                <h4>👥 Añade tus grupos y usuarios</h4>
+                <p>Pega las listas (una línea por elemento, o separadas por comas) para usarlas durante el asistente.</p>
+
+                <div class="guided-form">
+                    <div class="guided-field">
+                        <label>Lista de grupos</label>
+                        <textarea id="inputListaGrupos" rows="4" placeholder="Ej:\nUnidad Gestora\nSecretaría\nIntervención"></textarea>
+                    </div>
+                    <div class="guided-field">
+                        <label>Lista de usuarios</label>
+                        <textarea id="inputListaUsuarios" rows="4" placeholder="Ej:\nJuan Pérez\nAna García"></textarea>
+                    </div>
+                </div>
+
+                <div class="guided-actions">
+                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.showStep0_Welcome()">← Atrás</button>
+                    <button class="guided-btn guided-btn-primary" onclick="GuidedAssistant.step0b_SaveAssignments()">Continuar →</button>
+                </div>
+            </div>
+        `;
+    },
+
+    step0b_SaveAssignments() {
+        const gruposText = document.getElementById("inputListaGrupos")?.value || "";
+        const usuariosText = document.getElementById("inputListaUsuarios")?.value || "";
+
+        const grupos = this.parseList(gruposText);
+        const usuarios = this.parseList(usuariosText);
+
+        grupos.forEach(g => Engine.addGrupo(g));
+        usuarios.forEach(u => Engine.addUsuario(u));
+
+        if (window.UI && typeof UI.updateAsignacionesList === "function") {
+            UI.updateAsignacionesList();
+        }
 
         this.state.step = 1;
         this.showStep1_CreateFirstNode();
@@ -450,11 +527,14 @@ const GuidedAssistant = {
             tempId: "temp_" + Math.random().toString(36).substring(2, 9)
         };
 
+        this.getAutoPosition(nodo.tempId);
         this.state.nodos.push(nodo);
         this.state.currentNode = nodo;
 
         if (grupo) Engine.addGrupo(grupo);
         if (usuario) Engine.addUsuario(usuario);
+
+        this.renderPreview();
 
         this.state.step = 2;
         this.showStep2_WhatNext();
@@ -465,6 +545,7 @@ const GuidedAssistant = {
     ============================================================ */
     showStep2_WhatNext() {
         const currentNode = this.state.currentNode;
+        this.state.step = 2;
         this.updateProgress(40 + (this.state.nodos.length * 10));
 
         this.content.innerHTML = `
@@ -502,16 +583,46 @@ const GuidedAssistant = {
     },
 
     step2_NoNext() {
-        this.showFinalSummary();
+        if (this.state.currentNode) {
+            this.state.finalizedNodes.add(this.state.currentNode.tempId);
+        }
+        this.showStep5_AskMore();
     },
 
     step2_OneNext() {
-        this.state.nextNodes = [{ fromNode: this.state.currentNode, hasCondition: false }];
-        this.showStep3_AskCondition(0);
+        this.askWizardBeforeContinuing(() => {
+            this.state.nextNodes = [{ fromNode: this.state.currentNode, hasCondition: false }];
+            this.showStep3_AskCondition(0);
+        });
     },
 
     step2_MultipleNext() {
-        this.showStep2b_HowManyNext();
+        this.askWizardBeforeContinuing(() => this.showStep2b_HowManyNext());
+    },
+
+    askWizardBeforeContinuing(onManualContinuation) {
+        this.state.pendingManualContinuation = onManualContinuation;
+        this.content.innerHTML = `
+            <div class="guided-step">
+                <h4>🧙 ¿Quieres que el siguiente tramo sea un bloque Wizard?</h4>
+                <p>Si eliges Wizard, añadiremos un flujo predefinido justo después de "${this.state.currentNode.titulo}".</p>
+
+                <div class="guided-choice-buttons">
+                    <button class="guided-choice-btn" onclick="GuidedAssistant.step2_UseWizardFlow()">🧙 Sí, usar Wizard</button>
+                    <button class="guided-choice-btn" onclick="GuidedAssistant.continueAfterWizardQuestion()">✏️ No, lo defino yo</button>
+                </div>
+
+                <div class="guided-actions">
+                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.showStep2_WhatNext()">← Atrás</button>
+                </div>
+            </div>
+        `;
+    },
+
+    continueAfterWizardQuestion() {
+        const cb = this.state.pendingManualContinuation;
+        this.state.pendingManualContinuation = null;
+        if (typeof cb === "function") cb();
     },
 
     showStep2b_HowManyNext() {
@@ -607,6 +718,7 @@ const GuidedAssistant = {
 
     /* === NUEVO: opción de usar bloque estándar Wizard ================== */
     step2_UseWizardFlow() {
+        this.state.pendingManualContinuation = null;
         if (!window.Wizard || typeof Wizard.getDiagramTemplate !== "function") {
             alert("⚠️ No se pueden cargar las plantillas de Wizard (no disponible).");
             return;
@@ -706,6 +818,8 @@ const GuidedAssistant = {
                 conditionValue: ""
             });
         }
+
+        this.renderPreview(true);
 
         // Pasar a la pregunta de si hay más tareas que añadir
         this.showStep5_AskMore();
@@ -880,6 +994,7 @@ const GuidedAssistant = {
                 conditionValue: nextInfo.conditionValue || ""
             };
             this.state.conexiones.push(conexion);
+            this.renderPreview(true);
             this.showStep4_CreateNextNodes(index + 1);
             return;
         }
@@ -935,6 +1050,7 @@ const GuidedAssistant = {
             tempId: "temp_" + Math.random().toString(36).substring(2, 9)
         };
 
+        this.getAutoPosition(nodo.tempId);
         this.state.nodos.push(nodo);
 
         const nextInfo = this.state.nextNodes[index];
@@ -949,6 +1065,8 @@ const GuidedAssistant = {
         if (grupo) Engine.addGrupo(grupo);
         if (usuario) Engine.addUsuario(usuario);
 
+        this.renderPreview(true);
+
         this.showStep4_CreateNextNodes(index + 1);
     },
 
@@ -958,26 +1076,27 @@ const GuidedAssistant = {
     showStep5_AskMore() {
         this.updateProgress(80);
 
-        const nodosConContinuacion = new Set(this.state.conexiones.map(c => c.from));
-        const nodosSinContinuar = this.state.nodos.filter(n => !nodosConContinuacion.has(n.tempId));
+        const nodosPendientes = this.getNodesWithoutContinuation();
 
-        if (nodosSinContinuar.length === 0) {
+        if (nodosPendientes.length === 0) {
             this.showFinalSummary();
             return;
         }
 
+        const nodoObjetivo = nodosPendientes[0];
+
         this.content.innerHTML = `
             <div class="guided-step">
-                <h4>🔄 ¿Continuar añadiendo tareas?</h4>
-                <p>Tienes ${nodosSinContinuar.length} tarea(s) sin continuación.</p>
+                <h4>🔄 "${nodoObjetivo.titulo}" no tiene salida</h4>
+                <p>¿El procedimiento termina en esta tarea o continúa hacia otra?</p>
 
                 <div class="guided-form">
                     <div class="guided-choice-buttons">
-                        <button class="guided-choice-btn" onclick="GuidedAssistant.step5_SelectNextNode()">
-                            ➕ Sí, continuar desde otra tarea
+                        <button class="guided-choice-btn" onclick="GuidedAssistant.markNodeAsFinal('${nodoObjetivo.tempId}')">
+                            🏁 Sí, termina aquí
                         </button>
-                        <button class="guided-choice-btn" onclick="GuidedAssistant.showFinalSummary()">
-                            ✅ No, finalizar procedimiento
+                        <button class="guided-choice-btn" onclick="GuidedAssistant.continueFromNode('${nodoObjetivo.tempId}')">
+                            ➕ No, quiero seguir
                         </button>
                     </div>
                 </div>
@@ -985,40 +1104,25 @@ const GuidedAssistant = {
         `;
     },
 
-    step5_SelectNextNode() {
+    getNodesWithoutContinuation() {
         const nodosConContinuacion = new Set(this.state.conexiones.map(c => c.from));
-        const nodosSinContinuar = this.state.nodos.filter(n => !nodosConContinuacion.has(n.tempId));
-
-        this.content.innerHTML = `
-            <div class="guided-step">
-                <h4>🎯 Selecciona desde qué tarea continuar</h4>
-
-                <div class="guided-form">
-                    <div class="guided-field">
-                        <label>Tareas disponibles:</label>
-                        <select id="selectContinueFrom" class="guided-select">
-                            ${nodosSinContinuar.map(n => `
-                                <option value="${n.tempId}">${n.titulo} (${n.tipo})</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="guided-actions">
-                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.showStep5_AskMore()">← Atrás</button>
-                    <button class="guided-btn guided-btn-primary" onclick="GuidedAssistant.step5_ContinueFromNode()">Continuar →</button>
-                </div>
-            </div>
-        `;
+        return this.state.nodos.filter(n =>
+            !nodosConContinuacion.has(n.tempId) &&
+            !this.state.finalizedNodes.has(n.tempId)
+        );
     },
 
-    step5_ContinueFromNode() {
-        const tempId = document.getElementById("selectContinueFrom").value;
-        const nodo = this.state.nodos.find(n => n.tempId === tempId);
+    markNodeAsFinal(tempId) {
+        this.state.finalizedNodes.add(tempId);
+        this.showStep5_AskMore();
+    },
 
+    continueFromNode(tempId) {
+        const nodo = this.state.nodos.find(n => n.tempId === tempId);
         if (!nodo) return;
 
         this.state.currentNode = nodo;
+        this.state.finalizedNodes.delete(tempId);
         this.showStep2_WhatNext();
     },
 
@@ -1066,52 +1170,65 @@ const GuidedAssistant = {
     },
 
     /* ============================================================
-       APLICAR AL CANVAS
+       VISTA PREVIA EN VIVO
     ============================================================ */
-    applyToCanvas() {
-        console.log("🚀 Aplicando procedimiento al canvas...");
+    renderPreview(forceUpdate = false) {
+        if (!window.Engine || !window.Renderer) return;
 
-        Engine.updateFichaProyecto(this.state.fichaProyecto);
-
-        const idMap = {};
-        let x = 400;
-        let y = 100;
-        const stepY = 150;
+        const idMap = this.state.canvasMap;
 
         this.state.nodos.forEach((nodoTemp) => {
-            const nodo = Engine.createNode(nodoTemp.tipo, x, y);
-            idMap[nodoTemp.tempId] = nodo.id;
+            const pos = this.getAutoPosition(nodoTemp.tempId);
 
-            Engine.updateNode(nodo.id, {
-                titulo: nodoTemp.titulo,
-                tareaManual: nodoTemp.tareaManual,
-                asignadoA: nodoTemp.asignadoA,
-                asignadoUsuario: nodoTemp.asignadoUsuario
-            });
-
-            const div = document.getElementById(nodo.id);
-            if (div) {
-                const content = div.querySelector(".node-content");
-                if (content) content.innerText = nodoTemp.titulo;
+            if (!idMap[nodoTemp.tempId]) {
+                const nodo = Engine.createNode(nodoTemp.tipo, pos.x, pos.y);
+                idMap[nodoTemp.tempId] = nodo.id;
             }
 
-            y += stepY;
+            const nodeId = idMap[nodoTemp.tempId];
+            const nodoCanvas = Engine.getNode(nodeId);
+            if (nodoCanvas) {
+                nodoCanvas.x = pos.x;
+                nodoCanvas.y = pos.y;
+
+                const updates = {};
+                if (nodoCanvas.titulo !== nodoTemp.titulo) updates.titulo = nodoTemp.titulo;
+                if (!!nodoCanvas.tareaManual !== !!nodoTemp.tareaManual) updates.tareaManual = nodoTemp.tareaManual;
+                if ((nodoCanvas.asignadoA || "") !== (nodoTemp.asignadoA || "")) updates.asignadoA = nodoTemp.asignadoA;
+                if ((nodoCanvas.asignadoUsuario || "") !== (nodoTemp.asignadoUsuario || "")) updates.asignadoUsuario = nodoTemp.asignadoUsuario;
+
+                if (Object.keys(updates).length) {
+                    Engine.updateNode(nodeId, updates);
+                }
+
+                const div = document.getElementById(nodeId);
+                if (div) {
+                    div.style.left = pos.x + "px";
+                    div.style.top = pos.y + "px";
+                }
+            }
         });
 
         this.state.conexiones.forEach(connTemp => {
             const fromId = idMap[connTemp.from];
             const toId = idMap[connTemp.to];
 
-            if (!fromId || !toId) {
-                console.warn("⚠️ No se pudo crear conexión:", connTemp);
-                return;
+            if (!fromId || !toId) return;
+
+            let existing = Engine.data.conexiones.find(c =>
+                c.from === fromId &&
+                c.to === toId &&
+                c.fromPos === "bottom" &&
+                c.toPos === "top"
+            );
+
+            if (!existing) {
+                existing = Engine.createConnection(fromId, toId, "bottom", "top");
             }
 
-            const conn = Engine.createConnection(fromId, toId, "bottom", "top");
-
-            if (conn && (connTemp.conditionName || connTemp.conditionValue)) {
+            if (existing && (forceUpdate || connTemp.conditionName || connTemp.conditionValue)) {
                 Engine.updateConnectionCondition(
-                    conn.id,
+                    existing.id,
                     connTemp.conditionName || "",
                     connTemp.conditionValue || ""
                 );
@@ -1119,6 +1236,21 @@ const GuidedAssistant = {
         });
 
         Renderer.redrawConnections();
+
+        if (window.UI && typeof UI.updateAsignacionesList === "function") {
+            UI.updateAsignacionesList();
+        }
+    },
+
+    /* ============================================================
+       APLICAR AL CANVAS
+    ============================================================ */
+    applyToCanvas() {
+        console.log("🚀 Aplicando procedimiento al canvas...");
+
+        Engine.updateFichaProyecto(this.state.fichaProyecto);
+
+        this.renderPreview(true);
         Engine.saveHistory();
 
         if (window.DataTesauro) {
