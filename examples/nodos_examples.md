@@ -1,27 +1,48 @@
-# Nodos de los ejemplos
+# Títulos sugeridos para nodos
 
-## licencia_obras_menores.json
-- formulario: Solicitud de licencia de obras menores
-- documento: Informe técnico urbanístico
-- decision: Comprobación de documentación presentada
-- plazo: Periodo de subsanación
-- documento: Resolución de licencia de obras menores
-- notas: Anotación de visita de inspección
+Lista manual de títulos por tipo para que el asistente sugiera nombres.
 
-## contratacion_menor.json
-- formulario: Solicitud de inicio de contratación menor
-- operacion_externa: Petición de ofertas a proveedores
-- decision: Valoración de ofertas recibidas
-- documento: Informe de adjudicación
-- circuito: Circuito de firmas del contrato
-- documento: Notificación de adjudicación al adjudicatario
-- plazo: Control de recepción del suministro
+## formulario
+- Formulario de revisión de la solicitud
+- Formulario de revisión de la subsanación
+- Baremación de puntos
+- Cálculo de la tasa
+- Aportación de datos
+- Formulario nexo
+- Revisión de datos del expediente
 
-## subvenciones_culturales.json
-- formulario: Presentación de solicitud cultural
-- decision: Validación de requisitos básicos
-- operacion_externa: Cruce automático con registro de asociaciones
-- documento: Informe de valoración cultural
-- circuito: Firma de resolución de concesión
-- documento: Resolución de concesión de subvención
-- notas: Seguimiento de justificación
+## documento
+- Informe jurídico
+- Informe técnico
+- Informe técnico urbanístico
+- Requerimiento de subsanación
+- Notificación al interesado
+- Acta
+- Bases de la convocatoria
+- Bases de la subvención
+- Informe de baremación
+- Certificado
+- Providencia de inicio
+
+## plazo
+- Plazo de subsanación
+- Plazo de alegaciones
+- Plazo de revisión
+- Plazo de espera
+
+## circuito
+- Concesión
+- Denegación
+- Desistimiento
+- Aprobación provisional
+- Aprobación definitiva
+- Liquidación provisional
+- Liquidación definitiva
+
+## libre
+- Aviso a
+- Encargo a
+
+## operacion_externa
+- Consulta de bases de datos
+- Consulta PID /Via Oberta

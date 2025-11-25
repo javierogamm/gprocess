@@ -139,63 +139,88 @@ const Assistant = {
   },
 
   async loadExampleFlows() {
-    const exampleFiles = [
-      "contratacion_menor.json",
-      "licencia_obras_menores.json",
-      "subvenciones_culturales.json"
-    ];
+    const staticSeeds = {
+      formulario: [
+        "Formulario de revisión de la solicitud",
+        "Formulario de revisión de la subsanación",
+        "Baremación de puntos",
+        "Cálculo de la tasa",
+        "Aportación de datos",
+        "Formulario nexo",
+        "Revisión de datos del expediente"
+      ],
+      documento: [
+        "Informe jurídico",
+        "Informe técnico",
+        "Informe técnico urbanístico",
+        "Requerimiento de subsanación",
+        "Notificación al interesado",
+        "Acta",
+        "Bases de la convocatoria",
+        "Bases de la subvención",
+        "Informe de baremación",
+        "Certificado",
+        "Providencia de inicio"
+      ],
+      plazo: [
+        "Plazo de subsanación",
+        "Plazo de alegaciones",
+        "Plazo de revisión",
+        "Plazo de espera"
+      ],
+      circuito: [
+        "Concesión",
+        "Denegación",
+        "Desistimiento",
+        "Aprobación provisional",
+        "Aprobación definitiva",
+        "Liquidación provisional",
+        "Liquidación definitiva"
+      ],
+      libre: ["Aviso a", "Encargo a"],
+      operacion_externa: [
+        "Consulta de bases de datos",
+        "Consulta PID /Via Oberta"
+      ]
+    };
 
-    try {
-      const merged = (await Promise.all(
-        exampleFiles.map(async (file) => {
-          try {
-            const flowRes = await fetch(`examples/${file}`);
-            if (!flowRes.ok) throw new Error(`No se pudo abrir ${file}`);
-            const flowJson = await flowRes.json();
-            return this.extractTitlesFromFlow(flowJson);
-          } catch (err) {
-            console.warn(`No se pudo leer ${file}`, err);
-            return [];
-          }
-        })
-      )).flat();
-      const dedup = [];
-      const seen = new Set();
-      merged.forEach((m) => {
-        if (!m?.titulo) return;
-        const key = `${m.tipo || "cualquiera"}::${m.titulo}`;
-        if (seen.has(key)) return;
-        seen.add(key);
-        dedup.push(m);
-      });
+    const merged = Object.entries(staticSeeds).flatMap(([tipo, titulos]) =>
+      titulos.map((titulo) => ({ tipo, titulo }))
+    );
 
-      this.exampleFlows = dedup;
-      this.suggestionsByType = dedup.reduce((map, item) => {
-        const key = item.tipo || "cualquiera";
-        if (!map[key]) map[key] = [];
-        if (!map[key].includes(item.titulo)) {
-          map[key].push(item.titulo);
-        }
-        return map;
-      }, {});
-      Object.keys(this.suggestionsByType).forEach((key) => {
-        this.suggestionsByType[key] = this.suggestionsByType[key].sort((a, b) =>
-          a.localeCompare(b, "es", { sensitivity: "base" })
-        );
-      });
-      this.examplesLoaded = dedup.length > 0;
-      if (this.examplesLoaded) {
-        const tipos = new Set(dedup.map((d) => d.tipo || "cualquiera"));
-        this.addMessage(
-          `📁 Sugerencias cargadas (${dedup.length} nodos de ejemplo en ${tipos.size} tipos).`
-        );
-        if (this.currentStep === "titulo") {
-          this.renderStep();
-        }
+    const dedup = [];
+    const seen = new Set();
+    merged.forEach((m) => {
+      if (!m?.titulo) return;
+      const key = `${m.tipo || "cualquiera"}::${m.titulo}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      dedup.push(m);
+    });
+
+    this.exampleFlows = dedup;
+    this.suggestionsByType = dedup.reduce((map, item) => {
+      const key = item.tipo || "cualquiera";
+      if (!map[key]) map[key] = [];
+      if (!map[key].includes(item.titulo)) {
+        map[key].push(item.titulo);
       }
-    } catch (e) {
-      console.warn("No se pudieron cargar los ejemplos de /examples", e);
-      this.examplesLoaded = false;
+      return map;
+    }, {});
+    Object.keys(this.suggestionsByType).forEach((key) => {
+      this.suggestionsByType[key] = this.suggestionsByType[key].sort((a, b) =>
+        a.localeCompare(b, "es", { sensitivity: "base" })
+      );
+    });
+    this.examplesLoaded = dedup.length > 0;
+    if (this.examplesLoaded) {
+      const tipos = new Set(dedup.map((d) => d.tipo || "cualquiera"));
+      this.addMessage(
+        `📚 Sugerencias precargadas (${dedup.length} títulos en ${tipos.size} tipos).`
+      );
+      if (this.currentStep === "titulo") {
+        this.renderStep();
+      }
     }
   },
 
