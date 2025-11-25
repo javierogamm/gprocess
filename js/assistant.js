@@ -13,8 +13,12 @@ const Assistant = {
   formArea: null,
   lastNodeId: null,
   pendingFromId: null,
+  pendingCondition: null,
   currentStep: "idle",
   draft: null,
+  closedEnds: new Set(),
+  postOutputsCallbacks: [],
+  multiFlowContext: null,
 
   init() {
     // Crear botón flotante
@@ -76,10 +80,14 @@ const Assistant = {
     this.formArea.innerHTML = "";
     this.lastNodeId = null;
     this.pendingFromId = null;
+    this.pendingCondition = null;
     this.currentStep = "idle";
+    this.closedEnds = new Set();
+    this.postOutputsCallbacks = [];
+    this.multiFlowContext = null;
 
-    this.addMessage("Hola 👋. Pulsa en \"Nuevo nodo\" para empezar a construir tu flujo.");
-    this.renderIdleActions();
+    this.addMessage("Hola 👋. Antes de empezar prepara los Grupos y Usuarios para autocompletar.");
+    this.renderInitialSetup();
   },
 
   addMessage(text) {
@@ -90,11 +98,56 @@ const Assistant = {
     this.messages.scrollTop = this.messages.scrollHeight;
   },
 
+  renderInitialSetup() {
+    this.formArea.innerHTML = `
+      <form class="assistant-form-step">
+        <label>Pega Grupos (uno por línea)</label>
+        <textarea id="assistantGrupos" rows="3" placeholder="Secretaría\nIntervención\nContratación"></textarea>
+        <label>Pega Usuarios (uno por línea)</label>
+        <textarea id="assistantUsuarios" rows="3" placeholder="gestor1\ntecnico2"></textarea>
+        <div class="assistant-actions">
+          <button type="submit" class="assistant-primary">Continuar</button>
+        </div>
+      </form>
+    `;
+
+    this.formArea.querySelector("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      this.ingresarPool();
+    });
+  },
+
+  ingresarPool() {
+    const gruposRaw = this.formArea.querySelector("#assistantGrupos").value;
+    const usuariosRaw = this.formArea.querySelector("#assistantUsuarios").value;
+
+    const grupos = gruposRaw
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const usuarios = usuariosRaw
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    grupos.forEach((g) => Engine.asignaciones.grupos.add(g));
+    usuarios.forEach((u) => Engine.asignaciones.usuarios.add(u));
+
+    if (window.UI && typeof UI.updateAsignacionesList === "function") {
+      UI.updateAsignacionesList();
+    }
+
+    this.addMessage(
+      `Añadidos ${grupos.length} grupos y ${usuarios.length} usuarios al pool de asignación.`
+    );
+    this.renderIdleActions();
+  },
+
   renderIdleActions() {
     this.formArea.innerHTML = `
       <div class="assistant-actions">
         <button class="assistant-primary" id="assistantStart">Nuevo nodo</button>
-        <button class="assistant-secondary" id="assistantReset">Limpiar conversación</button>
+        <button class="assistant-secondary" id="assistantReset">Reiniciar asistente</button>
       </div>
     `;
 
@@ -104,41 +157,71 @@ const Assistant = {
         .addEventListener("click", () => this.reset());
   },
 
-  startNodeFlow(connectFromId = null) {
+  startNodeFlow(connectFromId = null, condition = null) {
     this.pendingFromId = connectFromId;
+    this.pendingCondition = condition;
     this.draft = {
       titulo: "",
       tipo: "formulario",
       descripcion: "",
       tareaManual: false
     };
-    this.currentStep = "titulo";
+    this.currentStep = "tipo";
     this.renderStep();
   },
 
+  nombreSugerido(tipo) {
+    const sugerencias = {
+      formulario: [
+        "Recepción de solicitud",
+        "Subsanación documental",
+        "Revisión de expediente",
+        "Informe técnico",
+        "Validación de requisitos"
+      ],
+      documento: [
+        "Emisión de resolución",
+        "Notificación al interesado",
+        "Publicación en tablón",
+        "Generación de certificado",
+        "Redacción de informe jurídico"
+      ],
+      decision: [
+        "Evaluar alegaciones",
+        "Determinar adjudicatario",
+        "Valorar cumplimiento",
+        "Resolver recurso",
+        "Aprobar expedición"
+      ],
+      plazo: [
+        "Esperar plazo de alegaciones",
+        "Plazo de publicación",
+        "Periodo de exposición pública"
+      ],
+      circuito: [
+        "Circuito de firmas",
+        "Revisión colegiada",
+        "Validación múltiple",
+        "Mesa de contratación"
+      ],
+      operacion_externa: [
+        "Interoperar con registro",
+        "Consulta padrón",
+        "Cruce con catastro",
+        "Integración con ORVE"
+      ],
+      notas: ["Nota interna", "Recordatorio de expediente", "Checklist del técnico"],
+      libre: [
+        "Comunicación interna",
+        "Reunión de seguimiento",
+        "Coordinación con interesados"
+      ]
+    };
+
+    return sugerencias[tipo] || ["Tarea administrativa", "Paso del expediente"];
+  },
+
   renderStep() {
-    if (this.currentStep === "titulo") {
-      this.addMessage(this.pendingFromId ? "Nuevo nodo conectado al anterior" : "Definamos el siguiente nodo");
-      this.formArea.innerHTML = `
-        <form class="assistant-form-step">
-          <label>Título del nodo</label>
-          <input type="text" id="assistantTitulo" placeholder="Ej. Revisar solicitud" required />
-          <div class="assistant-actions">
-            <button type="submit" class="assistant-primary">Siguiente</button>
-          </div>
-        </form>
-      `;
-
-      this.formArea.querySelector("form").addEventListener("submit", (e) => {
-        e.preventDefault();
-        const titulo = this.formArea.querySelector("#assistantTitulo").value.trim();
-        this.draft.titulo = titulo || "Nodo";
-        this.currentStep = "tipo";
-        this.renderStep();
-      });
-      return;
-    }
-
     if (this.currentStep === "tipo") {
       this.formArea.innerHTML = `
         <form class="assistant-form-step">
@@ -165,13 +248,52 @@ const Assistant = {
       this.formArea.querySelector("form").addEventListener("submit", (e) => {
         e.preventDefault();
         this.draft.tipo = this.formArea.querySelector("#assistantTipo").value;
+        this.currentStep = "titulo";
+        this.renderStep();
+      });
+
+      this.formArea.querySelector("#assistantBackTitulo").addEventListener("click", () => {
+        this.renderIdleActions();
+      });
+      return;
+    }
+
+    if (this.currentStep === "titulo") {
+      const sugerencias = this.nombreSugerido(this.draft.tipo);
+      this.addMessage(this.pendingFromId ? "Nuevo nodo conectado al anterior" : "Definamos el siguiente nodo");
+      this.formArea.innerHTML = `
+        <form class="assistant-form-step">
+          <label>Título del nodo</label>
+          <div class="assistant-suggestions">
+            ${sugerencias
+              .map((s) => `<button type="button" class="assistant-chip" data-title="${s}">${s}</button>`)
+              .join("")}
+          </div>
+          <input type="text" id="assistantTitulo" placeholder="Ej. Revisar solicitud" required />
+          <div class="assistant-actions">
+            <button type="button" class="assistant-secondary" id="assistantBackTipo">Atrás</button>
+            <button type="submit" class="assistant-primary">Siguiente</button>
+          </div>
+        </form>
+      `;
+
+      this.formArea.querySelectorAll(".assistant-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          this.formArea.querySelector("#assistantTitulo").value = chip.dataset.title;
+        });
+      });
+
+      this.formArea.querySelector("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const titulo = this.formArea.querySelector("#assistantTitulo").value.trim();
+        this.draft.titulo = titulo || "Nodo";
         this.currentStep = "descripcion";
         this.renderStep();
       });
 
-      this.formArea.querySelector("#assistantBackTitulo")
+      this.formArea.querySelector("#assistantBackTipo")
           .addEventListener("click", () => {
-            this.currentStep = "titulo";
+            this.currentStep = "tipo";
             this.renderStep();
           });
       return;
@@ -219,104 +341,219 @@ const Assistant = {
 
     if (this.pendingFromId) {
       const conn = Engine.createConnection(this.pendingFromId, nodo.id, "bottom", "top");
+      if (conn && this.pendingCondition) {
+        Engine.updateConnectionCondition(
+          conn.id,
+          this.pendingCondition.nombre,
+          this.pendingCondition.valor
+        );
+      }
       if (conn) {
         this.addMessage("↗️ Conexión añadida con el nodo anterior");
       }
       this.pendingFromId = null;
+      this.pendingCondition = null;
     }
 
     this.lastNodeId = nodo.id;
-    this.currentStep = "accionesFinal";
-    this.renderNextOptions();
+    this.currentStep = "salidas";
+    this.askOutputsForNode(nodo.id);
   },
 
-  renderNextOptions() {
-    const hayOtrosNodos = (Engine.data?.nodos?.length || 0) > 1;
-
-    this.formArea.innerHTML = `
-      <div class="assistant-next">
-        <p>¿Qué quieres hacer ahora?</p>
-        <div class="assistant-actions">
-          <button class="assistant-primary" id="assistantOtro">Crear siguiente nodo</button>
-          <button class="assistant-secondary" id="assistantExistente" ${hayOtrosNodos ? "" : "disabled"}>Ir a una tarea existente</button>
-          <button class="assistant-secondary" id="assistantFin">Terminar</button>
-        </div>
-      </div>
-    `;
-
-    this.formArea.querySelector("#assistantOtro")
-        .addEventListener("click", () => this.startNodeFlow(this.lastNodeId));
-
-    const btnExistente = this.formArea.querySelector("#assistantExistente");
-    btnExistente.addEventListener("click", () => {
-      if (btnExistente.disabled) return;
-      this.askExistingConnection();
-    });
-
-    this.formArea.querySelector("#assistantFin")
-        .addEventListener("click", () => this.renderIdleActions());
-  },
-
-  askExistingConnection() {
-    if (!Engine.data?.nodos?.length) {
-      this.addMessage("No hay nodos disponibles");
-      this.renderNextOptions();
-      return;
-    }
-
-    const options = Engine.data.nodos
-      .filter(n => n.id !== this.lastNodeId)
-      .map(n => `<option value="${n.id}">${n.titulo || n.id}</option>`)
-      .join("");
-
-    if (!options) {
-      this.addMessage("No hay otras tareas a las que enlazar todavía.");
-      this.renderNextOptions();
-      return;
-    }
+  askOutputsForNode(nodeId) {
+    const nodo = Engine.data.nodos.find((n) => n.id === nodeId);
+    if (!nodo) return this.renderIdleActions();
 
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
-        <label>Selecciona la tarea destino</label>
-        <select id="assistantDestino">${options}</select>
+        <label>¿Cuántas salidas tiene "${nodo.titulo}"?</label>
         <div class="assistant-grid">
-          <div>
-            <label>Condición</label>
-            <input id="assistantCondNombre" placeholder="Nombre" />
-          </div>
-          <div>
-            <label>&nbsp;</label>
-            <input id="assistantCondValor" placeholder="Valor" />
-          </div>
+          <label><input type="radio" name="salidas" value="0" /> 0 (finaliza aquí)</label>
+          <label><input type="radio" name="salidas" value="1" /> 1 salida</label>
+          <label><input type="radio" name="salidas" value="2" /> 2 o más</label>
         </div>
         <div class="assistant-actions">
-          <button type="button" class="assistant-secondary" id="assistantBackOpciones">Atrás</button>
-          <button type="submit" class="assistant-primary">Crear conexión</button>
+          <button type="submit" class="assistant-primary">Definir salidas</button>
         </div>
       </form>
     `;
 
-    this.formArea.querySelector("#assistantBackOpciones")
-        .addEventListener("click", () => this.renderNextOptions());
+    this.formArea.querySelector("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const value = this.formArea.querySelector("input[name='salidas']:checked")?.value;
+      if (value === undefined) return;
+
+      if (value === "0") return this.handleZeroOutputs(nodeId);
+      if (value === "1") return this.handleSingleOutput(nodeId);
+      return this.handleMultipleOutputs(nodeId);
+    });
+  },
+
+  handleZeroOutputs(nodeId) {
+    this.closedEnds.add(nodeId);
+    this.addMessage("Nodo marcado como final sin salidas.");
+    this.afterOutputsComplete(nodeId);
+  },
+
+  handleSingleOutput(nodeId) {
+    const options = Engine.data.nodos
+      .filter((n) => n.id !== nodeId)
+      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`) 
+      .join("");
+
+    this.formArea.innerHTML = `
+      <form class="assistant-form-step">
+        <label>Condición de salida</label>
+        <input id="assistantCondNombre" placeholder="Nombre de condición" />
+        <input id="assistantCondValor" placeholder="Valor o respuesta" />
+        <label>Destino</label>
+        <select id="assistantDestino">
+          <option value="new">Crear nuevo nodo</option>
+          ${options}
+        </select>
+        <div class="assistant-actions">
+          <button type="submit" class="assistant-primary">Continuar</button>
+        </div>
+      </form>
+    `;
 
     this.formArea.querySelector("form").addEventListener("submit", (e) => {
       e.preventDefault();
-      const destino = this.formArea.querySelector("#assistantDestino").value;
       const condNombre = this.formArea.querySelector("#assistantCondNombre").value.trim();
       const condValor = this.formArea.querySelector("#assistantCondValor").value.trim();
+      const destino = this.formArea.querySelector("#assistantDestino").value;
 
-      const conn = Engine.createConnection(this.lastNodeId, destino, "right", "left");
+      if (destino === "new") {
+        this.postOutputsCallbacks.push(() => this.afterOutputsComplete(nodeId));
+        this.startNodeFlow(nodeId, { nombre: condNombre, valor: condValor });
+        return;
+      }
+
+      const conn = Engine.createConnection(nodeId, destino, "right", "left");
       if (conn && (condNombre || condValor)) {
         Engine.updateConnectionCondition(conn.id, condNombre, condValor);
       }
+      this.addMessage("🔗 Conexión creada");
+      this.afterOutputsComplete(nodeId);
+    });
+  },
 
-      if (conn) {
-        this.addMessage("🔗 Conexión creada hacia la tarea seleccionada");
+  handleMultipleOutputs(nodeId) {
+    this.multiFlowContext = { fromId: nodeId, total: 0, completed: 0 };
+    this.formArea.innerHTML = `
+      <form class="assistant-form-step">
+        <label>Número de salidas</label>
+        <input id="assistantNumeroSalidas" type="number" min="2" value="2" />
+        <div class="assistant-actions">
+          <button type="submit" class="assistant-primary">Configurar</button>
+        </div>
+      </form>
+    `;
+
+    this.formArea.querySelector("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const cantidad = parseInt(this.formArea.querySelector("#assistantNumeroSalidas").value, 10) || 2;
+      this.multiFlowContext.total = Math.max(2, cantidad);
+      this.renderMultiOutputStep();
+    });
+  },
+
+  renderMultiOutputStep() {
+    const ctx = this.multiFlowContext;
+    if (!ctx) return this.renderIdleActions();
+    if (ctx.completed >= ctx.total) {
+      this.multiFlowContext = null;
+      this.afterOutputsComplete(ctx.fromId);
+      return;
+    }
+
+    const options = Engine.data.nodos
+      .filter((n) => n.id !== ctx.fromId)
+      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`) 
+      .join("");
+
+    this.formArea.innerHTML = `
+      <form class="assistant-form-step">
+        <label>Salida ${ctx.completed + 1} de ${ctx.total}</label>
+        <input id="assistantCondNombre" placeholder="Condición" />
+        <input id="assistantCondValor" placeholder="Valor" />
+        <label>Destino</label>
+        <select id="assistantDestino">
+          <option value="new">Crear nuevo nodo</option>
+          ${options}
+        </select>
+        <div class="assistant-actions">
+          <button type="submit" class="assistant-primary">Guardar salida</button>
+        </div>
+      </form>
+    `;
+
+    this.formArea.querySelector("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const condNombre = this.formArea.querySelector("#assistantCondNombre").value.trim();
+      const condValor = this.formArea.querySelector("#assistantCondValor").value.trim();
+      const destino = this.formArea.querySelector("#assistantDestino").value;
+
+      if (destino === "new") {
+        this.postOutputsCallbacks.push(() => {
+          ctx.completed += 1;
+          this.renderMultiOutputStep();
+        });
+        this.startNodeFlow(ctx.fromId, { nombre: condNombre, valor: condValor });
+        return;
       }
 
-      this.lastNodeId = destino;
-      this.pendingFromId = destino;
-      this.renderNextOptions();
+      const conn = Engine.createConnection(ctx.fromId, destino, "right", "left");
+      if (conn && (condNombre || condValor)) {
+        Engine.updateConnectionCondition(conn.id, condNombre, condValor);
+      }
+      ctx.completed += 1;
+      this.renderMultiOutputStep();
+    });
+  },
+
+  afterOutputsComplete(nodeId) {
+    const callbacks = [...this.postOutputsCallbacks];
+    this.postOutputsCallbacks = [];
+    if (callbacks.length) {
+      callbacks.shift()();
+      this.postOutputsCallbacks = callbacks;
+      return;
+    }
+
+    this.addMessage("💾 Guardado del estado actual del editor.");
+    Engine.saveHistory();
+    this.promptOpenEnds();
+  },
+
+  promptOpenEnds() {
+    const abiertos = Engine.data.nodos.filter((n) => {
+      const out = Engine.data.conexiones.filter((c) => c.desde === n.id);
+      return out.length === 0 && !this.closedEnds.has(n.id);
+    });
+
+    if (!abiertos.length) {
+      this.addMessage("Todos los nodos tienen salidas definidas o están marcados como finales.");
+      this.renderIdleActions();
+      return;
+    }
+
+    const siguiente = abiertos[0];
+    this.addMessage(`El nodo "${siguiente.titulo}" no tiene salidas. ¿El flujo termina ahí?`);
+    this.formArea.innerHTML = `
+      <div class="assistant-actions">
+        <button class="assistant-secondary" id="assistantFinaliza">Sí, finaliza</button>
+        <button class="assistant-primary" id="assistantConectar">No, conectar</button>
+      </div>
+    `;
+
+    this.formArea.querySelector("#assistantFinaliza").addEventListener("click", () => {
+      this.closedEnds.add(siguiente.id);
+      this.promptOpenEnds();
+    });
+
+    this.formArea.querySelector("#assistantConectar").addEventListener("click", () => {
+      this.askOutputsForNode(siguiente.id);
     });
   }
 };
