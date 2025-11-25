@@ -13,6 +13,7 @@ const GuidedAssistant = {
     btn: null,
     modal: null,
     content: null,
+    progressBar: null,
 
     // Estado del asistente
     state: {
@@ -118,6 +119,30 @@ const GuidedAssistant = {
                 </div>
             `;
             document.body.appendChild(modal);
+
+            // *** NUEVO: Forzar formato panel lateral para ver el editor ***
+            modal.style.position = "fixed";
+            modal.style.top = "0";
+            modal.style.right = "0";
+            modal.style.bottom = "0";
+            modal.style.width = "420px";
+            modal.style.zIndex = "99998";
+            modal.style.display = "flex";
+            modal.style.alignItems = "stretch";
+            modal.style.justifyContent = "flex-end";
+            modal.style.background = "transparent";
+
+            const backdrop = modal.querySelector(".guided-modal-backdrop");
+            if (backdrop) {
+                backdrop.style.display = "none";
+            }
+
+            const contentPanel = modal.querySelector(".guided-modal-content");
+            if (contentPanel) {
+                contentPanel.style.height = "100%";
+                contentPanel.style.width = "100%";
+                contentPanel.style.borderRadius = "0";
+            }
         }
 
         this.btn = document.getElementById("btnGuidedAssistant");
@@ -360,8 +385,6 @@ const GuidedAssistant = {
 
     updateTitleSuggestions(tipo) {
         const suggestionsDiv = document.getElementById("titleSuggestions");
-        const input = document.getElementById("inputNodeTitle");
-
         if (!suggestionsDiv || !tipo) return;
 
         const suggestions = this.suggestions[tipo] || [];
@@ -383,7 +406,8 @@ const GuidedAssistant = {
         const input = document.getElementById("inputNodeTitle");
         if (input) {
             input.value = title;
-            document.getElementById("titleSuggestions").innerHTML = "";
+            const sug = document.getElementById("titleSuggestions");
+            if (sug) sug.innerHTML = "";
         }
     },
 
@@ -391,9 +415,7 @@ const GuidedAssistant = {
         const checkbox = document.getElementById("checkManual");
         if (!checkbox) return;
 
-        // Tipos que normalmente son manuales
         const manualTypes = ["formulario", "circuito"];
-        // Tipos que normalmente NO son manuales
         const autoTypes = ["plazo"];
 
         if (manualTypes.includes(tipo)) {
@@ -419,7 +441,6 @@ const GuidedAssistant = {
             return;
         }
 
-        // Guardar el nodo en el estado
         const nodo = {
             tipo: tipo,
             titulo: titulo,
@@ -432,7 +453,6 @@ const GuidedAssistant = {
         this.state.nodos.push(nodo);
         this.state.currentNode = nodo;
 
-        // Añadir grupo y usuario a las asignaciones globales
         if (grupo) Engine.addGrupo(grupo);
         if (usuario) Engine.addUsuario(usuario);
 
@@ -450,7 +470,7 @@ const GuidedAssistant = {
         this.content.innerHTML = `
             <div class="guided-step">
                 <h4>🔗 Paso 2: ¿Qué ocurre después de "${currentNode.titulo}"?</h4>
-                <p>Indica cuántas tareas siguen a esta:</p>
+                <p>Indica cuántas tareas siguen a esta, o si vuelve a una tarea anterior.</p>
 
                 <div class="guided-form">
                     <div class="guided-choice-buttons">
@@ -463,6 +483,14 @@ const GuidedAssistant = {
                         <button class="guided-choice-btn" onclick="GuidedAssistant.step2_MultipleNext()">
                             🔀 Varias tareas (bifurcación)
                         </button>
+                        <!-- *** NUEVO: volver a tarea anterior *** -->
+                        <button class="guided-choice-btn" onclick="GuidedAssistant.step2_PreviousTask()">
+                            ↩️ Volver a una tarea anterior
+                        </button>
+                        <!-- *** NUEVO: usar bloque estándar de Wizard *** -->
+                        <button class="guided-choice-btn" onclick="GuidedAssistant.step2_UseWizardFlow()">
+                            🧙 Bloque estándar (Wizard)
+                        </button>
                     </div>
                 </div>
 
@@ -474,7 +502,6 @@ const GuidedAssistant = {
     },
 
     step2_NoNext() {
-        // No hay más nodos, mostrar resumen y finalizar
         this.showFinalSummary();
     },
 
@@ -500,7 +527,7 @@ const GuidedAssistant = {
                 </div>
 
                 <div class="guided-actions">
-                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.step2_WhatNext()">← Atrás</button>
+                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.showStep2_WhatNext()">← Atrás</button>
                     <button class="guided-btn guided-btn-primary" onclick="GuidedAssistant.step2b_Continue()">Continuar →</button>
                 </div>
             </div>
@@ -508,7 +535,7 @@ const GuidedAssistant = {
     },
 
     step2b_Continue() {
-        const count = parseInt(document.getElementById("inputNextCount").value);
+        const count = parseInt(document.getElementById("inputNextCount").value, 10);
         if (count < 2 || count > 5) {
             alert("⚠️ El número debe estar entre 2 y 5");
             return;
@@ -522,6 +549,168 @@ const GuidedAssistant = {
         this.showStep3_AskCondition(0);
     },
 
+    /* === NUEVO: opción de volver a una tarea anterior ================== */
+    step2_PreviousTask() {
+        const candidatos = this.state.nodos.filter(
+            n => this.state.currentNode && n.tempId !== this.state.currentNode.tempId
+        );
+        if (!candidatos.length) {
+            alert("⚠️ Aún no hay tareas anteriores a las que volver.");
+            return;
+        }
+
+        this.showStep2c_SelectPreviousTask(candidatos);
+    },
+
+    showStep2c_SelectPreviousTask(candidatos) {
+        this.content.innerHTML = `
+            <div class="guided-step">
+                <h4>↩️ Volver a una tarea anterior</h4>
+                <p>Selecciona la tarea a la que se volverá después de "${this.state.currentNode.titulo}".</p>
+
+                <div class="guided-form">
+                    <div class="guided-field">
+                        <label>Tareas disponibles:</label>
+                        <select id="selectPreviousTask" class="guided-select">
+                            ${candidatos.map(n => `
+                                <option value="${n.tempId}">${n.titulo} (${n.tipo})</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="guided-actions">
+                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.showStep2_WhatNext()">← Atrás</button>
+                    <button class="guided-btn guided-btn-primary" onclick="GuidedAssistant.step2c_SavePreviousTask()">Continuar →</button>
+                </div>
+            </div>
+        `;
+    },
+
+    step2c_SavePreviousTask() {
+        const select = document.getElementById("selectPreviousTask");
+        const tempId = select ? select.value : "";
+        if (!tempId) {
+            alert("⚠️ Selecciona una tarea");
+            return;
+        }
+
+        this.state.nextNodes = [{
+            fromNode: this.state.currentNode,
+            hasCondition: false,
+            mode: "existing",
+            targetTempId: tempId
+        }];
+
+        this.showStep3_AskCondition(0);
+    },
+
+    /* === NUEVO: opción de usar bloque estándar Wizard ================== */
+    step2_UseWizardFlow() {
+        if (!window.Wizard || typeof Wizard.getDiagramTemplate !== "function") {
+            alert("⚠️ No se pueden cargar las plantillas de Wizard (no disponible).");
+            return;
+        }
+
+        this.showStep2_WizardFlowSelection();
+    },
+
+    showStep2_WizardFlowSelection() {
+        this.content.innerHTML = `
+            <div class="guided-step">
+                <h4>🧙 Añadir bloque estándar (Wizard)</h4>
+                <p>Elige un flujo predefinido de Wizard para que continúe después de "${this.state.currentNode.titulo}".</p>
+
+                <div class="guided-form">
+                    <div class="guided-field">
+                        <label>Plantilla de flujo:</label>
+                        <select id="selectWizardTemplate" class="guided-select">
+                            <option value="">-- Elige una plantilla --</option>
+                            <option value="tramiteCompleto">📄 Procedimiento Tipo Completo</option>
+                            <option value="subsanacion">📝 Flujo de Subsanación</option>
+                            <option value="resolucionProvisionalAlegaciones">📝 Resolución Provisional con Alegaciones</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="guided-actions">
+                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.showStep2_WhatNext()">← Atrás</button>
+                    <button class="guided-btn guided-btn-primary" onclick="GuidedAssistant.step2_ApplyWizardTemplate()">Añadir bloque →</button>
+                </div>
+            </div>
+        `;
+    },
+
+    step2_ApplyWizardTemplate() {
+        const select = document.getElementById("selectWizardTemplate");
+        const templateId = select ? select.value : "";
+        if (!templateId) {
+            alert("⚠️ Selecciona una plantilla de Wizard");
+            return;
+        }
+
+        this.useWizardFlowAfterCurrent(templateId);
+    },
+
+    useWizardFlowAfterCurrent(templateId) {
+        const tpl = Wizard.getDiagramTemplate(templateId);
+        if (!tpl || !tpl.nodos || !tpl.conexiones) {
+            alert("⚠️ Plantilla de Wizard no disponible.");
+            return;
+        }
+
+        const basePrefix = "wiz_" + templateId + "_" + Date.now().toString(36) + "_";
+        const idMap = new Map();
+
+        // Crear nodos del bloque Wizard dentro del estado del asistente
+        tpl.nodos.forEach((tNodo, index) => {
+            const tempId = basePrefix + (tNodo.id || ("n" + index));
+            const nodo = {
+                tipo: tNodo.tipo,
+                titulo: tNodo.titulo || ("Tarea " + (this.state.nodos.length + 1)),
+                asignadoA: tNodo.asignadoA || "",
+                asignadoUsuario: tNodo.asignadoUsuario || "",
+                tareaManual: !!tNodo.tareaManual,
+                tempId
+            };
+            this.state.nodos.push(nodo);
+            idMap.set(tNodo.id, tempId);
+        });
+
+        // Calcular nodo de entrada del bloque
+        const incoming = new Set(tpl.conexiones.map(c => c.to));
+        const entryCandidates = tpl.nodos.filter(n => !incoming.has(n.id));
+        const entryOriginalId = entryCandidates.length ? entryCandidates[0].id : (tpl.nodos[0] ? tpl.nodos[0].id : null);
+        const entryTempId = entryOriginalId ? idMap.get(entryOriginalId) : null;
+
+        // Conexiones internas del bloque
+        tpl.conexiones.forEach(c => {
+            const fromTemp = idMap.get(c.from);
+            const toTemp = idMap.get(c.to);
+            if (!fromTemp || !toTemp) return;
+
+            this.state.conexiones.push({
+                from: fromTemp,
+                to: toTemp,
+                conditionName: c.condicionNombre || "",
+                conditionValue: c.condicionValor || ""
+            });
+        });
+
+        // Conexión desde la tarea actual al bloque
+        if (this.state.currentNode && entryTempId) {
+            this.state.conexiones.push({
+                from: this.state.currentNode.tempId,
+                to: entryTempId,
+                conditionName: "",
+                conditionValue: ""
+            });
+        }
+
+        // Pasar a la pregunta de si hay más tareas que añadir
+        this.showStep5_AskMore();
+    },
+
     /* ============================================================
        PASO 3: PREGUNTAR POR CONDICIONES
     ============================================================ */
@@ -530,7 +719,6 @@ const GuidedAssistant = {
         const isLast = index >= total;
 
         if (isLast) {
-            // Ya preguntamos por todas las condiciones, ahora crear los nodos
             this.showStep4_CreateNextNodes(0);
             return;
         }
@@ -589,7 +777,7 @@ const GuidedAssistant = {
                 </div>
 
                 <div class="guided-actions">
-                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.step3_AskCondition(${index})">← Atrás</button>
+                    <button class="guided-btn guided-btn-secondary" onclick="GuidedAssistant.showStep3_AskCondition(${index})">← Atrás</button>
                     <button class="guided-btn guided-btn-primary" onclick="GuidedAssistant.step3b_SaveCondition(${index})">Continuar →</button>
                 </div>
             </div>
@@ -608,21 +796,22 @@ const GuidedAssistant = {
         this.state.nextNodes[index].conditionName = nombre;
         this.state.nextNodes[index].conditionValue = valor;
 
-        // Crear campo de tesauro automáticamente
         this.autoCreateTesauro(nombre, valor);
 
         this.showStep3_AskCondition(index + 1);
     },
 
     autoCreateTesauro(nombre, valor) {
-        // Generar referencia automática usando la lógica de DataTesauro
-        const ref = DataTesauro ? DataTesauro.generarReferenciaDesdeNombre(nombre) : nombre.replace(/\s+/g, '');
+        const ref = window.DataTesauro
+            ? DataTesauro.generarReferenciaDesdeNombre(nombre)
+            : nombre.replace(/\s+/g, '');
 
         if (this.state.tesaurosCreados.has(ref)) {
-            // Ya existe, solo añadir el valor si es un selector
             const campo = Engine.tesauro.find(c => c.ref === ref);
             if (campo && campo.tipo === "selector") {
-                const refValor = DataTesauro ? DataTesauro.generarReferenciaDesdeNombre(valor) : valor.replace(/\s+/g, '');
+                const refValor = window.DataTesauro
+                    ? DataTesauro.generarReferenciaDesdeNombre(valor)
+                    : valor.replace(/\s+/g, '');
                 const existeValor = campo.opciones.find(o => o.ref === refValor);
                 if (!existeValor) {
                     campo.opciones.push({
@@ -635,14 +824,12 @@ const GuidedAssistant = {
             return;
         }
 
-        // Detectar tipo de campo
         const valorLower = valor.toLowerCase().trim();
         let tipo = "texto";
 
         if (valorLower === "sí" || valorLower === "si" || valorLower === "no") {
             tipo = "si_no";
         } else {
-            // Por defecto, crear como selector con una opción
             tipo = "selector";
         }
 
@@ -655,7 +842,9 @@ const GuidedAssistant = {
         };
 
         if (tipo === "selector") {
-            const refValor = DataTesauro ? DataTesauro.generarReferenciaDesdeNombre(valor) : valor.replace(/\s+/g, '');
+            const refValor = window.DataTesauro
+                ? DataTesauro.generarReferenciaDesdeNombre(valor)
+                : valor.replace(/\s+/g, '');
             campo.opciones.push({
                 id: Math.random().toString(36).substring(2, 9),
                 ref: refValor,
@@ -676,12 +865,25 @@ const GuidedAssistant = {
         const total = this.state.nextNodes.length;
 
         if (index >= total) {
-            // Ya creamos todos los nodos, preguntar si hay más
             this.showStep5_AskMore();
             return;
         }
 
         const nextInfo = this.state.nextNodes[index];
+
+        // *** NUEVO: si el destino es una tarea ya existente, solo creamos la conexión ***
+        if (nextInfo.mode === "existing" && nextInfo.targetTempId) {
+            const conexion = {
+                from: nextInfo.fromNode.tempId,
+                to: nextInfo.targetTempId,
+                conditionName: nextInfo.conditionName || "",
+                conditionValue: nextInfo.conditionValue || ""
+            };
+            this.state.conexiones.push(conexion);
+            this.showStep4_CreateNextNodes(index + 1);
+            return;
+        }
+
         this.updateProgress(60 + (index * 5));
 
         this.content.innerHTML = `
@@ -708,7 +910,6 @@ const GuidedAssistant = {
             </div>
         `;
 
-        // Re-attach eventos
         this.attachNodeTypeChangeEvent();
         this.attachTitleSuggestionsEvent();
     },
@@ -736,7 +937,6 @@ const GuidedAssistant = {
 
         this.state.nodos.push(nodo);
 
-        // Guardar conexión
         const nextInfo = this.state.nextNodes[index];
         const conexion = {
             from: nextInfo.fromNode.tempId,
@@ -746,7 +946,6 @@ const GuidedAssistant = {
         };
         this.state.conexiones.push(conexion);
 
-        // Añadir asignaciones
         if (grupo) Engine.addGrupo(grupo);
         if (usuario) Engine.addUsuario(usuario);
 
@@ -759,12 +958,10 @@ const GuidedAssistant = {
     showStep5_AskMore() {
         this.updateProgress(80);
 
-        // Encontrar nodos sin continuar
         const nodosConContinuacion = new Set(this.state.conexiones.map(c => c.from));
         const nodosSinContinuar = this.state.nodos.filter(n => !nodosConContinuacion.has(n.tempId));
 
         if (nodosSinContinuar.length === 0) {
-            // Todos tienen continuación, finalizar
             this.showFinalSummary();
             return;
         }
@@ -874,20 +1071,17 @@ const GuidedAssistant = {
     applyToCanvas() {
         console.log("🚀 Aplicando procedimiento al canvas...");
 
-        // Actualizar ficha del proyecto
         Engine.updateFichaProyecto(this.state.fichaProyecto);
 
-        // Crear nodos en el canvas
         const idMap = {};
         let x = 400;
         let y = 100;
         const stepY = 150;
 
-        this.state.nodos.forEach((nodoTemp, index) => {
+        this.state.nodos.forEach((nodoTemp) => {
             const nodo = Engine.createNode(nodoTemp.tipo, x, y);
             idMap[nodoTemp.tempId] = nodo.id;
 
-            // Actualizar propiedades
             Engine.updateNode(nodo.id, {
                 titulo: nodoTemp.titulo,
                 tareaManual: nodoTemp.tareaManual,
@@ -895,7 +1089,6 @@ const GuidedAssistant = {
                 asignadoUsuario: nodoTemp.asignadoUsuario
             });
 
-            // Actualizar visualmente
             const div = document.getElementById(nodo.id);
             if (div) {
                 const content = div.querySelector(".node-content");
@@ -905,7 +1098,6 @@ const GuidedAssistant = {
             y += stepY;
         });
 
-        // Crear conexiones
         this.state.conexiones.forEach(connTemp => {
             const fromId = idMap[connTemp.from];
             const toId = idMap[connTemp.to];
@@ -926,11 +1118,9 @@ const GuidedAssistant = {
             }
         });
 
-        // Redibujar
         Renderer.redrawConnections();
         Engine.saveHistory();
 
-        // Sincronizar tesauros con DataTesauro
         if (window.DataTesauro) {
             DataTesauro.campos = [...Engine.tesauro];
             DataTesauro.sync();
@@ -947,7 +1137,6 @@ const GuidedAssistant = {
     goBack() {
         if (this.state.step > 1) {
             this.state.step--;
-            // Simplificado: volver al paso anterior
             if (this.state.step === 1) {
                 this.showStep1_CreateFirstNode();
             }
