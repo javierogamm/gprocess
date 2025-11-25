@@ -1,0 +1,245 @@
+{
+  "fichaProyecto": {
+    "procedimiento": "Licencia de Vado",
+    "actividad": "",
+    "descripcion": "",
+    "entidad": ""
+  },
+  "tesauro": [],
+  "asignaciones": {
+    "grupos": [],
+    "usuarios": []
+  },
+  "nodos": [
+    {
+      "id": "neorcu66",
+      "tipo": "formulario",
+      "titulo": "01 - Revisión de datos de la solicitud",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 140,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n1f1c8ed",
+          "connId": "cws5fy07"
+        },
+        {
+          "id": "nhb5dfc3",
+          "connId": "cq9ydv0v"
+        }
+      ]
+    },
+    {
+      "id": "nhb5dfc3",
+      "tipo": "documento",
+      "titulo": "01.A) - Requerimiento de subsanación de deficiencias",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 320,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nf4a3hg4",
+          "connId": "cgfj8ajk"
+        }
+      ]
+    },
+    {
+      "id": "nf4a3hg4",
+      "tipo": "plazo",
+      "titulo": "01.B) - Plazo de subsanación de deficiencias",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 500,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "ntww5h85",
+          "connId": "c5ytqlg7"
+        }
+      ]
+    },
+    {
+      "id": "ntww5h85",
+      "tipo": "documento",
+      "titulo": "01.C) - Informe de revisión de la subsanación de deficiencias",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 680,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nz5d7oez",
+          "connId": "czl9669w"
+        },
+        {
+          "id": "n1f1c8ed",
+          "connId": "c59123k3"
+        }
+      ]
+    },
+    {
+      "id": "nz5d7oez",
+      "tipo": "circuito",
+      "titulo": "01.D) Resolución del expediente por caducidad",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3760,
+      "y": 860,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "id": "n1f1c8ed",
+      "tipo": "documento",
+      "titulo": "02-Informe técnico",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4120,
+      "y": 860,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "ngw6f3mi",
+          "connId": "cgxbfky4"
+        }
+      ]
+    },
+    {
+      "id": "ngw6f3mi",
+      "tipo": "circuito",
+      "titulo": "03-Resolución de licencia de vado",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1040,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nz8qdul7",
+          "connId": "cuif3w92"
+        }
+      ]
+    },
+    {
+      "id": "nz8qdul7",
+      "tipo": "formulario",
+      "titulo": "04 - Revisión y cierre del expediente",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1220,
+      "width": 120,
+      "height": 50
+    }
+  ],
+  "conexiones": [
+    {
+      "id": "cws5fy07",
+      "from": "neorcu66",
+      "to": "n1f1c8ed",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "¿Es necesario subsanar la documentación presentada?",
+      "condicionValor": "No",
+      "cambioEstado": "### estado de cambio no encontrado ###"
+    },
+    {
+      "id": "cq9ydv0v",
+      "from": "neorcu66",
+      "to": "nhb5dfc3",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "¿Es necesario subsanar la documentación presentada?",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cgfj8ajk",
+      "from": "nhb5dfc3",
+      "to": "nf4a3hg4",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c5ytqlg7",
+      "from": "nf4a3hg4",
+      "to": "ntww5h85",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "czl9669w",
+      "from": "ntww5h85",
+      "to": "nz5d7oez",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "¿Ha subsanado correctamente la documentación requerida?",
+      "condicionValor": "No",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c59123k3",
+      "from": "ntww5h85",
+      "to": "n1f1c8ed",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "¿Ha subsanado correctamente la documentación requerida?",
+      "condicionValor": "Sí",
+      "cambioEstado": "### estado de cambio no encontrado ###"
+    },
+    {
+      "id": "cgxbfky4",
+      "from": "n1f1c8ed",
+      "to": "ngw6f3mi",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cuif3w92",
+      "from": "ngw6f3mi",
+      "to": "nz8qdul7",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    }
+  ]
+}

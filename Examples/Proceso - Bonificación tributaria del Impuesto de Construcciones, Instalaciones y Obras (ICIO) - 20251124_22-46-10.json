@@ -1,0 +1,276 @@
+{
+  "fichaProyecto": {
+    "procedimiento": "Bonificación tributaria del Impuesto de Construcciones, Instalaciones y Obras (ICIO)",
+    "actividad": "",
+    "descripcion": "",
+    "entidad": ""
+  },
+  "tesauro": [
+    {
+      "id": "te50msa",
+      "ref": "Si/noNecesariaSubsanacion",
+      "nombre": "Subsanación necesaria Si/No",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "42rmmvw",
+      "ref": "(si/no)SubsanacionRequerimientoTrasSolicitudCorrige",
+      "nombre": "Corrige la solicitud tras el requerimiento de subsanación (Sí/No)",
+      "tipo": "si_no",
+      "opciones": []
+    },
+    {
+      "id": "1t3hok9",
+      "ref": "InformeTecnicoSentido",
+      "nombre": "Sentido del informe técnico",
+      "tipo": "selector",
+      "opciones": [
+        {
+          "id": "7go8pzp",
+          "ref": "Favorablemente",
+          "valor": "favorablemente"
+        },
+        {
+          "id": "m77yl25",
+          "ref": "Desfavorablemente",
+          "valor": "desfavorablemente"
+        }
+      ]
+    }
+  ],
+  "asignaciones": {
+    "grupos": [],
+    "usuarios": []
+  },
+  "nodos": [
+    {
+      "id": "nebv1ee5",
+      "tipo": "formulario",
+      "titulo": "T01. Revisión de la solicitud",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 140,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "njyds7gn",
+          "connId": "cx7x9ng6"
+        },
+        {
+          "id": "n2e27l5a",
+          "connId": "c8ywh2ul"
+        }
+      ]
+    },
+    {
+      "id": "njyds7gn",
+      "tipo": "formulario",
+      "titulo": "T02. Requerimiento de subsanación de documentación",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 320,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nlttsk18",
+          "connId": "ckqrh0jp"
+        }
+      ]
+    },
+    {
+      "id": "nlttsk18",
+      "tipo": "formulario",
+      "titulo": "T03. Plazo de Subsanación",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 500,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nh6h6xj1",
+          "connId": "c7di70kd"
+        }
+      ]
+    },
+    {
+      "id": "nh6h6xj1",
+      "tipo": "formulario",
+      "titulo": "T04. Revisión de la Subsanación",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 680,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n2e27l5a",
+          "connId": "c6lu9rkh"
+        },
+        {
+          "id": "npxjn0y7",
+          "connId": "ct4q8x9i"
+        }
+      ]
+    },
+    {
+      "id": "n2e27l5a",
+      "tipo": "documento",
+      "titulo": "T05. Informe técnico",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3760,
+      "y": 860,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nfie27vt",
+          "connId": "c1132sei"
+        },
+        {
+          "id": "nyysriz0",
+          "connId": "caotz82v"
+        }
+      ]
+    },
+    {
+      "id": "nfie27vt",
+      "tipo": "formulario",
+      "titulo": "T06.A Resolución sentido favorable",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3760,
+      "y": 1040,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "id": "nyysriz0",
+      "tipo": "formulario",
+      "titulo": "T06.B Resolución sentido desfavorable",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4120,
+      "y": 1040,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "id": "npxjn0y7",
+      "tipo": "formulario",
+      "titulo": "T06.C Resolución por caducidad",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4120,
+      "y": 860,
+      "width": 120,
+      "height": 50
+    }
+  ],
+  "conexiones": [
+    {
+      "id": "cx7x9ng6",
+      "from": "nebv1ee5",
+      "to": "njyds7gn",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Subsanación necesaria Si/No",
+      "condicionValor": "Sí",
+      "cambioEstado": "01b-SUBSANACIÓN"
+    },
+    {
+      "id": "c8ywh2ul",
+      "from": "nebv1ee5",
+      "to": "n2e27l5a",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Subsanación necesaria Si/No",
+      "condicionValor": "No",
+      "cambioEstado": "02-INSTRUCCIÓN"
+    },
+    {
+      "id": "ckqrh0jp",
+      "from": "njyds7gn",
+      "to": "nlttsk18",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c7di70kd",
+      "from": "nlttsk18",
+      "to": "nh6h6xj1",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": "02-INSTRUCCIÓN"
+    },
+    {
+      "id": "c6lu9rkh",
+      "from": "nh6h6xj1",
+      "to": "n2e27l5a",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Corrige la solicitud tras el requerimiento de subsanación (Sí/No)",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "ct4q8x9i",
+      "from": "nh6h6xj1",
+      "to": "npxjn0y7",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Corrige la solicitud tras el requerimiento de subsanación (Sí/No)",
+      "condicionValor": "No",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c1132sei",
+      "from": "n2e27l5a",
+      "to": "nfie27vt",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Sentido del informe técnico",
+      "condicionValor": "favorablemente",
+      "cambioEstado": "03-PENDIENTE DE RESOLUCIÓN"
+    },
+    {
+      "id": "caotz82v",
+      "from": "n2e27l5a",
+      "to": "nyysriz0",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Sentido del informe técnico",
+      "condicionValor": "desfavorablemente",
+      "cambioEstado": "03-PENDIENTE DE RESOLUCIÓN"
+    }
+  ]
+}

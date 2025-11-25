@@ -1,0 +1,604 @@
+{
+  "fichaProyecto": {
+    "procedimiento": "Convocatoria y concesión de subvenciones por concurrencia competitiva.",
+    "actividad": "",
+    "descripcion": "",
+    "entidad": ""
+  },
+  "tesauro": [],
+  "asignaciones": {
+    "grupos": [],
+    "usuarios": []
+  },
+  "nodos": [
+    {
+      "id": "n1jy6etc",
+      "tipo": "formulario",
+      "titulo": "01. Solicitud de RC",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3220,
+      "y": 140,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "id": "nd50iif2",
+      "tipo": "formulario",
+      "titulo": "02. Propuesta del Servicio",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3580,
+      "y": 140,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nsvw6d2z",
+          "connId": "c6gdqacd"
+        }
+      ]
+    },
+    {
+      "id": "nsvw6d2z",
+      "tipo": "formulario",
+      "titulo": "03. Bases de la Convocatoria",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 320,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n44lyxs2",
+          "connId": "ch269cd7"
+        }
+      ]
+    },
+    {
+      "id": "n44lyxs2",
+      "tipo": "documento",
+      "titulo": "04. Informe Jurídico",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 500,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n8u2oiwl",
+          "connId": "cb36k473"
+        }
+      ]
+    },
+    {
+      "id": "n8u2oiwl",
+      "tipo": "formulario",
+      "titulo": "04. CR-Aprobación de la Convocatoria",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 680,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "ne7rgpop",
+          "connId": "cjp0zr2x"
+        }
+      ]
+    },
+    {
+      "id": "ne7rgpop",
+      "tipo": "formulario",
+      "titulo": "05a. Publicación BDNS Convocatoria",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 860,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nawupnu0",
+          "connId": "caem7hvx"
+        }
+      ]
+    },
+    {
+      "id": "nawupnu0",
+      "tipo": "formulario",
+      "titulo": "05b. Revisión datos integración BDNS",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1040,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "ndapug4c",
+          "connId": "cqsumn9i"
+        }
+      ]
+    },
+    {
+      "id": "ndapug4c",
+      "tipo": "formulario",
+      "titulo": "05c. Integración BDNS Convocatoria",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1220,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nde9gsp1",
+          "connId": "co67k2zf"
+        }
+      ]
+    },
+    {
+      "id": "nde9gsp1",
+      "tipo": "formulario",
+      "titulo": "06. Anuncio BOP",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1400,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nehinzyc",
+          "connId": "cng17hkt"
+        }
+      ]
+    },
+    {
+      "id": "nehinzyc",
+      "tipo": "formulario",
+      "titulo": "07. Plazo de Presentación de las Solicitudes",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1580,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nny1ylqa",
+          "connId": "c7clvfg0"
+        }
+      ]
+    },
+    {
+      "id": "nny1ylqa",
+      "tipo": "formulario",
+      "titulo": "08. Evaluación Individual de las Solicitudes",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1760,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nss3swmu",
+          "connId": "c9wx4hi8"
+        }
+      ]
+    },
+    {
+      "id": "nss3swmu",
+      "tipo": "documento",
+      "titulo": "09. Informe de la Comisión de Valoración",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1940,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nr6w7t55",
+          "connId": "c97xqfwr"
+        }
+      ]
+    },
+    {
+      "id": "nr6w7t55",
+      "tipo": "formulario",
+      "titulo": "10. CR Aprobación de la Concesión Provisional",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 2120,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nozyd1ar",
+          "connId": "cp5pu978"
+        }
+      ]
+    },
+    {
+      "id": "nozyd1ar",
+      "tipo": "formulario",
+      "titulo": "11. Plazo presentación Alegaciones Concesión Provisional",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 2300,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nolg828m",
+          "connId": "c4gsn832"
+        }
+      ]
+    },
+    {
+      "id": "nolg828m",
+      "tipo": "formulario",
+      "titulo": "12. CR Aprobación Concesión Definitiva",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 2480,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nxq889du",
+          "connId": "c0shjklu"
+        }
+      ]
+    },
+    {
+      "id": "nxq889du",
+      "tipo": "formulario",
+      "titulo": "12a. Publicación BDNS Concesión",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 2660,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nhptw6k7",
+          "connId": "cfya8bx7"
+        }
+      ]
+    },
+    {
+      "id": "nhptw6k7",
+      "tipo": "formulario",
+      "titulo": "12b. Revisión datos integración BDNS",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 2840,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "ni8q5dco",
+          "connId": "cfa9gjxo"
+        }
+      ]
+    },
+    {
+      "id": "ni8q5dco",
+      "tipo": "formulario",
+      "titulo": "12c. Integración BDNS Concesión",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 3020,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n8c5eoyx",
+          "connId": "cr3b3lx3"
+        }
+      ]
+    },
+    {
+      "id": "n8c5eoyx",
+      "tipo": "formulario",
+      "titulo": "13. Inicio Justificación",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 3200,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nxbv9y8h",
+          "connId": "ctjxjvm7"
+        }
+      ]
+    },
+    {
+      "id": "nxbv9y8h",
+      "tipo": "formulario",
+      "titulo": "14. Plazo Fin Justificación Reconocimiento Obligación",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 3380,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "id": "ng03d0tp",
+      "tipo": "formulario",
+      "titulo": "15. Evaluación Individual de Documentación Justificación",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 140,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "id": "nieb8cdi",
+      "tipo": "formulario",
+      "titulo": "15.1. CR Aprobación Reconocimiento Obligación Prepagable",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4300,
+      "y": 140,
+      "width": 120,
+      "height": 50
+    },
+    {
+      "id": "nn4p3g12",
+      "tipo": "formulario",
+      "titulo": "15.2. CR Reconocimiento Obligación Pospagable",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4660,
+      "y": 140,
+      "width": 120,
+      "height": 50
+    }
+  ],
+  "conexiones": [
+    {
+      "id": "c6gdqacd",
+      "from": "nd50iif2",
+      "to": "nsvw6d2z",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": "02-INSTRUCCIÓN"
+    },
+    {
+      "id": "ch269cd7",
+      "from": "nsvw6d2z",
+      "to": "n44lyxs2",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cb36k473",
+      "from": "n44lyxs2",
+      "to": "n8u2oiwl",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cjp0zr2x",
+      "from": "n8u2oiwl",
+      "to": "ne7rgpop",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "caem7hvx",
+      "from": "ne7rgpop",
+      "to": "nawupnu0",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cqsumn9i",
+      "from": "nawupnu0",
+      "to": "ndapug4c",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "co67k2zf",
+      "from": "ndapug4c",
+      "to": "nde9gsp1",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cng17hkt",
+      "from": "nde9gsp1",
+      "to": "nehinzyc",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c7clvfg0",
+      "from": "nehinzyc",
+      "to": "nny1ylqa",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c9wx4hi8",
+      "from": "nny1ylqa",
+      "to": "nss3swmu",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c97xqfwr",
+      "from": "nss3swmu",
+      "to": "nr6w7t55",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cp5pu978",
+      "from": "nr6w7t55",
+      "to": "nozyd1ar",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": "05a-RESUELTO CONCESIÓN PROVISIONAL"
+    },
+    {
+      "id": "c4gsn832",
+      "from": "nozyd1ar",
+      "to": "nolg828m",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c0shjklu",
+      "from": "nolg828m",
+      "to": "nxq889du",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cfya8bx7",
+      "from": "nxq889du",
+      "to": "nhptw6k7",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cfa9gjxo",
+      "from": "nhptw6k7",
+      "to": "ni8q5dco",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cr3b3lx3",
+      "from": "ni8q5dco",
+      "to": "n8c5eoyx",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "ctjxjvm7",
+      "from": "n8c5eoyx",
+      "to": "nxbv9y8h",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    }
+  ]
+}

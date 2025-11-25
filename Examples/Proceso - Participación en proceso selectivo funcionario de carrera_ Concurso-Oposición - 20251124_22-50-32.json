@@ -1,0 +1,304 @@
+{
+  "fichaProyecto": {
+    "procedimiento": "Participación en proceso selectivo funcionario de carrera: Concurso-Oposición",
+    "actividad": "",
+    "descripcion": "",
+    "entidad": ""
+  },
+  "tesauro": [],
+  "asignaciones": {
+    "grupos": [],
+    "usuarios": []
+  },
+  "nodos": [
+    {
+      "id": "nz04v3hs",
+      "tipo": "formulario",
+      "titulo": "01.Revisión inicial de la solicitud de participación en proceso selectivo",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 140,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n3ynxz43",
+          "connId": "c2ww9xrh"
+        },
+        {
+          "id": "ntw70074",
+          "connId": "cz8prlfd"
+        }
+      ]
+    },
+    {
+      "id": "ntw70074",
+      "tipo": "formulario",
+      "titulo": "02. Subsanación (Notificación aspirante excluido)",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 320,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n3ynxz43",
+          "connId": "c6y2hb26"
+        }
+      ]
+    },
+    {
+      "id": "n3ynxz43",
+      "tipo": "formulario",
+      "titulo": "03. Plazo alegaciones (Lista provisional)",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 500,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n9k16q9q",
+          "connId": "c39ql9vj"
+        },
+        {
+          "id": "ne25fl7a",
+          "connId": "cmi4raq7"
+        }
+      ]
+    },
+    {
+      "id": "ne25fl7a",
+      "tipo": "formulario",
+      "titulo": "04. Comprobación subsanación",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3580,
+      "y": 300,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "n9k16q9q",
+          "connId": "cltevw92"
+        },
+        {
+          "id": "n9k16q9q",
+          "connId": "czblevjo"
+        }
+      ]
+    },
+    {
+      "id": "n9k16q9q",
+      "tipo": "documento",
+      "titulo": "05. Informe participación definitiva",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4420,
+      "y": 420,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "njngw9fr",
+          "connId": "cvh1c54j"
+        }
+      ]
+    },
+    {
+      "id": "njngw9fr",
+      "tipo": "formulario",
+      "titulo": "06.Puntuación fase de oposición",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1040,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nzgkh1cs",
+          "connId": "ccaur813"
+        }
+      ]
+    },
+    {
+      "id": "nzgkh1cs",
+      "tipo": "formulario",
+      "titulo": "07.Baremación fase de concurso",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4080,
+      "y": 720,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "nk9y1ka2",
+          "connId": "ckogb0ci"
+        }
+      ]
+    },
+    {
+      "id": "nk9y1ka2",
+      "tipo": "documento",
+      "titulo": "08. Informe de valoración final",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 4080,
+      "y": 900,
+      "width": 120,
+      "height": 50,
+      "outList": [
+        {
+          "id": "njuqrjbl",
+          "connId": "ccydf11y"
+        }
+      ]
+    },
+    {
+      "id": "njuqrjbl",
+      "tipo": "formulario",
+      "titulo": "09. Revisión para la propuesta de nombramiento en la la participación en proceso selectivo",
+      "tareaManual": false,
+      "asignadoA": "Unidad gestora",
+      "annex": "",
+      "pregunta": "",
+      "x": 3940,
+      "y": 1580,
+      "width": 120,
+      "height": 50
+    }
+  ],
+  "conexiones": [
+    {
+      "id": "c2ww9xrh",
+      "from": "nz04v3hs",
+      "to": "n3ynxz43",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Admitido o excluido de forma provisional",
+      "condicionValor": "Admitido",
+      "cambioEstado": "ADMITIDO/A PROVISIONALMENTE"
+    },
+    {
+      "id": "cz8prlfd",
+      "from": "nz04v3hs",
+      "to": "ntw70074",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Admitido o excluido de forma provisional",
+      "condicionValor": "Excluido",
+      "cambioEstado": "EXCLUIDO/A PROVISIONALMENTE"
+    },
+    {
+      "id": "c6y2hb26",
+      "from": "ntw70074",
+      "to": "n3ynxz43",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "c39ql9vj",
+      "from": "n3ynxz43",
+      "to": "n9k16q9q",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Admitido o excluido de forma provisional",
+      "condicionValor": "Admitido provisionalmente",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cmi4raq7",
+      "from": "n3ynxz43",
+      "to": "ne25fl7a",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Admitido o excluido de forma provisional",
+      "condicionValor": "Excluido provisionalmente",
+      "cambioEstado": "SUBSANACIÓN"
+    },
+    {
+      "id": "cltevw92",
+      "from": "ne25fl7a",
+      "to": "n9k16q9q",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Admitido o excluido de forma provisional",
+      "condicionValor": "Admitido",
+      "cambioEstado": ""
+    },
+    {
+      "id": "czblevjo",
+      "from": "ne25fl7a",
+      "to": "n9k16q9q",
+      "fromPos": "left",
+      "toPos": "top",
+      "condicionNombre": "Admitido o excluido de forma provisional",
+      "condicionValor": "Excluido",
+      "cambioEstado": ""
+    },
+    {
+      "id": "cvh1c54j",
+      "from": "n9k16q9q",
+      "to": "njngw9fr",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Admitido o excluido de forma definitiva",
+      "condicionValor": "Admitido",
+      "cambioEstado": "EXCLUIDO/A"
+    },
+    {
+      "id": "ccaur813",
+      "from": "njngw9fr",
+      "to": "nzgkh1cs",
+      "fromPos": "right",
+      "toPos": "top",
+      "condicionNombre": "Supera la fase de oposición",
+      "condicionValor": "Sí",
+      "cambioEstado": ""
+    },
+    {
+      "id": "ckogb0ci",
+      "from": "nzgkh1cs",
+      "to": "nk9y1ka2",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    },
+    {
+      "id": "ccydf11y",
+      "from": "nk9y1ka2",
+      "to": "njuqrjbl",
+      "fromPos": "bottom",
+      "toPos": "top",
+      "condicionNombre": "",
+      "condicionValor": "",
+      "cambioEstado": ""
+    }
+  ]
+}
