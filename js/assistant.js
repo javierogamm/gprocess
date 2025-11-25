@@ -136,26 +136,15 @@ const Assistant = {
   },
 
   async loadExampleFlows() {
+    const exampleFiles = [
+      "contratacion_menor.json",
+      "licencia_obras_menores.json",
+      "subvenciones_culturales.json"
+    ];
+
     try {
-      const res = await fetch("examples/index.json");
-      if (!res.ok) throw new Error("No se pudo cargar examples/index.json");
-      const data = await res.json();
-      const entries = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.files)
-          ? data.files
-          : [];
-
-      const directTitles = entries
-        .filter((e) => e?.titulo)
-        .map((e) => ({ tipo: e.tipo || null, titulo: e.titulo }));
-
-      const fileEntries = entries
-        .map((e) => e?.file)
-        .filter(Boolean);
-
-      const fileTitles = (await Promise.all(
-        fileEntries.map(async (file) => {
+      const merged = (await Promise.all(
+        exampleFiles.map(async (file) => {
           try {
             const flowRes = await fetch(`examples/${file}`);
             if (!flowRes.ok) throw new Error(`No se pudo abrir ${file}`);
@@ -167,8 +156,6 @@ const Assistant = {
           }
         })
       )).flat();
-
-      const merged = [...directTitles, ...fileTitles];
       const dedup = [];
       const seen = new Set();
       merged.forEach((m) => {
@@ -197,7 +184,7 @@ const Assistant = {
       if (this.examplesLoaded) {
         const tipos = new Set(dedup.map((d) => d.tipo || "cualquiera"));
         this.addMessage(
-          `📁 Sugerencias cargadas (${dedup.length} nodos de ejemplo en ${tipos.size} familias).`
+          `📁 Sugerencias cargadas (${dedup.length} nodos de ejemplo en ${tipos.size} tipos).`
         );
         if (this.currentStep === "titulo") {
           this.renderStep();
