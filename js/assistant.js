@@ -25,6 +25,7 @@ const Assistant = {
   exampleFlows: [],
   examplesLoaded: false,
   suggestionsByType: {},
+  wizardTemplates: [],
 
   init() {
     // Reutilizar o crear botón flotante
@@ -68,6 +69,7 @@ const Assistant = {
 
     this.reset();
     this.loadExampleFlows();
+    this.loadWizardTemplates();
     this.attachFloatingButtons();
   },
 
@@ -224,6 +226,17 @@ const Assistant = {
     }
   },
 
+  loadWizardTemplates() {
+    if (!window.Wizard) return;
+    const catalog = Wizard.catalog || [];
+    this.wizardTemplates = catalog.map((item) => ({
+      id: item.id,
+      title: item.title || item.id,
+      description: item.description || "",
+      entry: item.entry || null
+    }));
+  },
+
   extractTitlesFromFlow(flowJson) {
     if (!flowJson) return [];
     const nodes = [];
@@ -294,14 +307,57 @@ const Assistant = {
     this.formArea.innerHTML = `
       <div class="assistant-actions">
         <button class="assistant-primary" id="assistantStart">Nuevo nodo</button>
+        <button class="assistant-secondary" id="assistantWizardFlow">Enganchar flujo del wizard</button>
         <button class="assistant-secondary" id="assistantReset">Reiniciar asistente</button>
       </div>
     `;
 
     this.formArea.querySelector("#assistantStart")
         .addEventListener("click", () => this.startNodeFlow());
+    this.formArea.querySelector("#assistantWizardFlow")
+        .addEventListener("click", () => this.renderWizardChooser());
     this.formArea.querySelector("#assistantReset")
         .addEventListener("click", () => this.reset());
+  },
+
+  renderWizardChooser() {
+    if (!this.wizardTemplates?.length) {
+      this.addMessage("⚠️ No hay plantillas del wizard disponibles para enganchar.");
+      return;
+    }
+
+    this.formArea.innerHTML = `
+      <div class="assistant-chooser">
+        <p class="assistant-chooser-title">Enganchar un flujo del wizard</p>
+        <div class="assistant-template-grid">
+          ${this.wizardTemplates
+            .map(
+              (tpl) => `
+                <button class="assistant-template-card" data-tpl="${tpl.id}">
+                  <span class="assistant-template-title">${tpl.title}</span>
+                  <small>${tpl.description}</small>
+                </button>
+              `
+            )
+            .join("")}
+        </div>
+        <div class="assistant-actions">
+          <button class="assistant-secondary" id="assistantChooserBack">Volver</button>
+        </div>
+      </div>
+    `;
+
+    this.formArea.querySelectorAll(".assistant-template-card").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tplId = btn.dataset.tpl;
+        const fromId = this.lastNodeId || null;
+        this.applyWizardTemplateFrom(fromId, tplId);
+        this.afterOutputsComplete(fromId || undefined);
+      });
+    });
+
+    this.formArea.querySelector("#assistantChooserBack")
+        .addEventListener("click", () => this.renderIdleActions());
   },
 
   startNodeFlow(connectFromId = null, condition = null, layoutHint = null) {
@@ -356,6 +412,31 @@ const Assistant = {
       <datalist id="assistantTesauroNombres">${opcionesNombre}</datalist>
       <input id="assistantCondValor" list="assistantTesauroValores" placeholder="Valor o respuesta" />
       <datalist id="assistantTesauroValores">${opcionesValor}</datalist>
+    `;
+  },
+
+  renderDestinationSelect(currentId) {
+    const nodesOptions = Engine.data.nodos
+      .filter((n) => n.id !== currentId)
+      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`)
+      .join("");
+
+    const wizardOptions = (this.wizardTemplates || [])
+      .map(
+        (tpl) =>
+          `<option value="wizard:${tpl.id}">Flujo wizard: ${tpl.title}${
+            tpl.entry?.titulo ? ` → ${tpl.entry.titulo}` : ""
+          }</option>`
+      )
+      .join("");
+
+    return `
+      <label>Destino</label>
+      <select id="assistantDestino">
+        <option value="new">Crear nuevo nodo</option>
+        ${wizardOptions ? `<optgroup label="Enganchar flujo del wizard">${wizardOptions}</optgroup>` : ""}
+        ${nodesOptions ? `<optgroup label="Nodos existentes">${nodesOptions}</optgroup>` : ""}
+      </select>
     `;
   },
 
@@ -617,23 +698,15 @@ const Assistant = {
   },
 
   handleSingleOutput(nodeId) {
-    const options = Engine.data.nodos
-      .filter((n) => n.id !== nodeId)
-      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`)
-      .join("");
-
     const nodo = Engine.getNode(nodeId);
     const context = nodo ? this.renderNodeContext(nodo) : "";
+    const destinos = this.renderDestinationSelect(nodeId);
 
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
         ${context}
         ${this.renderConditionInputs()}
-        <label>Destino</label>
-        <select id="assistantDestino">
-          <option value="new">Crear nuevo nodo</option>
-          ${options}
-        </select>
+        ${destinos}
         <div class="assistant-actions">
           <button type="submit" class="assistant-primary">Continuar</button>
         </div>
@@ -645,6 +718,13 @@ const Assistant = {
       const condNombre = this.formArea.querySelector("#assistantCondNombre").value.trim();
       const condValor = this.formArea.querySelector("#assistantCondValor").value.trim();
       const destino = this.formArea.querySelector("#assistantDestino").value;
+
+      if (destino.startsWith("wizard:")) {
+        const tplId = destino.replace("wizard:", "");
+        this.applyWizardTemplateFrom(nodeId, tplId, { nombre: condNombre, valor: condValor });
+        this.afterOutputsComplete(nodeId);
+        return;
+      }
 
       if (destino === "new") {
         this.postOutputsCallbacks.push(() => this.afterOutputsComplete(nodeId));
@@ -701,24 +781,16 @@ const Assistant = {
     this.activeOutputsFor = ctx.fromId;
     this.setWorkingNode(ctx.fromId);
 
-    const options = Engine.data.nodos
-      .filter((n) => n.id !== ctx.fromId)
-      .map((n) => `<option value="${n.id}">${n.titulo || n.id}</option>`)
-      .join("");
-
     const nodo = Engine.getNode(ctx.fromId);
     const context = nodo ? this.renderNodeContext(nodo, ctx) : "";
+    const destinos = this.renderDestinationSelect(ctx.fromId);
 
     this.formArea.innerHTML = `
       <form class="assistant-form-step">
         ${context}
         <label>Salida ${ctx.completed + 1} de ${ctx.total}</label>
         ${this.renderConditionInputs()}
-        <label>Destino</label>
-        <select id="assistantDestino">
-          <option value="new">Crear nuevo nodo</option>
-          ${options}
-        </select>
+        ${destinos}
         <div class="assistant-actions">
           <button type="submit" class="assistant-primary">Guardar salida</button>
         </div>
@@ -730,6 +802,19 @@ const Assistant = {
       const condNombre = this.formArea.querySelector("#assistantCondNombre").value.trim();
       const condValor = this.formArea.querySelector("#assistantCondValor").value.trim();
       const destino = this.formArea.querySelector("#assistantDestino").value;
+
+      if (destino.startsWith("wizard:")) {
+        const tplId = destino.replace("wizard:", "");
+        this.applyWizardTemplateFrom(
+          ctx.fromId,
+          tplId,
+          { nombre: condNombre, valor: condValor },
+          ctx
+        );
+        ctx.completed += 1;
+        this.renderMultiOutputStep();
+        return;
+      }
 
       if (destino === "new") {
         this.postOutputsCallbacks.push(() => {
@@ -849,6 +934,55 @@ Assistant.computeNextPosition = function () {
     const { branchIndex, branchTotal } = this.pendingLayoutHint;
     const offset = (branchIndex - (branchTotal - 1) / 2) * gapX;
     x = base.x + offset;
+  }
+
+  x = Math.round(x / GRID) * GRID;
+  y = Math.round(y / GRID) * GRID;
+
+  return { x: Math.max(20, x), y: Math.max(20, y) };
+};
+
+Assistant.applyWizardTemplateFrom = function (fromId, templateId, condicion = {}, layoutHint = null) {
+  if (!window.Wizard || typeof Wizard.applyTemplate !== "function") {
+    this.addMessage(`❌ No encontré el flujo del wizard "${templateId}".`);
+    return null;
+  }
+
+  const anchor = this.computeWizardAnchor(fromId, layoutHint);
+  const result = Wizard.applyTemplate(templateId, {
+    anchor,
+    attachFrom: fromId,
+    condition: condicion,
+    skipAlert: true
+  });
+
+  if (result?.created?.length) {
+    this.addMessage(
+      `✨ Flujo del wizard "${templateId}" insertado (${result.created.length} nodos).`
+    );
+  }
+
+  if ((condicion.nombre || condicion.valor) && fromId && result?.entryId) {
+    const tes = this.ensureTesauroForCondition(condicion.nombre, condicion.valor);
+    if (tes) this.addMessage(`🧩 Condición guardada en tesauro: ${tes.nombre}`);
+  }
+
+  return result?.entryId || null;
+};
+
+Assistant.computeWizardAnchor = function (fromId, layoutHint = null) {
+  const GRID = (window.Interactions && Interactions.GRID_SIZE) || 20;
+  const parent = fromId ? Engine.getNode(fromId) : null;
+  const gapY = 220;
+  const gapX = 240;
+
+  let x = parent ? parent.x : this.getCanvasCenter().x - 120;
+  let y = parent ? parent.y + (parent.height || 120) + gapY : this.getCanvasCenter().y - 40;
+
+  if (layoutHint && typeof layoutHint.branchIndex === "number") {
+    const { branchIndex, branchTotal } = layoutHint;
+    const offset = (branchIndex - (branchTotal - 1) / 2) * gapX;
+    x += offset;
   }
 
   x = Math.round(x / GRID) * GRID;
