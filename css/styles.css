@@ -908,7 +908,7 @@ input {
 ========================================================== */
 .drag-tesauro-active .connection-hit {
   pointer-events: stroke !important; /* habilita drop directo en el hit */
-  stroke-width: 64px !important;     /* 🔥 área de detección MUCHO más grande */
+  stroke-width: 15px !important;     /* Área de detección moderada para drop */
 }
 
 /* ============================================================
@@ -980,7 +980,7 @@ body.panel-locked #canvasArea {
 
 .connection-hit {
   stroke: transparent;
-  stroke-width: 36px;
+  stroke-width: 15px;
   fill: none;
   pointer-events: stroke;
   cursor: pointer;
