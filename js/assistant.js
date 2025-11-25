@@ -14,6 +14,7 @@ const Assistant = {
   lastNodeId: null,
   pendingFromId: null,
   pendingCondition: null,
+  pendingLayoutHint: null,
   currentStep: "idle",
   draft: null,
   closedEnds: new Set(),
@@ -81,6 +82,7 @@ const Assistant = {
     this.lastNodeId = null;
     this.pendingFromId = null;
     this.pendingCondition = null;
+    this.pendingLayoutHint = null;
     this.currentStep = "idle";
     this.closedEnds = new Set();
     this.postOutputsCallbacks = [];
@@ -157,9 +159,10 @@ const Assistant = {
         .addEventListener("click", () => this.reset());
   },
 
-  startNodeFlow(connectFromId = null, condition = null) {
+  startNodeFlow(connectFromId = null, condition = null, layoutHint = null) {
     this.pendingFromId = connectFromId;
     this.pendingCondition = condition;
+    this.pendingLayoutHint = layoutHint;
     this.draft = {
       titulo: "",
       tipo: "formulario",
@@ -330,7 +333,8 @@ const Assistant = {
   },
 
   finalizarNodo() {
-    const nodo = Engine.createNode(this.draft.tipo);
+    const coords = this.computeNextPosition();
+    const nodo = Engine.createNode(this.draft.tipo, coords.x, coords.y);
     Engine.updateNode(nodo.id, {
       titulo: this.draft.titulo,
       descripcion: this.draft.descripcion,
@@ -342,6 +346,11 @@ const Assistant = {
     if (this.pendingFromId) {
       const conn = Engine.createConnection(this.pendingFromId, nodo.id, "bottom", "top");
       if (conn && this.pendingCondition) {
+        const tes = this.ensureTesauroForCondition(
+          this.pendingCondition.nombre,
+          this.pendingCondition.valor
+        );
+        if (tes) this.addMessage(`🧩 Condición guardada en tesauro: ${tes.nombre}`);
         Engine.updateConnectionCondition(
           conn.id,
           this.pendingCondition.nombre,
@@ -353,6 +362,7 @@ const Assistant = {
       }
       this.pendingFromId = null;
       this.pendingCondition = null;
+      this.pendingLayoutHint = null;
     }
 
     this.lastNodeId = nodo.id;
@@ -425,12 +435,17 @@ const Assistant = {
 
       if (destino === "new") {
         this.postOutputsCallbacks.push(() => this.afterOutputsComplete(nodeId));
-        this.startNodeFlow(nodeId, { nombre: condNombre, valor: condValor });
+        this.startNodeFlow(nodeId, { nombre: condNombre, valor: condValor }, {
+          branchIndex: 0,
+          branchTotal: 1
+        });
         return;
       }
 
-      const conn = Engine.createConnection(nodeId, destino, "right", "left");
+      const conn = Engine.createConnection(nodeId, destino, "bottom", "top");
       if (conn && (condNombre || condValor)) {
+        const tes = this.ensureTesauroForCondition(condNombre, condValor);
+        if (tes) this.addMessage(`🧩 Condición guardada en tesauro: ${tes.nombre}`);
         Engine.updateConnectionCondition(conn.id, condNombre, condValor);
       }
       this.addMessage("🔗 Conexión creada");
@@ -499,12 +514,18 @@ const Assistant = {
           ctx.completed += 1;
           this.renderMultiOutputStep();
         });
-        this.startNodeFlow(ctx.fromId, { nombre: condNombre, valor: condValor });
+        this.startNodeFlow(
+          ctx.fromId,
+          { nombre: condNombre, valor: condValor },
+          { branchIndex: ctx.completed, branchTotal: ctx.total }
+        );
         return;
       }
 
-      const conn = Engine.createConnection(ctx.fromId, destino, "right", "left");
+      const conn = Engine.createConnection(ctx.fromId, destino, "bottom", "top");
       if (conn && (condNombre || condValor)) {
+        const tes = this.ensureTesauroForCondition(condNombre, condValor);
+        if (tes) this.addMessage(`🧩 Condición guardada en tesauro: ${tes.nombre}`);
         Engine.updateConnectionCondition(conn.id, condNombre, condValor);
       }
       ctx.completed += 1;
@@ -528,7 +549,7 @@ const Assistant = {
 
   promptOpenEnds() {
     const abiertos = Engine.data.nodos.filter((n) => {
-      const out = Engine.data.conexiones.filter((c) => c.desde === n.id);
+      const out = Engine.data.conexiones.filter((c) => c.from === n.id);
       return out.length === 0 && !this.closedEnds.has(n.id);
     });
 
@@ -556,6 +577,92 @@ const Assistant = {
       this.askOutputsForNode(siguiente.id);
     });
   }
+};
+
+Assistant.computeNextPosition = function () {
+  const GRID = (window.Interactions && Interactions.GRID_SIZE) || 20;
+  const parent = this.pendingFromId
+    ? Engine.getNode(this.pendingFromId)
+    : (this.lastNodeId ? Engine.getNode(this.lastNodeId) : null);
+
+  const base = parent || { x: this.getCanvasCenter().x - 100, y: 40, width: 200, height: 80 };
+  const gapY = 180;
+  const gapX = 240;
+
+  let x = base.x;
+  let y = (parent ? base.y + (base.height || 100) + gapY : base.y);
+
+  if (this.pendingLayoutHint && typeof this.pendingLayoutHint.branchIndex === "number") {
+    const { branchIndex, branchTotal } = this.pendingLayoutHint;
+    const offset = (branchIndex - (branchTotal - 1) / 2) * gapX;
+    x = base.x + offset;
+  }
+
+  x = Math.round(x / GRID) * GRID;
+  y = Math.round(y / GRID) * GRID;
+
+  return { x: Math.max(20, x), y: Math.max(20, y) };
+};
+
+Assistant.getCanvasCenter = function () {
+  const area = document.getElementById("canvasArea");
+  const container = Renderer?.container;
+  if (!area || !container) return { x: 200, y: 60 };
+
+  const rectArea = area.getBoundingClientRect();
+  const rectCanvas = container.getBoundingClientRect();
+
+  return {
+    x: rectArea.left + rectArea.width / 2 - rectCanvas.left,
+    y: rectArea.top + 40 - rectCanvas.top
+  };
+};
+
+Assistant.ensureTesauroForCondition = function (nombre, valor) {
+  if (!nombre) return null;
+  const list = Engine.tesauro || [];
+  const existing = list.find(
+    (c) => c.nombre?.toLowerCase?.() === nombre.toLowerCase()
+  );
+  if (existing) return existing;
+
+  const cleanValor = (valor || "").trim();
+  const normalized = cleanValor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  let tipo = "texto";
+  let opciones = undefined;
+
+  if (cleanValor) {
+    if (["si", "sí", "no"].includes(normalized)) {
+      tipo = "si_no";
+    } else if (!isNaN(Number(cleanValor))) {
+      tipo = "numerico";
+    } else {
+      tipo = "selector";
+      opciones = [cleanValor];
+    }
+  }
+
+  const refGen = window.DataTesauro?.generarReferenciaDesdeNombre;
+  const ref = refGen ? refGen(nombre) : nombre.replace(/\s+/g, "").slice(0, 20) || nombre;
+  const newId = window.DataTesauro?.generateId?.() || Engine.generateId();
+  const nuevo = { id: newId, nombre, ref, tipo };
+  if (opciones) nuevo.opciones = opciones;
+
+  Engine.tesauro = [...list, nuevo];
+
+  if (window.DataTesauro) {
+    DataTesauro.campos = [...Engine.tesauro];
+    DataTesauro.sync?.();
+    DataTesauro.render?.();
+  } else {
+    Engine.saveHistory?.();
+  }
+
+  return nuevo;
 };
 
 window.addEventListener("DOMContentLoaded", () => {
