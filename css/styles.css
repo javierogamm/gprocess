@@ -217,7 +217,7 @@ input {
 /* 🔧 Área de clic invisible (paths auxiliares) */
 .connection-hit {
   stroke: transparent;           /* evita tapar nada visualmente */
-  stroke-width: 12px;            /* área razonable */
+  stroke-width: 36px;            /* área amplia para clic y drop */
   fill: none;
   pointer-events: stroke;        /* solo activa en el trazo */
   cursor: pointer;
@@ -907,8 +907,8 @@ input {
    y mantener una gran zona de drop.
 ========================================================== */
 .drag-tesauro-active .connection-hit {
-  pointer-events: none !important; /* deja pasar el evento al path visible */
-  stroke-width: 30px !important;   /* 🔥 área de detección MUCHO más grande */
+  pointer-events: stroke !important; /* habilita drop directo en el hit */
+  stroke-width: 64px !important;     /* 🔥 área de detección MUCHO más grande */
 }
 
 /* ============================================================
@@ -980,7 +980,7 @@ body.panel-locked #canvasArea {
 
 .connection-hit {
   stroke: transparent;
-  stroke-width: 20px;
+  stroke-width: 36px;
   fill: none;
   pointer-events: stroke;
   cursor: pointer;
