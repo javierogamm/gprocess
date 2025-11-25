@@ -1194,9 +1194,13 @@ const GuidedAssistant = {
        VISTA PREVIA EN VIVO
     ============================================================ */
     renderPreview(forceUpdate = false) {
-        if (!window.Engine || !window.Renderer) {
+        if (typeof Engine === "undefined" || typeof Renderer === "undefined") {
             console.warn("⚠️ [GuidedAssistant] Engine o Renderer no disponibles todavía");
             return;
+        }
+
+        if (!Renderer.container || !Renderer.svg) {
+            Renderer.init();
         }
 
         this.state.nodos.forEach((nodoTemp) => {

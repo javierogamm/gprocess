@@ -1603,7 +1603,5 @@ window.handleTesauroDrop = function (e, connId) {
     }
   };
   
-
-  
-
+window.Renderer = Renderer;
 window.addEventListener("DOMContentLoaded", () => Renderer.init());

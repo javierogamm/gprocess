@@ -1162,4 +1162,5 @@ function getActivePanelOffset() {
 /* ============================================================
    ARRANQUE
 ============================================================ */
+window.UI = UI;
 window.addEventListener("DOMContentLoaded", () => UI.init());
