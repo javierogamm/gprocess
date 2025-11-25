@@ -1231,6 +1231,10 @@ const GuidedAssistant = {
         const nodoCanvas = Engine.getNode(nodeId);
         if (!nodoCanvas) return null;
 
+        if (!document.getElementById(nodeId)) {
+            Renderer.renderNode(nodoCanvas);
+        }
+
         nodoCanvas.x = pos.x;
         nodoCanvas.y = pos.y;
 
