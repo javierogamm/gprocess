@@ -214,6 +214,45 @@ importFromJSON(jsonString) {
             })
             .filter(conn => nodos.find(n => n.id === conn.from) && nodos.find(n => n.id === conn.to));
 
+        // 👉 Reubicar dentro del lienzo (al importar pueden quedar demasiado a la derecha)
+        const area = document.getElementById("canvasArea");
+        if (area && nodos.length) {
+            const margin = 80;
+            const rect = area.getBoundingClientRect();
+            const areaWidth = rect.width || area.clientWidth || 0;
+
+            if (areaWidth > 0) {
+                const minX = Math.min(...nodos.map(n => Number.isFinite(n.x) ? n.x : 0));
+                const maxX = Math.max(...nodos.map(n => (Number.isFinite(n.x) ? n.x : 0) + (Number.isFinite(n.width) ? n.width : 120)));
+
+                const leftBound = margin;
+                const rightBound = areaWidth - margin;
+                let shiftX = 0;
+
+                // Si todo el bloque está desplazado a la derecha, acercarlo al margen izquierdo
+                if (minX > leftBound) {
+                    shiftX = leftBound - minX;
+                }
+
+                // Evitar que el extremo derecho se salga del lienzo visible
+                if (maxX + shiftX > rightBound) {
+                    shiftX = rightBound - maxX;
+                }
+
+                // Garantizar margen mínimo tras los ajustes
+                if (minX + shiftX < leftBound) {
+                    shiftX = leftBound - minX;
+                }
+
+                if (shiftX !== 0) {
+                    nodos.forEach(n => {
+                        const currentX = Number.isFinite(n.x) ? n.x : 0;
+                        n.x = Math.round(currentX + shiftX);
+                    });
+                }
+            }
+        }
+
         this.data = { nodos, conexiones };
 
         // 4) Tesauro (retrocompatible)
