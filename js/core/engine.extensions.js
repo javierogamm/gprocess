@@ -2,6 +2,12 @@
 /* ============================================================
    EXPORTAR DIAGRAMA A CSV / EXCEL
 ============================================================ */
+// Compatibilidad Node para tests: asegurar Engine está disponible
+if (typeof module !== "undefined" && module.exports && typeof Engine === "undefined") {
+  const core = require("./engine.core.js");
+  global.Engine = core.Engine;
+}
+
 Engine.exportToCSV = function() {
 
     // --- 1️⃣ Nodos ---
@@ -125,6 +131,11 @@ Engine.importFromCSV = async function(file) {
         alert("Error importando el CSV. Ver consola para detalles.");
     }
 };
+
+// Exportar Engine para entornos de prueba en Node
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { Engine };
+}
 /* ============================================================
    EXPORTAR TAREAS Y CONDICIONES (formato flujo normalizado)
 ============================================================ */
