@@ -149,7 +149,7 @@ input {
     font-weight: bold; 
     font-family: "Segoe UI", sans-serif;
     top: 10px;
-        left: 12px;
+    left: 12px;
     right: 12px;
     z-index: 2;
 
@@ -170,7 +170,12 @@ input {
 }
 /* Ajuste especial para nodos de tipo "Circuito de resolución" */
 .node.circuito .node-content {
-    top: 25px !important;
+    top: 30px !important;
+}
+
+/* Ajuste especial para nodos de tipo "Libre" */
+.node.libre .node-content {
+    top: 16px !important;
 }
 
 /* ============================================
@@ -296,7 +301,18 @@ input {
 
     /* ✅ evita que el caret salte al principio */
     display: block !important;
-}/* ============================================
+}
+
+/* Ajustes de espaciado para la descripción en nodos "Circuito" y "Libre" */
+.node.circuito .node-description {
+    top: calc(30px + 18px);
+}
+
+.node.libre .node-description {
+    top: calc(16px + 20px);
+}
+
+/* ============================================
    SELECCIÓN MÚLTIPLE (RECTÁNGULO Y NODOS)
 ============================================ */
 #selectionBox {
