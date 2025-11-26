@@ -1107,7 +1107,12 @@ alert(`✅ Tesauro importado correctamente (${nuevosUnicos.length} nuevos o actu
     if (tipo === "si_no") {
       return { tipo, nombre, refCampo, valor: el.getAttribute("data-valor") || "" };
     }
-    if (tipo === "texto" || tipo === "numerico") {
+    if (
+      tipo === "texto" ||
+      tipo === "numerico" ||
+      tipo === "moneda" ||
+      tipo === "fecha"
+    ) {
       return { tipo, nombre, refCampo, needsInput };
     }
     return null;
@@ -1440,3 +1445,8 @@ DataTesauro.exportTesauroVinculacionCSV = function() {
 ============================================================ */
 window.addEventListener("DOMContentLoaded", () => DataTesauro.init());
 window.DataTesauro = DataTesauro;
+
+// Exponer para pruebas en Node
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { DataTesauro };
+}

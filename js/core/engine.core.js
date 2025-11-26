@@ -135,7 +135,8 @@ const full = {
     nodos: this.data.nodos,
     conexiones: this.data.conexiones
 };
-    const dataString = JSON.stringify(full, null, 2);
+
+      const dataString = JSON.stringify(full, null, 2);
 
     let nombreProceso = this.fichaProyecto.procedimiento?.trim() || "SinNombre";
     nombreProceso = nombreProceso.replace(/[\\\/:*?"<>|]/g, "_");
@@ -794,3 +795,14 @@ resizeSelectedNodes(scaleFactor) {
     }
 
 };
+
+// Exponer en entornos de navegador y Node para pruebas
+if (typeof window !== "undefined") {
+  window.Engine = Engine;
+} else if (typeof global !== "undefined") {
+  global.Engine = Engine;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { Engine };
+}

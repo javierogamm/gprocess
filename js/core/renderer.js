@@ -585,20 +585,25 @@ if (nodo.tipo === "operacion_externa") {
    RESALTAR CONEXIONES DE UNO O VARIOS NODOS SELECCIONADOS
 ============================================================ */
 highlightConnectionsForNode(nodeIds) {
-    // Aceptar string o array
-    const ids = Array.isArray(nodeIds) ? nodeIds : [nodeIds];
+    // Aceptar string, array o Set
+    const ids =
+      nodeIds instanceof Set
+        ? Array.from(nodeIds)
+        : Array.isArray(nodeIds)
+          ? nodeIds
+          : [nodeIds];
 
     // Quitar highlights previos
-    document.querySelectorAll(".connection-line").forEach(p => {
+    document.querySelectorAll(".connection-line, .conn-path").forEach(p => {
         p.classList.remove("highlighted-conn");
     });
 
-    if (!ids || ids.length === 0) return;
+    if (!ids || ids.length === 0 || !Engine?.data?.conexiones) return;
 
     // Recorrer conexiones que enlacen cualquier nodo seleccionado
     Engine.data.conexiones.forEach(conn => {
         if (ids.includes(conn.from) || ids.includes(conn.to)) {
-            const path = document.getElementById(conn.id);
+            const path = document.getElementById(conn.id) || document.querySelector(`.conn-path[data-conn-id="${conn.id}"]`);
             if (path) path.classList.add("highlighted-conn");
         }
     });
@@ -1478,7 +1483,11 @@ document.addEventListener("click", (e) => {
   if (clickedNode) {
     lastNodeClickTime = now;
     e.stopPropagation();
-    cleanAll();
+    // Solo limpiamos editores de línea; mantenemos los highlights de selección
+    Renderer.LineEditor.clear();
+    document
+      .querySelectorAll(".connection-line.selected-conn, .conn-path.selected-conn")
+      .forEach((el) => el.classList.remove("selected-conn"));
     clickedNode.classList.add("highlighted-node");
     return;
   }
@@ -1527,126 +1536,165 @@ Renderer.flashConnection = function (connId) {
    DROP TESAURO SOBRE CONEXIÓN
    (Asigna condicionNombre y condicionValor automáticamente)
 ============================================================ */
+const sanitizeTesauroNumeric = (input) => {
+  const raw = (input || "").trim();
+  if (!raw) return "";
+
+  const sign = raw.trim().startsWith("-") ? "-" : "";
+  const cleaned = raw.replace(/[^0-9.,-]/g, "");
+  const lastComma = cleaned.lastIndexOf(",");
+  const lastDot = cleaned.lastIndexOf(".");
+  const decimalIndex = Math.max(lastComma, lastDot);
+
+  const integerPart = (decimalIndex >= 0 ? cleaned.slice(0, decimalIndex) : cleaned)
+    .replace(/[.,-]/g, "");
+  const decimalPart = decimalIndex >= 0 ? cleaned.slice(decimalIndex + 1).replace(/[.,-]/g, "") : "";
+
+  return decimalPart ? `${sign}${integerPart}.${decimalPart}` : `${sign}${integerPart}`;
+};
+
 window.handleTesauroDrop = function (e, connId) {
+  try {
+    e.preventDefault();
+
+    const Eng = window.Engine ?? (typeof Engine !== "undefined" ? Engine : null);
+    if (!Eng) return;
+
+    // 1️⃣ Recuperar el payload arrastrado
+    const raw =
+      e.dataTransfer.getData("application/x-tesauro") ||
+      e.dataTransfer.getData("text/plain");
+    if (!raw) return;
+
+    let payload = null;
     try {
-      e.preventDefault();
-  
-      const Eng = window.Engine ?? (typeof Engine !== "undefined" ? Engine : null);
-      if (!Eng) return;
-  
-      // 1️⃣ Recuperar el payload arrastrado
-      const raw =
-        e.dataTransfer.getData("application/x-tesauro") ||
-        e.dataTransfer.getData("text/plain");
-      if (!raw) return;
-  
-      let payload = null;
-      try {
-        payload = JSON.parse(raw);
-      } catch {
-        return;
-      }
-  
-      // 2️⃣ Determinar nombre del campo tesauro
-      let condicionNombre = (payload.nombre || "").trim();
-      if (!condicionNombre)
-        condicionNombre = (payload.refCampo || "").trim();
-      if (!condicionNombre) return;
-  
-      // 3️⃣ Determinar valor según el tipo
-      let valor = (payload.valor || "").trim();
-  
-      // ---- SELECTOR ----
-      if (payload.tipo === "selector") {
-        if (!valor) {
-          const campo = (Eng.tesauro || []).find(
-            (t) =>
-              t.nombre === condicionNombre ||
-              t.ref === payload.refCampo
-          );
-          if (!campo || !Array.isArray(campo.opciones)) {
-            alert("Este selector no tiene valores definidos.");
-            return;
-          }
-          const opcionesTxt = campo.opciones
-            .map((o) => `${o.ref} — ${o.valor}`)
-            .join("\n");
-          const indicado = prompt(
-            `Valor para "${campo.nombre}" (escribe la REFERENCIA):\n${opcionesTxt}`
-          );
-          if (!indicado) return;
-          const found = campo.opciones.find(
-            (o) =>
-              o.ref.toLowerCase() ===
-              indicado.trim().toLowerCase()
-          );
-          if (!found) {
-            alert("Referencia no válida.");
-            return;
-          }
-          valor = found.valor;
+      payload = JSON.parse(raw);
+    } catch {
+      return;
+    }
+
+    // 2️⃣ Determinar nombre del campo tesauro
+    let condicionNombre = (payload.nombre || "").trim();
+    if (!condicionNombre)
+      condicionNombre = (payload.refCampo || "").trim();
+    if (!condicionNombre) return;
+
+    // 3️⃣ Determinar valor según el tipo
+    let valor = (payload.valor || "").trim();
+
+    // ---- SELECTOR ----
+    if (payload.tipo === "selector") {
+      if (!valor) {
+        const campo = (Eng.tesauro || []).find(
+          (t) =>
+            t.nombre === condicionNombre ||
+            t.ref === payload.refCampo
+        );
+        if (!campo || !Array.isArray(campo.opciones)) {
+          alert("Este selector no tiene valores definidos.");
+          return;
         }
-      }
-  
-      // ---- SI/NO ----
-      else if (payload.tipo === "si_no") {
-        if (!valor) {
-          valor = confirm(
-            `Asignar "${condicionNombre}" = Sí ?`
-          )
-            ? "Sí"
-            : "No";
+        const opcionesTxt = campo.opciones
+          .map((o) => `${o.ref} — ${o.valor}`)
+          .join("\n");
+        const indicado = prompt(
+          `Valor para "${campo.nombre}" (escribe la REFERENCIA):\n${opcionesTxt}`
+        );
+        if (!indicado) return;
+        const found = campo.opciones.find(
+          (o) =>
+            o.ref.toLowerCase() ===
+            indicado.trim().toLowerCase()
+        );
+        if (!found) {
+          alert("Referencia no válida.");
+          return;
         }
+        valor = found.valor;
       }
-  
-      // ---- TEXTO o NUMÉRICO ----
-      else if (
-        payload.tipo === "texto" ||
-        payload.tipo === "numerico"
-      ) {
-        if (payload.needsInput || !valor) {
-          const input = prompt(
-            `Introduce el valor para "${condicionNombre}"${
-              payload.tipo === "numerico" ? " (numérico)" : ""
-            }:`
-          );
-          if (input == null) return;
-          if (
-            payload.tipo === "numerico" &&
-            isNaN(parseFloat(input))
-          ) {
+    }
+
+    // ---- SI/NO ----
+    else if (payload.tipo === "si_no") {
+      if (!valor) {
+        valor = confirm(
+          `Asignar "${condicionNombre}" = Sí ?`
+        )
+          ? "Sí"
+          : "No";
+      }
+    }
+
+    // ---- TEXTO o NUMÉRICO ----
+    else if (
+      payload.tipo === "texto" ||
+      payload.tipo === "numerico" ||
+      payload.tipo === "moneda" ||
+      payload.tipo === "fecha"
+    ) {
+      if (payload.needsInput || !valor) {
+        const input = prompt(
+          `Introduce el valor para "${condicionNombre}"${
+            payload.tipo === "numerico"
+              ? " (numérico)"
+              : payload.tipo === "moneda"
+                ? " (importe)"
+                : payload.tipo === "fecha"
+                  ? " (fecha)"
+                  : ""
+          }:`
+        );
+        if (input == null) return;
+
+        if (payload.tipo === "numerico" || payload.tipo === "moneda") {
+          const sanitized = sanitizeTesauroNumeric(input);
+          if (sanitized === "" || isNaN(parseFloat(sanitized))) {
             alert("Introduce un número válido.");
             return;
           }
+          valor = sanitized;
+        } else {
           valor = input.trim();
         }
-      } else {
-        // Tipo no reconocido
-        return;
-      }
-  
-      // 4️⃣ Actualizar la conexión en Engine
-      if (typeof Eng.updateConnectionCondition === "function") {
-        Eng.updateConnectionCondition(connId, condicionNombre, valor);
-      } else {
-        // Si no existe ese método, forzamos actualización directa
-        const conn = Eng.getConnection(connId);
-        if (conn) {
-          conn.condicionNombre = condicionNombre;
-          conn.condicionValor = valor;
-          Eng.saveHistory?.();
-          Eng.updateConnections?.();
+      } else if (payload.tipo === "numerico" || payload.tipo === "moneda") {
+        const sanitized = sanitizeTesauroNumeric(valor);
+        if (sanitized === "" || isNaN(parseFloat(sanitized))) {
+          alert("Introduce un número válido.");
+          return;
         }
+        valor = sanitized;
       }
-  
-      // 5️⃣ Efecto visual (flash verde corto)
-      if (window.Renderer && typeof Renderer.flashConnection === "function") {
-        Renderer.flashConnection(connId);
-      }
-    } catch (err) {
-      console.error("Error en handleTesauroDrop:", err);
+    } else {
+      // Tipo no reconocido
+      return;
     }
-  };
+
+    // 4️⃣ Actualizar la conexión en Engine
+    if (typeof Eng.updateConnectionCondition === "function") {
+      Eng.updateConnectionCondition(connId, condicionNombre, valor);
+    } else {
+      // Si no existe ese método, forzamos actualización directa
+      const conn = Eng.getConnection(connId);
+      if (conn) {
+        conn.condicionNombre = condicionNombre;
+        conn.condicionValor = valor;
+        Eng.saveHistory?.();
+        Eng.updateConnections?.();
+      }
+    }
+
+    // 5️⃣ Efecto visual (flash verde corto)
+    if (window.Renderer && typeof Renderer.flashConnection === "function") {
+      Renderer.flashConnection(connId);
+    }
+  } catch (err) {
+    console.error("Error en handleTesauroDrop:", err);
+  }
+};
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { handleTesauroDrop: window.handleTesauroDrop, sanitizeTesauroNumeric };
+}
   
 
   

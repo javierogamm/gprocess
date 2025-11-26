@@ -570,3 +570,13 @@ if (/^Lanzar tarea\s+/i.test(txt)) {
 }
 
 };
+
+if (typeof window !== "undefined") {
+  window.ImportText = ImportText;
+} else if (typeof global !== "undefined") {
+  global.ImportText = ImportText;
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { ImportText };
+}
