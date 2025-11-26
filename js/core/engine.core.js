@@ -36,6 +36,7 @@ asignaciones: {
     -------------------------------------------- */
     selectedNodeId: null,
     selectedConnectionId: null,
+    resizeSelectionBaseline: new Map(),
 
     /* -------------------------------------------
        GENERADOR DE IDS
@@ -455,6 +456,7 @@ alignSelectedNodes() {
        SELECCIÓN DE ELEMENTOS
     ============================================================ */
     selectNode(id) {
+        this.clearResizeBaseline();
         this.selectedNodeId = id;
         this.selectedConnectionId = null;
     
@@ -619,19 +621,51 @@ alignSelectedNodes() {
 
 
     /* ============================================================
-   REDIMENSIONAR VARIOS NODOS A LA VEZ
+       REDIMENSIONAR VARIOS NODOS A LA VEZ
 ============================================================ */
+captureResizeBaseline() {
+    this.resizeSelectionBaseline = new Map();
+
+    Interactions.selectedNodes.forEach(id => {
+        const nodo = this.getNode(id);
+        if (!nodo) return;
+
+        this.resizeSelectionBaseline.set(id, {
+            width: nodo.width,
+            height: nodo.height
+        });
+    });
+},
+
+clearResizeBaseline() {
+    this.resizeSelectionBaseline = new Map();
+},
+
 resizeSelectedNodes(scaleFactor) {
     const selected = Array.from(Interactions.selectedNodes);
     if (selected.length === 0) return;
+
+    const needsBaseline =
+        !this.resizeSelectionBaseline ||
+        this.resizeSelectionBaseline.size !== selected.length ||
+        selected.some(id => !this.resizeSelectionBaseline.has(id));
+
+    if (needsBaseline) {
+        this.captureResizeBaseline();
+    }
 
     // Redimensionar cada nodo proporcionalmente
     selected.forEach(id => {
         const nodo = this.getNode(id);
         if (!nodo) return;
 
-        nodo.width = Math.max(60, nodo.width * scaleFactor);
-        nodo.height = Math.max(40, nodo.height * scaleFactor);
+        const baseSize = this.resizeSelectionBaseline.get(id) || {
+            width: nodo.width,
+            height: nodo.height
+        };
+
+        nodo.width = Math.max(60, baseSize.width * scaleFactor);
+        nodo.height = Math.max(40, baseSize.height * scaleFactor);
 
         // Actualizar visual
         const div = document.getElementById(id);

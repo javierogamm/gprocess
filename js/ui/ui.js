@@ -828,8 +828,10 @@ showGroupProperties() {
         inputAsignadoGroup.value = todosIguales ? (primerValor || "") : "";
     }
 
-    // 📏 Mostrar slider de tamaño
+    // 📏 Mostrar slider de tamaño y fijar baseline actual
     if (this.inputResize) {
+        Engine.captureResizeBaseline();
+        this.inputResize.value = "100";
         this.inputResize.style.display = "block";
         const labelResize = this.inputResize.previousElementSibling;
         if (labelResize) labelResize.style.display = "block";
@@ -986,6 +988,7 @@ showConnectionProperties(connId) {
     clear() {
         this.currentNodeId = null;
         this.currentConnId = null;
+        Engine.clearResizeBaseline();
 
         this.propsEmpty.style.display = "block";
         this.propsEditor.style.display = "none";
