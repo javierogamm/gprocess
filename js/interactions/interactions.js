@@ -71,14 +71,20 @@ const Interactions = {
             });
             Interactions.selectedNodes.clear();
     
-            // Añadir este nodo como único seleccionado
-            Interactions.selectedNodes.add(nodo.id);
-            div.classList.add("selected-multi");
-        }
-    
-            Engine.selectNode(nodo.id);
-            Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));    });
-            toggleRightPanel(true); // 👈 muestra el panel cuando se selecciona un nodo
+        // Añadir este nodo como único seleccionado
+        Interactions.selectedNodes.add(nodo.id);
+        div.classList.add("selected-multi");
+    }
+
+        Engine.selectNode(nodo.id);
+        Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));
+        toggleRightPanel(true); // 👈 muestra el panel cuando se selecciona un nodo
+    });
+
+    // Asegurar highlight tras el clic completo (evita necesitar doble clic)
+    div.addEventListener("click", () => {
+        Renderer.highlightConnectionsForNode(Interactions.selectedNodes.size ? Array.from(Interactions.selectedNodes) : nodo.id);
+    });
 
     /* --------- Inicio de drag (individual o múltiple) --------- */
     div.addEventListener("mousedown", (e) => {

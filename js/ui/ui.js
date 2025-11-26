@@ -454,6 +454,8 @@ if (btnFpGuardar) {
 
         // Refrescar el panel de grupo
         UI.showGroupProperties();
+        toggleRightPanel(true);
+        Renderer.highlightConnectionsForNode(Array.from(Interactions.selectedNodes));
 
         console.log(`✅ Seleccionados ${Engine.data.nodos.length} nodos`);
     }
