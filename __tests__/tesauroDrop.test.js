@@ -1,4 +1,5 @@
 const { handleTesauroDrop, sanitizeTesauroNumeric } = require('../js/core/renderer.js');
+const { DataTesauro } = require('../js/features/datatesauro.js');
 
 describe('handleTesauroDrop', () => {
   let event;
@@ -106,5 +107,34 @@ describe('sanitizeTesauroNumeric', () => {
   test('normalizes decimals and thousands separators', () => {
     expect(sanitizeTesauroNumeric('1.234,56')).toBe('1234.56');
     expect(sanitizeTesauroNumeric('-9,876.5')).toBe('-9876.5');
+  });
+});
+
+describe('DataTesauro.buildDragPayloadFromEl', () => {
+  const buildPayload = (tipo) => {
+    const pill = document.createElement('span');
+    pill.setAttribute('data-dnd', tipo);
+    pill.setAttribute('data-campo-nombre', 'Precio');
+    pill.setAttribute('data-campo-ref', 'PREC');
+    pill.setAttribute('data-needs-input', 'true');
+    return DataTesauro.buildDragPayloadFromEl(pill);
+  };
+
+  test('returns payload for moneda drag items', () => {
+    expect(buildPayload('moneda')).toEqual({
+      tipo: 'moneda',
+      nombre: 'Precio',
+      refCampo: 'PREC',
+      needsInput: true
+    });
+  });
+
+  test('returns payload for fecha drag items', () => {
+    expect(buildPayload('fecha')).toEqual({
+      tipo: 'fecha',
+      nombre: 'Precio',
+      refCampo: 'PREC',
+      needsInput: true
+    });
   });
 });
