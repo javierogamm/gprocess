@@ -81,6 +81,11 @@ const Interactions = {
         toggleRightPanel(true); // 👈 muestra el panel cuando se selecciona un nodo
     });
 
+    // Asegurar highlight tras el clic completo (evita necesitar doble clic)
+    div.addEventListener("click", () => {
+        Renderer.highlightConnectionsForNode(Interactions.selectedNodes.size ? Array.from(Interactions.selectedNodes) : nodo.id);
+    });
+
     /* --------- Inicio de drag (individual o múltiple) --------- */
     div.addEventListener("mousedown", (e) => {
         if (e.target.classList.contains("handle")) return;
