@@ -5,7 +5,8 @@
     <title>Editor de Flujos</title>
 
     <!-- CSS global -->
-    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
 </head>
 
 <body>
@@ -93,6 +94,12 @@
     <!-- 🔘 Botón flotante -->
     <button id="btnAsignaciones" class="floating-assign-btn">📋 Asignaciones</button>
     <button id="btnCambiosEstado" class="floating-cambios-btn">🔄 Cambios de estado</button>
+
+    <!-- Barra flotante de asistente y wizard -->
+    <div id="floatingControlGroup" class="floating-control-group">
+        <button id="btnWizard" class="floating-wizard-btn">🧙 Asistente</button>
+        <button id="btnAssistant" class="floating-assistant-btn">🤖 Assistant</button>
+    </div>
         <!-- Panel derecho-->
     <div id="rightPanel">
         <h3>Propiedades</h3>
@@ -190,25 +197,28 @@
     SCRIPTS (ORDEN CORRECTO)
 ========================= -->
  <!-- 1️⃣ Librerías externas  -->
- <script src="js/html2canvas.min.js"></script>
- <!-- 
+ <script src="js/vendor/html2canvas.min.js"></script>
+ <!--
  ✅ DOCX versión estable, expone window.docx correctamente -->
- <script src="js/docx-8.2.2.umd.js"></script> 
+ <script src="js/vendor/docx-8.2.2.umd.js"></script>
 
 
 
-<!-- 2️⃣ Archivos de tu app -->
-<script src="js/engine.js"></script>
-<script src="js/renderer.js"></script>
-<script src="js/importtext.js"></script>
-<script src="js/interactions.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/asignaciones.js"></script>
-<script src="js/cambiosestado.js"></script>
-<script src="js/datatesauro.js"></script>
-<script src="js/tesauroManager.js"></script>
-<script src="js/wizard.js"></script>
-<script src="js/resizepanels.js"></script>
+<!-- 2️⃣ Núcleo y módulos de la app -->
+<script src="js/core/engine.core.js"></script>
+<script src="js/core/engine.extensions.js"></script>
+<script src="js/core/renderer.js"></script>
+<script src="js/features/importtext.js"></script>
+<script src="js/interactions/interactions.js"></script>
+<script src="js/ui/ui.js"></script>
+
+<script src="js/features/asignaciones.js"></script>
+<script src="js/features/cambiosestado.js"></script>
+<script src="js/features/datatesauro.js"></script>
+<script src="js/features/tesauromanager.js"></script>
+<script src="js/features/wizard.js"></script>
+<script src="js/interactions/resizepanels.js"></script>
+<script src="js/features/assistant.js"></script>
 <script>
   // 🧠 Botón para abrir el GPT personalizado
   document.getElementById("btnIAJson").addEventListener("click", () => {

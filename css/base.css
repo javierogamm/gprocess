@@ -116,9 +116,10 @@ input {
     position: absolute;
     cursor: move;
     user-select: none;
-    width: 200px;
-    height: 100px;
+    width: 240px;
+    height: 135px;
     pointer-events: auto;    /* ✅ los nodos sí siguen siendo interactivos */
+    border-radius: 14px;
 }
 
 /* ============================================
@@ -148,7 +149,7 @@ input {
     font-weight: bold; 
     font-family: "Segoe UI", sans-serif;
     top: 10px;
-        left: 12px;
+    left: 12px;
     right: 12px;
     z-index: 2;
 
@@ -169,7 +170,12 @@ input {
 }
 /* Ajuste especial para nodos de tipo "Circuito de resolución" */
 .node.circuito .node-content {
-    top: 25px !important;
+    top: 30px !important;
+}
+
+/* Ajuste especial para nodos de tipo "Libre" */
+.node.libre .node-content {
+    top: 16px !important;
 }
 
 /* ============================================
@@ -217,7 +223,7 @@ input {
 /* 🔧 Área de clic invisible (paths auxiliares) */
 .connection-hit {
   stroke: transparent;           /* evita tapar nada visualmente */
-  stroke-width: 12px;            /* área razonable */
+  stroke-width: 36px;            /* área amplia para clic y drop */
   fill: none;
   pointer-events: stroke;        /* solo activa en el trazo */
   cursor: pointer;
@@ -295,7 +301,18 @@ input {
 
     /* ✅ evita que el caret salte al principio */
     display: block !important;
-}/* ============================================
+}
+
+/* Ajustes de espaciado para la descripción en nodos "Circuito" y "Libre" */
+.node.circuito .node-description {
+    top: calc(30px + 18px);
+}
+
+.node.libre .node-description {
+    top: calc(16px + 20px);
+}
+
+/* ============================================
    SELECCIÓN MÚLTIPLE (RECTÁNGULO Y NODOS)
 ============================================ */
 #selectionBox {
@@ -890,559 +907,4 @@ input {
   stroke: #10b981 !important;
   stroke-width: 3 !important;
   filter: brightness(1.2);
-}
-/* ===============================
-   EFECTO VISUAL DE DRAG-OVER EN CONEXIÓN
-=============================== */
-.conn-path.conn-drop-over {
-  stroke: #10b981 !important;         /* verde vivo */
-  stroke-width: 4 !important;         /* un poco más gruesa */
-  filter: drop-shadow(0 0 3px #10b981);
-  transition: all 0.15s ease;
-  
-}
-/* ==========================================================
-   🔸 Desactivar área invisible de clic durante arrastre Tesauro
-   (para que las líneas reales puedan iluminarse correctamente)
-   y mantener una gran zona de drop.
-========================================================== */
-.drag-tesauro-active .connection-hit {
-  pointer-events: none !important; /* deja pasar el evento al path visible */
-  stroke-width: 30px !important;   /* 🔥 área de detección MUCHO más grande */
-}
-
-/* ============================================================
-   BOTONES FLOTANTES — SE MUEVEN CON CUALQUIER PANEL VISIBLE
-============================================================ */
-
-/* 🔹 Transición suave para todos los botones */
-.floating-assign-btn,
-.floating-cambios-btn,
-.floating-tesauro-btn {
-  transition: right 0.3s ease;
-}
-
-/* 🔹 Si cualquier panel lateral (derecho, asignaciones, cambios o tesauro) está visible,
-   todos los botones flotantes se desplazan a 360px */
-#rightPanel.visible ~ .floating-assign-btn,
-#rightPanel.visible ~ .floating-cambios-btn,
-#rightPanel.visible ~ .floating-tesauro-btn,
-.assign-panel.visible ~ .floating-assign-btn,
-.assign-panel.visible ~ .floating-cambios-btn,
-.assign-panel.visible ~ .floating-tesauro-btn,
-.cambios-panel.visible ~ .floating-assign-btn,
-.cambios-panel.visible ~ .floating-cambios-btn,
-.cambios-panel.visible ~ .floating-tesauro-btn,
-.tesauro-panel.visible ~ .floating-assign-btn,
-.tesauro-panel.visible ~ .floating-cambios-btn,
-.tesauro-panel.visible ~ .floating-tesauro-btn {
-  right: 360px;
-}
-/* ============================================================
-   🔒 BLOQUEAR DESPLAZAMIENTO DEL VIEWPORT AL ABRIR PANEL LATERAL
-   (evita que el canvas se mueva y desincronice las líneas)
-============================================================ */
-body.panel-locked {
-  overflow: hidden !important; /* bloquea movimiento */
-}
-
-body.panel-locked #canvasArea {
-  pointer-events: none; /* previene scrolls mientras se abre */
-}
-
-/* 🔹 Hover — efecto más luminoso */
-
-#svgConnections {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 8000px;
-  height: 4000px;
-  overflow: visible;
-}
-
-.connection-line {
-  stroke: #4a7f84;
-  stroke-width: 2;
-  fill: none;
-  cursor: pointer;
-  pointer-events: stroke;
-  transition: stroke-width 0.15s ease;
-}
-
-/* 🔹 Solo efecto de selección, sin hover */
-.connection-line.selected,
-.connection-line.highlighted-conn {
-  stroke: #50a1a2 !important;
-  stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
-}
-
-.connection-hit {
-  stroke: transparent;
-  stroke-width: 20px;
-  fill: none;
-  pointer-events: stroke;
-  cursor: pointer;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-/* ============================================================
-   ✨ SELECCIÓN DE CONEXIÓN — LÍNEA + NODOS ORIGEN/DESTINO
-============================================================ */
-
-/* 🔹 Línea seleccionada (ya coherente con tu gama) */
-.connection-line.selected-conn {
-  stroke: #00b4d8 !important;
-  stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(0,180,216,0.8));
-  transition: stroke 0.2s ease, filter 0.2s ease;
-}
-
-/* 🔹 Nodos conectados (resaltados con tono compatible) */
-.node.selected-conn {
-  outline: 3px solid rgba(0,180,216,0.8) !important;
-  box-shadow: 0 0 10px rgba(0,180,216,0.6);
-  z-index: 1200;
-  transition: box-shadow 0.2s ease, outline 0.2s ease;
-}
-/* 🔧 Fix visual para resaltado de asignaciones */
-.node.node-highlight .shape,
-.node.node-highlight svg {
-  filter: drop-shadow(0 0 10px rgba(4, 200, 144, 0.6));
-}
-
-.node.node-highlight {
-  background-color: rgba(4, 200, 144, 0.12) !important;
-  outline: 3px solid rgba(4, 200, 144, 0.9) !important;
-  box-shadow: 0 0 12px rgba(4, 200, 144, 0.7);
-}
-
-/* ===== Popup de pegar grupos/usuarios ===== */
-.assign-paste-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.assign-paste-modal.hidden {
-    display: none !important;
-}
-
-.assign-paste-box {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    width: 380px;
-    max-width: 90%;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-#assignPasteTextarea {
-    width: 100%;
-    height: 200px;
-    resize: vertical;
-    padding: 10px;
-    box-sizing: border-box;
-}
-
-.assign-paste-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.btn-import {
-    background: #08d17a;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-}
-
-.btn-cancel {
-    background: #aaa;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-}
-.tm-row-selected {
-    background: #dbeafe !important;
-}
-
-/* ============================================================
-   WIZARD - ASISTENTE GUIADO
-============================================================ */
-
-/* Botón flotante del wizard */
-.floating-wizard-btn {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 14px 28px;
-    border-radius: 30px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    z-index: 1500;
-    transition: all 0.3s ease;
-}
-
-.floating-wizard-btn:hover {
-    transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
-
-/* Panel lateral del wizard */
-.wizard-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 400px;
-    height: 100vh;
-    background: white;
-    border-right: 2px solid #e2e8f0;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 1600;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.wizard-panel.visible {
-    transform: translateX(0);
-}
-
-.wizard-header {
-    padding: 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.wizard-header h3 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.wizard-close-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 24px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
-
-.wizard-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.wizard-content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 20px;
-}
-
-/* Menú principal del wizard */
-.wizard-menu h4 {
-    margin: 0 0 12px 0;
-    color: #1f2937;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.wizard-btn {
-    width: 100%;
-    padding: 12px 16px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #1f2937;
-    cursor: pointer;
-    font-size: 14px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    text-align: left;
-    transition: all 0.2s;
-}
-
-.wizard-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    transform: translateX(4px);
-}
-
-.wizard-btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    font-weight: bold;
-}
-
-.wizard-btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.wizard-divider {
-    border: none;
-    border-top: 1px solid #e2e8f0;
-    margin: 20px 0;
-}
-
-/* Botón de volver */
-.wizard-back-btn {
-    background: transparent;
-    border: none;
-    color: #667eea;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 8px 0;
-    margin-bottom: 16px;
-    text-align: left;
-    font-weight: 600;
-}
-
-.wizard-back-btn:hover {
-    color: #764ba2;
-    text-decoration: underline;
-}
-
-/* Importación */
-.wizard-import-options {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.wizard-input,
-.wizard-textarea,
-.wizard-select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 14px;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
-
-.wizard-input-large {
-    font-size: 16px;
-    padding: 14px;
-}
-
-.wizard-textarea {
-    resize: vertical;
-    min-height: 120px;
-}
-
-.wizard-select {
-    cursor: pointer;
-}
-
-.wizard-help {
-    margin-top: 8px;
-    padding: 10px;
-    background: #fef3c7;
-    border: 1px solid #fbbf24;
-    border-radius: 6px;
-}
-
-.wizard-help small {
-    color: #92400e;
-    font-size: 12px;
-}
-
-/* Acciones (botones de confirmar/cancelar) */
-.wizard-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.wizard-actions button {
-    flex: 1;
-}
-
-.wizard-btn-cancel {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-}
-
-.wizard-btn-cancel:hover {
-    background: #e2e8f0;
-}
-
-/* Wizard de nodos paso a paso */
-.wizard-progress {
-    background: #f1f5f9;
-    padding: 8px 12px;
-    border-radius: 6px;
-    text-align: center;
-    font-size: 12px;
-    color: #64748b;
-    margin-bottom: 16px;
-    font-weight: 600;
-}
-
-.wizard-step-content {
-    margin: 20px 0;
-}
-
-.wizard-yesno {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-}
-
-.wizard-btn-yesno {
-    flex: 1;
-    padding: 20px;
-    background: #f8fafc;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-
-.wizard-btn-yesno:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-}
-
-.wizard-btn-yesno.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-color: #667eea;
-}
-
-/* Plantillas de flujo */
-.wizard-template-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.wizard-template-card {
-    padding: 16px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.wizard-template-card:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.wizard-template-card h5 {
-    margin: 0 0 8px 0;
-    color: #1f2937;
-    font-size: 16px;
-}
-
-.wizard-template-card p {
-    margin: 0;
-    color: #64748b;
-    font-size: 13px;
-}
-
-.wizard-template-description {
-    color: #64748b;
-    font-size: 14px;
-    line-height: 1.6;
-    margin: 12px 0 20px 0;
-}
-
-.wizard-template-preview {
-    background: #f8fafc;
-    padding: 16px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.wizard-template-preview h5 {
-    margin: 0 0 12px 0;
-    color: #1f2937;
-    font-size: 14px;
-}
-
-.wizard-template-nodes {
-    margin: 0;
-    padding-left: 20px;
-}
-
-.wizard-template-nodes li {
-    margin-bottom: 12px;
-    line-height: 1.6;
-}
-
-.wizard-node-type {
-    color: #64748b;
-    font-size: 12px;
-    font-style: italic;
-    margin-left: 8px;
-}
-
-.wizard-template-nodes small {
-    color: #64748b;
-    font-size: 12px;
-}
-
-/* Modal del wizard (si se necesita) */
-.wizard-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
-.wizard-modal.hidden {
-    display: none;
-}
-
-.wizard-modal-content {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }

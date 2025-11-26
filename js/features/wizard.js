@@ -15,6 +15,26 @@ const Wizard = {
     modal: null,
     modalBody: null,
     modalCloseBtn: null,
+    catalog: [
+        {
+            id: 'tramiteCompleto',
+            title: '📄 Procedimiento Tipo Completo',
+            description: 'Revisión solicitud → Subsanación / Informe → Concesión / Denegación',
+            entry: 'Revisión de la solicitud'
+        },
+        {
+            id: 'subsanacion',
+            title: '📝 Flujo de Subsanación',
+            description: 'Requerimiento → Plazo → Revisión → Desistimiento',
+            entry: 'Requerimiento de subsanación'
+        },
+        {
+            id: 'resolucionProvisionalAlegaciones',
+            title: '📝 Resolución Provisional con Alegaciones',
+            description: 'Resolución provisional → Alegaciones → Certificado → Resolución definitiva',
+            entry: 'Resolución con alegaciones (Provisional)'
+        }
+    ],
 
     /* ============================================================
        INICIALIZACIÓN
@@ -61,6 +81,11 @@ const Wizard = {
         this.modal = document.getElementById("wizardTemplatesModal");
         this.modalBody = document.getElementById("wizardTemplatesBody");
         this.modalCloseBtn = document.getElementById("wizardTemplatesClose");
+
+        const floatingGroup = document.getElementById("floatingControlGroup");
+        if (floatingGroup && this.btn && this.btn.parentElement !== floatingGroup) {
+            floatingGroup.appendChild(this.btn);
+        }
 
         console.log("🔗 [Wizard.init] Referencias DOM:", {
             btn: this.btn,
@@ -114,6 +139,13 @@ const Wizard = {
 
         if (!this.modalBody) return;
 
+        const cards = this.catalog.map((item) => `
+            <div class="wizard-template-card" onclick="Wizard.showTemplateDetail('${item.id}')">
+                <h5>${item.title}</h5>
+                <p>${item.description}</p>
+            </div>
+        `).join('');
+
         this.modalBody.innerHTML = `
             <div class="wizard-templates">
                 <h4>📋 Plantillas de Flujo</h4>
@@ -122,22 +154,7 @@ const Wizard = {
                 </p>
 
                 <div class="wizard-template-list">
-                    
-                    <div class="wizard-template-card" onclick="Wizard.showTemplateDetail('tramiteCompleto')">
-                        <h5>📄 Procedimiento Tipo Completo</h5>
-                        <p>Revisión solicitud → Subsanación / Informe → Concesión / Denegación</p>
-                    </div>    
-
-                    <div class="wizard-template-card" onclick="Wizard.showTemplateDetail('subsanacion')">
-                        <h5>📝 Flujo de Subsanación</h5>
-                        <p>Requerimiento → Plazo → Revisión → Desistimiento</p>
-                    </div>
-
-                    <div class="wizard-template-card" onclick="Wizard.showTemplateDetail('resolucionProvisionalAlegaciones')">
-                        <h5>📝 Resolución Provisional con Alegaciones</h5>
-                        <p>Resolución provisional → Alegaciones → Certificado → Resolución definitiva</p>
-                    </div>
-
+                    ${cards}
                 </div>
             </div>
         `;
@@ -298,8 +315,8 @@ const Wizard = {
         `;
     },
 
-    applyTemplate(templateId) {
-        console.log("✅ [Wizard.applyTemplate] Aplicando template (diagrama):", templateId);
+    applyTemplate(templateId, options = {}) {
+        console.log("✅ [Wizard.applyTemplate] Aplicando template (diagrama):", templateId, options);
 
         // ============================================================
         // 🧩 PLANTILLAS COMO MINI-DIAGRAMAS (NODOS + CONEXIONES)
@@ -709,6 +726,8 @@ const Wizard = {
             return;
         }
 
+        const { anchor, attachFrom, condition, skipAlert } = options || {};
+
         // Asegurar Renderer inicializado (sin tocar Engine)
         if (!Renderer.container || !Renderer.svg) {
             console.warn("⚠ Renderer no estaba inicializado, llamando a Renderer.init()");
@@ -716,6 +735,10 @@ const Wizard = {
         }
 
         const { nodos, conexiones } = template;
+        const minX = Math.min(...nodos.map(n => n.x || 0));
+        const minY = Math.min(...nodos.map(n => n.y || 0));
+        const offsetX = anchor ? (anchor.x - minX) : 0;
+        const offsetY = anchor ? (anchor.y - minY) : 0;
         const idMap = {};
         const creados = [];
 
@@ -724,7 +747,11 @@ const Wizard = {
         // ============================================================
         nodos.forEach((tNodo) => {
             // Crear nodo nuevo con el tipo y posición del template
-            const n = Engine.createNode(tNodo.tipo, tNodo.x, tNodo.y);
+            const n = Engine.createNode(
+                tNodo.tipo,
+                (tNodo.x || 0) + offsetX,
+                (tNodo.y || 0) + offsetY
+            );
 
             // Mapear id antiguo → id nuevo
             idMap[tNodo.id] = n.id;
@@ -819,9 +846,24 @@ const Wizard = {
         Renderer.redrawConnections();
         Engine.saveHistory();
 
-        alert(`✅ Plantilla aplicada: ${nodos.length} nodos y ${conexiones.length} conexiones creadas.`);
+        const entryId = creados[0]?.id;
+        if (attachFrom && entryId) {
+            const conn = Engine.createConnection(attachFrom, entryId, "bottom", "top");
+            if (conn && condition) {
+                Engine.updateConnectionCondition(
+                    conn.id,
+                    condition.nombre || "",
+                    condition.valor || ""
+                );
+            }
+        }
+
+        if (!skipAlert) {
+            alert(`✅ Plantilla aplicada: ${nodos.length} nodos y ${conexiones.length} conexiones creadas.`);
+        }
         // Cerramos el popup de plantillas tras aplicar
         Wizard.closeTemplatesModal();
+        return { entryId, created: creados, idMap };
     }
 
 };
