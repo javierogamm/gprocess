@@ -116,9 +116,10 @@ input {
     position: absolute;
     cursor: move;
     user-select: none;
-    width: 200px;
-    height: 100px;
+    width: 240px;
+    height: 135px;
     pointer-events: auto;    /* ✅ los nodos sí siguen siendo interactivos */
+    border-radius: 14px;
 }
 
 /* ============================================

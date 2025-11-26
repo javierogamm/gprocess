@@ -41,8 +41,8 @@ const Renderer = {
         div.style.left = nodo.x + "px";
         div.style.top  = nodo.y + "px";
 
-        if (!nodo.width)  nodo.width  = 40;
-        if (!nodo.height) nodo.height =25;
+        if (!nodo.width)  nodo.width  = 144;
+        if (!nodo.height) nodo.height = 68;
 
         div.style.width  = nodo.width + "px";
         div.style.height = nodo.height + "px";
@@ -226,17 +226,46 @@ document.addEventListener("mouseup", () => {
         svg.style.position = "absolute";
         svg.style.inset = "0";
         svg.style.pointerEvents = "none";
-    
+
         const W = div.offsetWidth;
         const H = div.offsetHeight;
-    
+
+        const fillBase = nodo.color || "#dff3f9";
+        const strokeBase = "#2f6f82";
+        const strokeAccent = "#3b8c99";
+        const strokeWidth = 1.4;
+
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const shadowId = `shadow-${nodo.id}`;
+
+        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+        filter.setAttribute("id", shadowId);
+        filter.setAttribute("x", "-20%");
+        filter.setAttribute("y", "-20%");
+        filter.setAttribute("width", "140%");
+        filter.setAttribute("height", "140%");
+
+        const dropShadow = document.createElementNS("http://www.w3.org/2000/svg", "feDropShadow");
+        dropShadow.setAttribute("dx", "0");
+        dropShadow.setAttribute("dy", "2");
+        dropShadow.setAttribute("stdDeviation", "2.5");
+        dropShadow.setAttribute("flood-color", "#111827");
+        dropShadow.setAttribute("flood-opacity", "0.18");
+        filter.appendChild(dropShadow);
+
+        defs.appendChild(filter);
+        svg.appendChild(defs);
+
+        g.setAttribute("filter", `url(#${shadowId})`);
+        g.setAttribute("stroke-linejoin", "round");
+        g.setAttribute("stroke-linecap", "round");
     
         /* ====================================================
            FORMULARIO → cápsula vertical no deformable
         ==================================================== */
         if (nodo.tipo === "formulario") {
-            const rx = Math.min(W, H) * 0.20;
+            const rx = Math.min(W, H) * 0.18;
             const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
             r.setAttribute("x", 2);
             r.setAttribute("y", 2);
@@ -244,9 +273,9 @@ document.addEventListener("mouseup", () => {
             r.setAttribute("height", H - 4);
             r.setAttribute("rx", rx);
             r.setAttribute("ry", rx);
-            r.setAttribute("fill", nodo.color || "#b9e6e8");
-            r.setAttribute("stroke", "#4a7f84");
-            r.setAttribute("stroke-width", "1");
+            r.setAttribute("fill", fillBase);
+            r.setAttribute("stroke", strokeBase);
+            r.setAttribute("stroke-width", strokeWidth);
             g.appendChild(r);
         }
     
@@ -272,9 +301,9 @@ document.addEventListener("mouseup", () => {
             `;
         
             path.setAttribute("d", d);
-            path.setAttribute("fill", nodo.color || "#b9e6e8");
-            path.setAttribute("stroke", "#4a7f84");
-            path.setAttribute("stroke-width", "1");
+            path.setAttribute("fill", fillBase);
+            path.setAttribute("stroke", strokeBase);
+            path.setAttribute("stroke-width", strokeWidth);
             g.appendChild(path);
         }
         
@@ -295,9 +324,9 @@ if (nodo.tipo === "decisionR") {
     rect.setAttribute("height", H - s*2);
     rect.setAttribute("rx", rx);
     rect.setAttribute("ry", ry);
-    rect.setAttribute("fill", nodo.color || "#b9e6e8");
-    rect.setAttribute("stroke", "#4a7f84");
-    rect.setAttribute("stroke-width", "1");
+    rect.setAttribute("fill", fillBase);
+    rect.setAttribute("stroke", strokeBase);
+    rect.setAttribute("stroke-width", strokeWidth);
 
     g.appendChild(rect);
 }
@@ -311,17 +340,17 @@ if (nodo.tipo === "decisionR") {
         reloj.setAttribute("cx", W / 2);
         reloj.setAttribute("cy", H / 2);
         reloj.setAttribute("r", Math.min(W, H) / 2 - 6);
-        reloj.setAttribute("fill", nodo.color || "#b9e6e8");
-        reloj.setAttribute("stroke", "#4a7f84");
-        reloj.setAttribute("stroke-width", "1");
+        reloj.setAttribute("fill", fillBase);
+        reloj.setAttribute("stroke", strokeBase);
+        reloj.setAttribute("stroke-width", strokeWidth);
         g.appendChild(reloj);
 
         // 🔹 Centro del reloj
         const centro = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         centro.setAttribute("cx", W / 2);
         centro.setAttribute("cy", H / 2);
-        centro.setAttribute("r", 3);
-        centro.setAttribute("fill", nodo.color || "#4a7f84");
+        centro.setAttribute("r", 3.5);
+        centro.setAttribute("fill", strokeBase);
         g.appendChild(centro);
 
         // 🔹 Manecilla horaria
@@ -330,8 +359,8 @@ if (nodo.tipo === "decisionR") {
         hora.setAttribute("y1", H / 2);
         hora.setAttribute("x2", W / 2);
         hora.setAttribute("y2", H / 2 - Math.min(W, H) * 0.20);
-        hora.setAttribute("stroke", "#4a7f84");
-        hora.setAttribute("stroke-width", "1");
+        hora.setAttribute("stroke", strokeBase);
+        hora.setAttribute("stroke-width", strokeWidth);
         hora.setAttribute("stroke-linecap", "round");
         g.appendChild(hora);
 
@@ -341,7 +370,7 @@ if (nodo.tipo === "decisionR") {
         min.setAttribute("y1", H / 2);
         min.setAttribute("x2", W / 2 + Math.min(W, H) * 0.25);
         min.setAttribute("y2", H / 2);
-        min.setAttribute("stroke", "#4a7f84");
+        min.setAttribute("stroke", strokeBase);
         min.setAttribute("stroke-width", "2");
         min.setAttribute("stroke-linecap", "round");
         g.appendChild(min);
@@ -359,7 +388,7 @@ if (nodo.tipo === "decisionR") {
             line.setAttribute("y1", m.y1);
             line.setAttribute("x2", m.x2);
             line.setAttribute("y2", m.y2);
-            line.setAttribute("stroke", "#4a7f84");
+            line.setAttribute("stroke", strokeBase);
             line.setAttribute("stroke-width", "2");
             g.appendChild(line);
         }
@@ -377,9 +406,12 @@ if (nodo.tipo === "operacion_externa") {
     body.setAttribute("y", 20 * fy);
     body.setAttribute("width", 200 * fx);
     body.setAttribute("height", 100 * fy);
-    body.setAttribute("fill", nodo.color || "#b9e6e8");
-    body.setAttribute("stroke", "#4a7f84");
-    body.setAttribute("stroke-width", "1");
+    const cylinderRadius = Math.min(W, H) * 0.12;
+    body.setAttribute("fill", fillBase);
+    body.setAttribute("stroke", strokeBase);
+    body.setAttribute("stroke-width", strokeWidth);
+    body.setAttribute("rx", cylinderRadius);
+    body.setAttribute("ry", cylinderRadius);
     g.appendChild(body);
 
     // 🔵 Elipse superior
@@ -388,9 +420,9 @@ if (nodo.tipo === "operacion_externa") {
     topEllipse.setAttribute("cy", 20 * fy);
     topEllipse.setAttribute("rx", 100 * fx);
     topEllipse.setAttribute("ry", 20 * fy);
-    topEllipse.setAttribute("fill", nodo.color || "#b9e6e8");
-    topEllipse.setAttribute("stroke", "#4a7f84");
-    topEllipse.setAttribute("stroke-width", "1");
+    topEllipse.setAttribute("fill", fillBase);
+    topEllipse.setAttribute("stroke", strokeBase);
+    topEllipse.setAttribute("stroke-width", strokeWidth);
     g.appendChild(topEllipse);
 
     // 🔵 Elipse inferior (solo contorno)
@@ -400,8 +432,8 @@ if (nodo.tipo === "operacion_externa") {
     bottomEllipse.setAttribute("rx", 100 * fx);
     bottomEllipse.setAttribute("ry", 20 * fy);
     bottomEllipse.setAttribute("fill", nodo.color || "none");
-    bottomEllipse.setAttribute("stroke", "#4a7f84");
-    bottomEllipse.setAttribute("stroke-width", "1");
+    bottomEllipse.setAttribute("stroke", strokeAccent);
+    bottomEllipse.setAttribute("stroke-width", strokeWidth);
     g.appendChild(bottomEllipse);
 }
 
@@ -414,9 +446,9 @@ if (nodo.tipo === "operacion_externa") {
             el.setAttribute("cy", H / 2);
             el.setAttribute("rx", W / 2 - 4);
             el.setAttribute("ry", H / 2 - 4);
-            el.setAttribute("fill", nodo.color || "#b9e6e8");
-            el.setAttribute("stroke", "#4a7f84");
-            el.setAttribute("stroke-width", "1");
+            el.setAttribute("fill", fillBase);
+            el.setAttribute("stroke", strokeBase);
+            el.setAttribute("stroke-width", strokeWidth);
             g.appendChild(el);
         }
     
@@ -424,18 +456,32 @@ if (nodo.tipo === "operacion_externa") {
            DECISIÓN → rombo
         ==================================================== */
         if (nodo.tipo === "decision") {
-            const p = `
-                ${W / 2},2
-                ${W - 2},${H / 2}
-                ${W / 2},${H - 2}
-                2,${H / 2}
+            const r = Math.min(W, H) * 0.08;
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            const topY = 2;
+            const bottomY = H - 2;
+            const leftX = 2;
+            const rightX = W - 2;
+
+            const d = `
+                M ${W / 2},${topY + r}
+                Q ${W / 2},${topY} ${W / 2 + r},${topY + r}
+                L ${rightX - r},${H / 2 - r}
+                Q ${rightX},${H / 2} ${rightX - r},${H / 2 + r}
+                L ${W / 2 + r},${bottomY - r}
+                Q ${W / 2},${bottomY} ${W / 2 - r},${bottomY - r}
+                L ${leftX + r},${H / 2 + r}
+                Q ${leftX},${H / 2} ${leftX + r},${H / 2 - r}
+                L ${W / 2 - r},${topY + r}
+                Q ${W / 2},${topY} ${W / 2 + r},${topY + r}
+                Z
             `;
-            const romb = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-            romb.setAttribute("points", p);
-            romb.setAttribute("fill", nodo.color || "#b9e6e8");
-            romb.setAttribute("stroke", "#4a7f84");
-            romb.setAttribute("stroke-width", "1");
-            g.appendChild(romb);
+
+            path.setAttribute("d", d);
+            path.setAttribute("fill", fillBase);
+            path.setAttribute("stroke", strokeBase);
+            path.setAttribute("stroke-width", strokeWidth);
+            g.appendChild(path);
         }
     
         /* ====================================================
@@ -462,9 +508,9 @@ if (nodo.tipo === "operacion_externa") {
     
             const front = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
             front.setAttribute("points", `${F1.x},${F1.y} ${F2.x},${F2.y} ${F3.x},${F3.y} ${F4.x},${F4.y}`);
-            front.setAttribute("fill", nodo.color || "#b9e6e8");
-            front.setAttribute("stroke", "#4a7f84");
-            front.setAttribute("stroke-width", 1);
+            front.setAttribute("fill", fillBase);
+            front.setAttribute("stroke", strokeBase);
+            front.setAttribute("stroke-width", strokeWidth);
             g.appendChild(front);
     
             const T1 = { x: F1.x, y: F1.y };
@@ -474,9 +520,9 @@ if (nodo.tipo === "operacion_externa") {
     
             const top = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
             top.setAttribute("points", `${T1.x},${T1.y} ${T2.x},${T2.y} ${T3.x},${T3.y} ${T4.x},${T4.y}`);
-            top.setAttribute("fill", nodo.color || "#a4d7d9");
-            top.setAttribute("stroke", "#4a7f84");
-            top.setAttribute("stroke-width", 1);
+            top.setAttribute("fill", nodo.color || "#cae8ee");
+            top.setAttribute("stroke", strokeAccent);
+            top.setAttribute("stroke-width", strokeWidth);
             g.appendChild(top);
     
             const L1 = { x: F2.x, y: F2.y };
@@ -486,9 +532,9 @@ if (nodo.tipo === "operacion_externa") {
     
             const side = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
             side.setAttribute("points", `${L1.x},${L1.y} ${L2.x},${L2.y} ${L3.x},${L3.y} ${L4.x},${L4.y}`);
-            side.setAttribute("fill", nodo.color || "#97c8ca");
-            side.setAttribute("stroke", "#4a7f84");
-            side.setAttribute("stroke-width", 1);
+            side.setAttribute("fill", nodo.color || "#b6d8de");
+            side.setAttribute("stroke", strokeBase);
+            side.setAttribute("stroke-width", strokeWidth);
             g.appendChild(side);
         }
     
@@ -509,7 +555,7 @@ if (nodo.tipo === "operacion_externa") {
             bg.setAttribute("cy", iconY);
             bg.setAttribute("r", iconSize * 0.55);
             bg.setAttribute("fill", nodo.color || "#ffffff");
-            bg.setAttribute("stroke", "#4a7f84");
+            bg.setAttribute("stroke", strokeBase);
             bg.setAttribute("stroke-width", "1.5");
             bg.style.pointerEvents = "none";
             svg.appendChild(bg);

@@ -62,8 +62,8 @@ asignaciones: {
             const centerScreenX = rectArea.left + rectArea.width  / 2;
             const centerScreenY = rectArea.top  + rectArea.height / 2;
 
-            const baseWidth  = 120;
-            const baseHeight = 50;
+            const baseWidth  = 144;
+            const baseHeight = 68;
 
             // Pasar a coordenadas del canvas y centrar el nodo
             let nx = centerScreenX - rectCanvas.left - baseWidth  / 2;
@@ -92,8 +92,8 @@ asignaciones: {
         pregunta: "",
         x,
         y,
-        width: 120,
-        height: 50,
+        width: 144,
+        height: 68,
         
     };
 
@@ -103,7 +103,7 @@ asignaciones: {
         nodo.esNota = true; // ⚠️ bandera para excluir en exportaciones
     }
     if (tipo === "circuito") {
-        nodo.height = 100;
+        nodo.height = 135;
     }
 
     this.data.nodos.push(nodo);
@@ -199,8 +199,8 @@ importFromJSON(jsonString) {
             safe.titulo = safe.titulo || safe.tipo.toUpperCase();
             safe.x = Number.isFinite(safe.x) ? safe.x : 100;
             safe.y = Number.isFinite(safe.y) ? safe.y : 100;
-            safe.width = Number.isFinite(safe.width) ? safe.width : 120;
-            safe.height = Number.isFinite(safe.height) ? safe.height : 50;
+            safe.width = Number.isFinite(safe.width) ? safe.width : 144;
+            safe.height = Number.isFinite(safe.height) ? safe.height : 68;
             return safe;
         });
 
@@ -223,7 +223,7 @@ importFromJSON(jsonString) {
 
             if (areaWidth > 0) {
                 const minX = Math.min(...nodos.map(n => Number.isFinite(n.x) ? n.x : 0));
-                const maxX = Math.max(...nodos.map(n => (Number.isFinite(n.x) ? n.x : 0) + (Number.isFinite(n.width) ? n.width : 120)));
+                const maxX = Math.max(...nodos.map(n => (Number.isFinite(n.x) ? n.x : 0) + (Number.isFinite(n.width) ? n.width : 144)));
 
                 const leftBound = margin;
                 const rightBound = areaWidth - margin;
