@@ -589,7 +589,7 @@ highlightConnectionsForNode(nodeIds) {
     const ids = Array.isArray(nodeIds) ? nodeIds : [nodeIds];
 
     // Quitar highlights previos
-    document.querySelectorAll(".connection-line").forEach(p => {
+    document.querySelectorAll(".connection-line, .conn-path").forEach(p => {
         p.classList.remove("highlighted-conn");
     });
 
@@ -1478,7 +1478,11 @@ document.addEventListener("click", (e) => {
   if (clickedNode) {
     lastNodeClickTime = now;
     e.stopPropagation();
-    cleanAll();
+    // Solo limpiamos editores de línea; mantenemos los highlights de selección
+    Renderer.LineEditor.clear();
+    document
+      .querySelectorAll(".connection-line.selected-conn, .conn-path.selected-conn")
+      .forEach((el) => el.classList.remove("selected-conn"));
     clickedNode.classList.add("highlighted-node");
     return;
   }
@@ -1602,23 +1606,35 @@ window.handleTesauroDrop = function (e, connId) {
       // ---- TEXTO o NUMÉRICO ----
       else if (
         payload.tipo === "texto" ||
-        payload.tipo === "numerico"
+        payload.tipo === "numerico" ||
+        payload.tipo === "moneda" ||
+        payload.tipo === "fecha"
       ) {
         if (payload.needsInput || !valor) {
           const input = prompt(
             `Introduce el valor para "${condicionNombre}"${
-              payload.tipo === "numerico" ? " (numérico)" : ""
+              payload.tipo === "numerico"
+                ? " (numérico)"
+                : payload.tipo === "moneda"
+                  ? " (importe)"
+                  : payload.tipo === "fecha"
+                    ? " (fecha)"
+                    : ""
             }:`
           );
           if (input == null) return;
+          const sanitized = input.replace(/[^0-9.,-]/g, "").replace(/,/g, ".");
           if (
-            payload.tipo === "numerico" &&
-            isNaN(parseFloat(input))
+            (payload.tipo === "numerico" || payload.tipo === "moneda") &&
+            isNaN(parseFloat(sanitized))
           ) {
             alert("Introduce un número válido.");
             return;
           }
-          valor = input.trim();
+          valor =
+            payload.tipo === "moneda" || payload.tipo === "numerico"
+              ? sanitized.trim()
+              : input.trim();
         }
       } else {
         // Tipo no reconocido
