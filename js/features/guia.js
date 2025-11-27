@@ -249,6 +249,31 @@
     const iaJsonBtn = document.getElementById("btnIAJson");
     const copypasteArea = pasteBlock || null;
 
+    const leftButtons = leftPanel ? Array.from(leftPanel.querySelectorAll("button")) : [];
+    const added = new Set();
+    const actionMap = {
+      btnFichaProyecto: { message: messages.ficha },
+      btnVerCSV: { message: messages.verCsv },
+      btnExportFlujo: { message: messages.exportFlujo },
+      btnExportTesauro: { message: messages.exportTesauro },
+      btnExportJSON: { message: messages.guardarJson },
+      btnImportJSON: { message: messages.cargarJson },
+      btnPasteJSON: { message: messages.pegarJson },
+      btnIAJson: { message: messages.iaJson },
+      btnExportDocx: { message: messages.exportDocx },
+    };
+
+    const pushActionStep = (id, element) => {
+      const config = actionMap[id];
+      if (!config || added.has(id) || !element) return;
+      steps.push({
+        title: config.message.title,
+        description: config.message.description,
+        element: () => element,
+      });
+      added.add(id);
+    };
+
     const firstNodeBtn = document.querySelector("#leftPanel button[onclick*='createNode']");
 
     if (leftPanel) {
@@ -259,77 +284,21 @@
       });
     }
 
-    if (fichaBtn) {
-      steps.push({
-        title: messages.ficha.title,
-        description: messages.ficha.description,
-        element: () => fichaBtn,
-      });
-    }
+    leftButtons.forEach((btn) => pushActionStep(btn.id, btn));
 
-    if (verCsvBtn) {
-      steps.push({
-        title: messages.verCsv.title,
-        description: messages.verCsv.description,
-        element: () => verCsvBtn,
-      });
-    }
-
-    if (exportFlujoBtn) {
-      steps.push({
-        title: messages.exportFlujo.title,
-        description: messages.exportFlujo.description,
-        element: () => exportFlujoBtn,
-      });
-    }
-
-    if (exportTesauroBtn) {
-      steps.push({
-        title: messages.exportTesauro.title,
-        description: messages.exportTesauro.description,
-        element: () => exportTesauroBtn,
-      });
-    }
-
-    if (guardarJsonBtn) {
-      steps.push({
-        title: messages.guardarJson.title,
-        description: messages.guardarJson.description,
-        element: () => guardarJsonBtn,
-      });
-    }
-
-    if (cargarJsonBtn) {
-      steps.push({
-        title: messages.cargarJson.title,
-        description: messages.cargarJson.description,
-        element: () => cargarJsonBtn,
-      });
-    }
-
-    if (pegarJsonBtn) {
-      steps.push({
-        title: messages.pegarJson.title,
-        description: messages.pegarJson.description,
-        element: () => pegarJsonBtn,
-      });
-    }
-
-    if (iaJsonBtn) {
-      steps.push({
-        title: messages.iaJson.title,
-        description: messages.iaJson.description,
-        element: () => iaJsonBtn,
-      });
-    }
-
-    if (exportDocxBtn) {
-      steps.push({
-        title: messages.exportDocx.title,
-        description: messages.exportDocx.description,
-        element: () => exportDocxBtn,
-      });
-    }
+    [
+      fichaBtn,
+      verCsvBtn,
+      exportFlujoBtn,
+      exportTesauroBtn,
+      guardarJsonBtn,
+      cargarJsonBtn,
+      pegarJsonBtn,
+      iaJsonBtn,
+      exportDocxBtn,
+    ].forEach((btn) => {
+      if (btn) pushActionStep(btn.id, btn);
+    });
 
     if (copypasteArea) {
       steps.push({
@@ -428,6 +397,11 @@
     target.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
     positionHighlight(target);
     placeTooltip(target);
+
+    requestAnimationFrame(() => {
+      positionHighlight(target);
+      placeTooltip(target);
+    });
 
     state.elements.title.textContent = step.title;
     state.elements.text.textContent = step.description;

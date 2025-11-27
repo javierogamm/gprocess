@@ -602,7 +602,7 @@ body.panel-locked #canvasArea {
 .guide-layer {
     position: fixed;
     inset: 0;
-    z-index: 6400;
+    z-index: 12000;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s ease;
@@ -627,6 +627,7 @@ body.panel-locked #canvasArea {
     box-shadow: 0 0 0 10px rgba(99, 102, 241, 0.25), 0 10px 40px rgba(15, 23, 42, 0.35);
     transition: all 0.2s ease;
     background: rgba(255, 255, 255, 0.4);
+    z-index: 12001;
 }
 
 .guide-tooltip {
@@ -638,6 +639,7 @@ body.panel-locked #canvasArea {
     padding: 16px 16px 14px;
     border-radius: 14px;
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+    z-index: 12002;
 }
 
 .guide-tooltip h4 {
@@ -700,7 +702,7 @@ body.panel-locked #canvasArea {
     grid-template-columns: 1fr 1fr;
     gap: 14px;
     align-items: center;
-    z-index: 6401;
+    z-index: 12003;
     pointer-events: none;
 }
 
