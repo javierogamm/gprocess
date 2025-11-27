@@ -569,84 +569,240 @@ body.panel-locked #canvasArea {
 }
 
 /* ============================================================
-   GUÍA VISUAL
+   GUÍA VISUAL INTERACTIVA
 ============================================================ */
 
-.guide-modal-content {
-    max-width: 960px;
-    width: 92%;
-    gap: 12px;
+.guide-floating-btn {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 6500;
+    background: linear-gradient(120deg, #4f46e5 0%, #6366f1 55%, #a855f7 100%);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    box-shadow: 0 18px 45px rgba(99, 102, 241, 0.35);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.guide-header {
+.guide-floating-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 42px rgba(99, 102, 241, 0.48);
+}
+
+.guide-left-trigger {
+    background: linear-gradient(120deg, #4f46e5 0%, #6366f1 55%, #a855f7 100%);
+    color: #fff;
+}
+
+.guide-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 6400;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+
+.guide-layer.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.guide-dim {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.05), rgba(15, 23, 42, 0.55));
+    backdrop-filter: blur(1px);
+}
+
+.guide-highlight {
+    position: absolute;
+    border: 3px solid #6366f1;
+    border-radius: 14px;
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0.25), 0 10px 40px rgba(15, 23, 42, 0.35);
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.guide-tooltip {
+    position: absolute;
+    min-width: 320px;
+    max-width: 420px;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px 16px 14px;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+}
+
+.guide-tooltip h4 {
+    margin: 0 0 8px 0;
+    font-size: 17px;
+    color: #cbd5e1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
+    gap: 8px;
 }
 
-.guide-header h3 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.guide-subtitle {
-    margin: 4px 0 0 0;
-    color: #475569;
+.guide-tooltip p {
+    margin: 0 0 12px 0;
+    line-height: 1.55;
     font-size: 14px;
 }
 
-.guide-close-btn {
-    background: #f1f5f9;
+.guide-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.guide-actions button {
+    flex: 1;
     border: none;
-    font-size: 22px;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
     cursor: pointer;
+    font-weight: 700;
+    background: #1e293b;
+    color: #e2e8f0;
+    transition: transform 0.12s ease, background 0.12s ease;
 }
 
-.guide-close-btn:hover {
-    background: #e2e8f0;
+.guide-actions button:hover {
+    background: #334155;
+    transform: translateY(-1px);
 }
 
-.guide-content {
-    max-height: 60vh;
-    overflow-y: auto;
-    padding-right: 6px;
+.guide-actions .guide-next {
+    background: linear-gradient(120deg, #22c55e 0%, #16a34a 50%, #22c55e 100%);
     color: #0f172a;
 }
 
-.guide-content h1,
-.guide-content h2,
-.guide-content h3 {
-    margin-top: 18px;
-    margin-bottom: 10px;
-    color: #0f172a;
+.guide-actions .guide-next:hover {
+    background: linear-gradient(120deg, #16a34a 0%, #15803d 50%, #16a34a 100%);
+    color: #fff;
 }
 
-.guide-content p {
-    margin: 6px 0;
-    line-height: 1.6;
+.guide-demo-board {
+    position: fixed;
+    width: 520px;
+    max-width: 92vw;
+    height: 240px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 22px 50px rgba(15, 23, 42, 0.25);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: center;
+    z-index: 6401;
+    pointer-events: none;
 }
 
-.guide-content ul {
-    margin: 8px 0 12px 20px;
-    padding: 0;
-    line-height: 1.5;
+.guide-demo-node {
+    position: relative;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 12px 16px;
+    min-height: 104px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 12px 32px rgba(15, 23, 42, 0.25);
 }
 
-.guide-content code {
-    background: #f8fafc;
-    padding: 2px 6px;
-    border-radius: 6px;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+.guide-demo-node .guide-node-title {
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    letter-spacing: 0.2px;
 }
 
-.guide-footer {
-    margin-top: 8px;
-    color: #475569;
+.guide-demo-node .guide-node-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+.guide-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.22);
+    animation: handlePulse 1.8s infinite;
+}
+
+.guide-handle.top { top: -6px; left: 50%; transform: translateX(-50%); }
+.guide-handle.right { right: -6px; top: 50%; transform: translateY(-50%); }
+.guide-handle.bottom { bottom: -6px; left: 50%; transform: translateX(-50%); }
+.guide-handle.left { left: -6px; top: 50%; transform: translateY(-50%); }
+
+.guide-demo-connection {
+    position: absolute;
+    left: 45%;
+    right: 6%;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 3px;
+    background: linear-gradient(90deg, #22c55e, #2563eb);
+    border-radius: 999px;
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.14);
+}
+
+.guide-connection-dot {
+    position: absolute;
+    right: -10px;
+    top: -6px;
+    width: 14px;
+    height: 14px;
+    background: #2563eb;
+    border-radius: 50%;
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.18);
+    animation: dragDot 2.6s infinite;
+}
+
+.guide-connection-pill {
+    position: absolute;
+    top: -38px;
+    right: 12px;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.35);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.18s ease;
+}
+
+.guide-connection-pill.state {
+    top: 16px;
+    right: 60px;
+    background: #c7d2fe;
+    color: #1e293b;
+}
+
+.guide-demo-board.show-conditions .guide-connection-pill {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@keyframes handlePulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.35); }
+    60% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes dragDot {
+    0% { transform: translate(0, 0); opacity: 1; }
+    40% { transform: translate(22px, -6px); opacity: 0.6; }
+    80% { transform: translate(38px, -2px); opacity: 0; }
+    100% { transform: translate(0, 0); opacity: 0; }
 }
 
 /* ============================================================
