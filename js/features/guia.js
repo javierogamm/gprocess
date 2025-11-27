@@ -116,6 +116,7 @@
     demoBoard: null,
     managerAutoOpened: false,
     nodesGroupBox: null,
+    procedureBox: null,
   };
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -188,6 +189,8 @@
     nextBtn.addEventListener("click", () => goToStep(state.current + 1));
     exitBtn.addEventListener("click", endGuide);
 
+    const leftPanel = document.getElementById("leftPanel");
+
     window.addEventListener("resize", () => {
       if (state.active) renderStep(state.current);
     });
@@ -198,6 +201,16 @@
       },
       { passive: true }
     );
+
+    if (leftPanel) {
+      leftPanel.addEventListener(
+        "scroll",
+        () => {
+          if (state.active) renderStep(state.current);
+        },
+        { passive: true }
+      );
+    }
     document.addEventListener("keydown", (e) => {
       if (!state.active) return;
       if (e.key === "Escape") endGuide();
@@ -250,71 +263,102 @@
     const iaJsonBtn = document.getElementById("btnIAJson");
     const copypasteArea = pasteBlock || null;
 
-    const leftButtons = leftPanel ? Array.from(leftPanel.querySelectorAll("button")) : [];
-    const added = new Set();
-    const actionMap = {
-      btnFichaProyecto: { message: messages.ficha },
-      btnVerCSV: { message: messages.verCsv },
-      btnExportFlujo: { message: messages.exportFlujo },
-      btnExportTesauro: { message: messages.exportTesauro },
-      btnExportJSON: { message: messages.guardarJson },
-      btnImportJSON: { message: messages.cargarJson },
-      btnPasteJSON: { message: messages.pegarJson },
-      btnIAJson: { message: messages.iaJson },
-      btnExportDocx: { message: messages.exportDocx },
-    };
+    const procedureGroup = buildProcedureGroupTarget();
+    const nodesGroup = buildNodesGroupTarget();
 
-    const pushActionStep = (id, element) => {
-      const config = actionMap[id];
-      if (!config || added.has(id) || !element) return;
-      steps.push({
-        title: config.message.title,
-        description: config.message.description,
-        element: () => element,
-      });
-      added.add(id);
-    };
-
-    const firstNodeBtn = document.querySelector("#leftPanel button[onclick*='createNode']");
-
-    if (leftPanel) {
+    if (procedureGroup) {
       steps.push({
         title: messages.procedure.title,
         description: messages.procedure.description,
-        element: () => leftPanel,
+        element: () => updateProcedureGroupBox(),
       });
     }
 
-    leftButtons.forEach((btn) => pushActionStep(btn.id, btn));
+    if (fichaBtn) {
+      steps.push({
+        title: messages.ficha.title,
+        description: messages.ficha.description,
+        element: () => fichaBtn,
+      });
+    }
 
-    [
-      fichaBtn,
-      verCsvBtn,
-      exportFlujoBtn,
-      exportTesauroBtn,
-      guardarJsonBtn,
-      cargarJsonBtn,
-      pegarJsonBtn,
-      iaJsonBtn,
-      exportDocxBtn,
-    ].forEach((btn) => {
-      if (btn) pushActionStep(btn.id, btn);
-    });
+    if (verCsvBtn) {
+      steps.push({
+        title: messages.verCsv.title,
+        description: messages.verCsv.description,
+        element: () => verCsvBtn,
+      });
+    }
+
+    if (nodesGroup) {
+      steps.push({
+        title: messages.nodes.title,
+        description: messages.nodes.description,
+        element: () => updateNodesGroupBox(),
+      });
+    }
+
+    if (guardarJsonBtn) {
+      steps.push({
+        title: messages.guardarJson.title,
+        description: messages.guardarJson.description,
+        element: () => guardarJsonBtn,
+      });
+    }
+
+    if (cargarJsonBtn) {
+      steps.push({
+        title: messages.cargarJson.title,
+        description: messages.cargarJson.description,
+        element: () => cargarJsonBtn,
+      });
+    }
+
+    if (iaJsonBtn) {
+      steps.push({
+        title: messages.iaJson.title,
+        description: messages.iaJson.description,
+        element: () => iaJsonBtn,
+      });
+    }
+
+    if (pegarJsonBtn) {
+      steps.push({
+        title: messages.pegarJson.title,
+        description: messages.pegarJson.description,
+        element: () => pegarJsonBtn,
+      });
+    }
+
+    if (exportDocxBtn) {
+      steps.push({
+        title: messages.exportDocx.title,
+        description: messages.exportDocx.description,
+        element: () => exportDocxBtn,
+      });
+    }
+
+    if (exportFlujoBtn) {
+      steps.push({
+        title: messages.exportFlujo.title,
+        description: messages.exportFlujo.description,
+        element: () => exportFlujoBtn,
+      });
+    }
+
+    if (exportTesauroBtn) {
+      steps.push({
+        title: messages.exportTesauro.title,
+        description: messages.exportTesauro.description,
+        element: () => exportTesauroBtn,
+      });
+    }
 
     if (copypasteArea) {
       steps.push({
         title: messages.copypaste.title,
         description: messages.copypaste.description,
         element: () => copypasteArea,
-      });
-    }
-
-    const nodesGroup = buildNodesGroupTarget();
-    if (nodesGroup) {
-      steps.push({
-        title: messages.nodes.title,
-        description: messages.nodes.description,
-        element: () => updateNodesGroupBox(),
       });
     }
 
@@ -363,6 +407,64 @@
     steps.push(...tesauroManagerSteps);
 
     return steps;
+  }
+
+  function buildProcedureGroupTarget() {
+    const leftPanel = document.getElementById("leftPanel");
+    if (!leftPanel) return null;
+
+    const headers = Array.from(leftPanel.querySelectorAll("h2"));
+    const procedureTitle = headers.find((h2) => h2.textContent.trim().toLowerCase().startsWith("procedimiento"));
+    const nodesTitle = headers.find((h2) => h2 !== procedureTitle && h2.textContent.trim().toLowerCase().startsWith("nodos"));
+
+    if (!procedureTitle) return null;
+
+    let lastElement = procedureTitle;
+    let walker = procedureTitle.nextElementSibling;
+    while (walker && walker !== nodesTitle) {
+      lastElement = walker;
+      walker = walker.nextElementSibling;
+    }
+
+    return { procedureTitle, lastElement: lastElement || procedureTitle };
+  }
+
+  function ensureProcedureGroupBox() {
+    if (state.procedureBox) return state.procedureBox;
+    const box = document.createElement("div");
+    box.className = "guide-nodes-group";
+    box.style.position = "fixed";
+    box.style.pointerEvents = "none";
+    box.style.visibility = "hidden";
+    document.body.appendChild(box);
+    state.procedureBox = box;
+    return box;
+  }
+
+  function updateProcedureGroupBox() {
+    const group = buildProcedureGroupTarget();
+    const box = ensureProcedureGroupBox();
+    if (!group || !box) return null;
+
+    const { procedureTitle, lastElement } = group;
+    procedureTitle.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+
+    const titleRect = procedureTitle.getBoundingClientRect();
+    const lastRect = lastElement.getBoundingClientRect();
+    const padding = 8;
+
+    const left = Math.min(titleRect.left, lastRect.left) - padding;
+    const top = titleRect.top - padding;
+    const right = Math.max(titleRect.right, lastRect.right) + padding;
+    const bottom = lastRect.bottom + padding;
+
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+    box.style.width = `${right - left}px`;
+    box.style.height = `${bottom - top}px`;
+    box.style.visibility = "visible";
+
+    return box;
   }
 
   function buildNodesGroupTarget() {
@@ -457,6 +559,11 @@
       placeTooltip(target);
     });
 
+    setTimeout(() => {
+      positionHighlight(target);
+      placeTooltip(target);
+    }, 180);
+
     state.elements.title.textContent = step.title;
     state.elements.text.textContent = step.description;
 
@@ -534,6 +641,9 @@
     }
     if (state.nodesGroupBox) {
       state.nodesGroupBox.style.visibility = "hidden";
+    }
+    if (state.procedureBox) {
+      state.procedureBox.style.visibility = "hidden";
     }
   }
 
