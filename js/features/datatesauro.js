@@ -282,8 +282,8 @@ grupos.forEach(gr => {
 html += `
   <div class="tesauro-import-zone" style="margin-top:16px; border-top:1px solid #ccc; padding-top:8px;">
             <!-- ⭐ NUEVO BOTÓN: Importar Tesauro CSV -->
-    <button id="btnImportTesauro" class="btn"
-            style="width:100%; margin-top:8px; background:#e0f2fe; border:1px solid #38bdf8; border-radius:6px; color:#0369a1; font-weight:bold;">
+    <button id="btnImportTesauro" class="btn tesauro-accent-btn"
+            style="width:100%; margin-top:8px; border-radius:6px; font-weight:bold;">
       📥 Importar Tesauro CSV
     </button>
 
@@ -297,8 +297,8 @@ html += `
   </div>
 
   <div class="tesauro-transform-zone" style="margin-top:10px;">
-    <button id="btnTransformCondiciones" class="btn btn-transform"
-            style="width:100%; background:#fef3c7; border:1px solid #f59e0b; border-radius:6px;">
+    <button id="btnTransformCondiciones" class="btn tesauro-accent-btn"
+            style="width:100%; border-radius:6px; font-weight:bold;">
       ⚡ Transformar condiciones a Tesauros
     </button>
 
@@ -306,14 +306,11 @@ html += `
            style="display:none;">
 
     <!-- ⭐ NUEVO BOTÓN VERDE -->
-    <button id="btnTesauroManager" class="btn btn-manager"
+    <button id="btnTesauroManager" class="btn btn-manager tesauro-accent-btn"
             style="
               width:100%;
               margin-top:8px;
-              background:#d1fae5;
-              border:1px solid #10b981;
               border-radius:6px;
-              color:#065f46;
               font-weight:bold;
             ">
       🧩 Gestor Completo de Tesauros

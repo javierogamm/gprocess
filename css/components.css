@@ -22,6 +22,39 @@
    BOTONES FLOTANTES — SE MUEVEN CON CUALQUIER PANEL VISIBLE
 ============================================================ */
 
+/* ============================================================
+   TESAURO — ESTILO UNIFICADO DE BOTONES
+============================================================ */
+#panelTesauro button,
+#panelTesauro .btn,
+#tesauroManagerModal button,
+#tmRefModal button {
+  background: #E34850;
+  color: #fff;
+  border: 1px solid #c63c45;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+#panelTesauro button:hover,
+#panelTesauro .btn:hover,
+#tesauroManagerModal button:hover,
+#tmRefModal button:hover {
+  background: #c63c45;
+  transform: translateY(-1px);
+}
+
+#panelTesauro button:disabled,
+#panelTesauro .btn:disabled,
+#tesauroManagerModal button:disabled,
+#tmRefModal button:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* 🔹 Transición suave para todos los botones */
 .floating-assign-btn,
 .floating-cambios-btn,

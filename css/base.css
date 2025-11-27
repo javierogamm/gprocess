@@ -895,14 +895,14 @@ input {
   position: relative;
 }
 .btn-guardar {
-  background: #2563eb;
+  background: #E34850;
   color: white;
   margin-top: 10px;
   width: 100%;
   border-radius: 6px;
   padding: 10px;
 }
-.btn-guardar:hover { background: #1e40af; }
+.btn-guardar:hover { background: #c63c45; }
 .conn-drop-over {
   stroke: #10b981 !important;
   stroke-width: 3 !important;
