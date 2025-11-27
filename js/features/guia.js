@@ -115,6 +115,7 @@
     },
     demoBoard: null,
     managerAutoOpened: false,
+    nodesGroupBox: null,
   };
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -308,11 +309,12 @@
       });
     }
 
-    if (firstNodeBtn) {
+    const nodesGroup = buildNodesGroupTarget();
+    if (nodesGroup) {
       steps.push({
         title: messages.nodes.title,
         description: messages.nodes.description,
-        element: () => firstNodeBtn,
+        element: () => updateNodesGroupBox(),
       });
     }
 
@@ -361,6 +363,58 @@
     steps.push(...tesauroManagerSteps);
 
     return steps;
+  }
+
+  function buildNodesGroupTarget() {
+    const leftPanel = document.getElementById("leftPanel");
+    if (!leftPanel) return null;
+
+    const nodesTitle = Array.from(leftPanel.querySelectorAll("h2")).find((h2) =>
+      h2.textContent.trim().toLowerCase().startsWith("nodos")
+    );
+    const nodeButtons = Array.from(leftPanel.querySelectorAll("button[onclick*='createNode']"));
+    const lastBtn = nodeButtons[nodeButtons.length - 1];
+
+    if (!nodesTitle || !lastBtn) return null;
+    return { nodesTitle, lastBtn };
+  }
+
+  function ensureNodesGroupBox() {
+    if (state.nodesGroupBox) return state.nodesGroupBox;
+    const box = document.createElement("div");
+    box.className = "guide-nodes-group";
+    box.style.position = "fixed";
+    box.style.pointerEvents = "none";
+    box.style.visibility = "hidden";
+    document.body.appendChild(box);
+    state.nodesGroupBox = box;
+    return box;
+  }
+
+  function updateNodesGroupBox() {
+    const group = buildNodesGroupTarget();
+    const box = ensureNodesGroupBox();
+    if (!group || !box) return null;
+
+    const { nodesTitle, lastBtn } = group;
+    nodesTitle.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+
+    const titleRect = nodesTitle.getBoundingClientRect();
+    const lastRect = lastBtn.getBoundingClientRect();
+    const padding = 8;
+
+    const left = Math.min(titleRect.left, lastRect.left) - padding;
+    const top = titleRect.top - padding;
+    const right = Math.max(titleRect.right, lastRect.right) + padding;
+    const bottom = lastRect.bottom + padding;
+
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+    box.style.width = `${right - left}px`;
+    box.style.height = `${bottom - top}px`;
+    box.style.visibility = "visible";
+
+    return box;
   }
 
   function goToStep(index) {
@@ -477,6 +531,9 @@
     if (tooltip) {
       tooltip.style.left = "-9999px";
       tooltip.style.top = "-9999px";
+    }
+    if (state.nodesGroupBox) {
+      state.nodesGroupBox.style.visibility = "hidden";
     }
   }
 
