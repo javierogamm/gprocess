@@ -29,9 +29,9 @@
 
                      <!--  Cargar guardar -->
                      <hr>
-                     <button class="btn" onclick="Engine.exportToJSON()">💾 Guardar JSON</button>
+                     <button class="btn" id="btnExportJSON" onclick="Engine.exportToJSON()">💾 Guardar JSON</button>
                      <input type="file" id="fileLoader" accept=".json" style="display:none" onchange="loadJSONFile(event)">
-                     <button class="btn" onclick="document.getElementById('fileLoader').click()">📂 Cargar JSON</button>
+                     <button class="btn" id="btnImportJSON" onclick="document.getElementById('fileLoader').click()">📂 Cargar JSON</button>
                      <div class="json-buttons-row">
                         <button id="btnPasteJSON">📋 Pegar JSON</button>
                         <button id="btnIAJson" title="Abrir asistente IA JSON">
@@ -53,7 +53,7 @@
      <hr>
      <!-- Botón de Export WORD comentado para evitar uso de librerias de momento -->
      <button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX</button>
-     <button class="btn" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
+     <button class="btn" id="btnExportFlujo" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
      <button class="btn" id="btnExportTesauro">📤 Exportar tesauro CSV</button>
 
 <!-- Botón de importación -->
@@ -95,10 +95,9 @@
     <button id="btnAsignaciones" class="floating-assign-btn">📋 Asignaciones</button>
     <button id="btnCambiosEstado" class="floating-cambios-btn">🔄 Cambios de estado</button>
 
-    <!-- Barra flotante de asistente y wizard -->
+    <!-- Barra flotante del wizard -->
     <div id="floatingControlGroup" class="floating-control-group">
         <button id="btnWizard" class="floating-wizard-btn">🧙 Asistente</button>
-        <button id="btnAssistant" class="floating-assistant-btn">🤖 Assistant</button>
     </div>
         <!-- Panel derecho-->
     <div id="rightPanel">
@@ -211,6 +210,7 @@
 <script src="js/features/importtext.js"></script>
 <script src="js/interactions/interactions.js"></script>
 <script src="js/ui/ui.js"></script>
+<script src="js/features/guia.js"></script>
 
 <script src="js/features/asignaciones.js"></script>
 <script src="js/features/cambiosestado.js"></script>

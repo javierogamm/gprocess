@@ -81,8 +81,6 @@ const TesauroManager = {
         <button id="tmOpenRefPopup" style="
             width:100%;
             margin:10px 0;
-            background:#fef3c7;
-            border:1px solid #f59e0b;
             border-radius:6px;
             padding:10px;
             cursor:pointer;
@@ -94,8 +92,6 @@ const TesauroManager = {
         <div style="display:flex; gap:10px; margin-top:12px;">
             <button id="tmClose" style="
                 flex:1;
-                background:#f1f5f9;
-                border:1px solid #cbd5e1;
                 padding:10px;
                 border-radius:6px;
                 cursor:pointer;
@@ -104,9 +100,6 @@ const TesauroManager = {
 
             <button id="tmSave" style="
                 flex:1;
-                background:#10b981;
-                color:white;
-                border:none;
                 padding:10px;
                 border-radius:6px;
                 cursor:pointer;
@@ -160,8 +153,7 @@ div.innerHTML += `
                 style="padding:8px; border:1px solid #cbd5e1; border-radius:6px; width:180px;">
 
             <button id="tmMassApply" style="
-                background:#10b981; color:white;
-                border:none; border-radius:6px;
+                border-radius:6px;
                 padding:8px 16px; font-weight:bold; cursor:pointer;
             ">Aplicar</button>
         </div>
@@ -211,6 +203,7 @@ div.innerHTML += `
         }
 
         const div = document.createElement("div");
+        div.id = "tmRefModal";
         div.style.position = "fixed";
         div.style.inset = "0";
         div.style.background = "rgba(0,0,0,0.45)";
@@ -243,7 +236,6 @@ div.innerHTML += `
                 "></textarea>
 
                 <button id="refPreview" style="
-                    background:#fef3c7; border:1px solid #f59e0b;
                     padding:8px; border-radius:6px; margin-bottom:10px;
                     font-weight:bold; cursor:pointer;
                 ">🔍 Generar referencias</button>
@@ -260,13 +252,13 @@ div.innerHTML += `
 
                 <div style="display:flex; gap:10px;">
                     <button id="refCancel" style="
-                        flex:1; background:#f1f5f9; border:1px solid #cbd5e1;
+                        flex:1;
                         padding:8px; border-radius:6px; cursor:pointer;
                     ">Cancelar</button>
 
                     <button id="refCreate" style="
-                        flex:1; background:#10b981; color:white;
-                        border:none; padding:8px; border-radius:6px;
+                        flex:1;
+                        padding:8px; border-radius:6px;
                         cursor:pointer; font-weight:bold;
                     ">💾 Crear Tesauros</button>
                 </div>

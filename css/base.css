@@ -690,7 +690,7 @@ input {
   top: 15px;
   right:80px;
   z-index: 2000;
-  background: rgba(4, 200, 144, 0.821);
+  background: #E34850;
   color: white;
   border: none;
   padding: 10px 16px;
@@ -701,7 +701,7 @@ input {
   transition: all 0.3s ease;
 }
 .floating-assign-btn:hover {
-  background: rgba(2, 65, 47, 0.821);
+  background: #c63c45;
 }
 
 /* 📜 Panel lateral */
@@ -773,7 +773,7 @@ input {
   top: 60px;          /* 👈 justo debajo del botón de Asignaciones */
   right: 80px;         /* mismo alineado a la izquierda */
   z-index: 2000;
-  background: rgba(2, 144, 104, 0.821); /* verde elegante */
+  background: #E34850;
   color: white;
   border: none;
   padding: 10px 16px;
@@ -783,7 +783,7 @@ input {
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
 }
-.floating-cambios-btn:hover { background: #047857; }
+.floating-cambios-btn:hover { background: #c63c45; }
 
 /* 📜 Panel lateral Cambios */
 .cambios-panel {
@@ -850,7 +850,7 @@ input {
   top: 105px;           /* debajo del botón de Cambios */
   right: 80px;
   z-index: 2000;
-  background: #475569; /* gris azulado */
+  background: #E34850;
   color: white;
   border: none;
   padding: 10px 16px;
@@ -860,7 +860,7 @@ input {
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
 }
-.floating-tesauro-btn:hover { background: #334155; }
+.floating-tesauro-btn:hover { background: #c63c45; }
 
 .tesauro-panel {
   position: fixed;
@@ -895,14 +895,14 @@ input {
   position: relative;
 }
 .btn-guardar {
-  background: #2563eb;
+  background: #E34850;
   color: white;
   margin-top: 10px;
   width: 100%;
   border-radius: 6px;
   padding: 10px;
 }
-.btn-guardar:hover { background: #1e40af; }
+.btn-guardar:hover { background: #c63c45; }
 .conn-drop-over {
   stroke: #10b981 !important;
   stroke-width: 3 !important;
