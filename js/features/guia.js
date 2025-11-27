@@ -7,52 +7,93 @@
 
 (() => {
   const messages = {
-    leftPanel: {
-      title: "Panel izquierdo: nodos y carga",
+    procedure: {
+      title: "Panel izquierdo: procedimiento",
       description:
-        "Añade formularios, documentos o decisiones y usa Guardar/Cargar JSON. " +
-        "El botón 🤖 IA JSON genera el esquema y 📋 Pegar JSON admite texto pegado " +
-        "(si viene de Gestiona: copia → pega como texto sin formato en Excel → vuelve a copiar aquí).",
+        "Aquí comienzas: configura el procedimiento y abre vistas previas sin usar ningún botón flotante extra.",
     },
-    paste: {
-      title: "Pegado directo y asistente",
+    ficha: {
+      title: "Ficha del proyecto",
+      description: "⚙️ Ficha del proyecto abre los metadatos básicos del flujo.",
+    },
+    verCsv: {
+      title: "Vista previa del procedimiento",
+      description: "📋 Abre la vista previa CSV del flujo sin descargar nada.",
+    },
+    exportFlujo: {
+      title: "Exportar flujo normalizado",
+      description: "📤 Genera el CSV oficial del flujo listo para compartir o validar.",
+    },
+    exportTesauro: {
+      title: "Exportar tesauro",
+      description: "📤 Exporta el tesauro actual en CSV para revisar o migrar las etiquetas.",
+    },
+    guardarJson: {
+      title: "Guardar JSON",
+      description: "💾 Exporta el JSON completo del flujo para respaldarlo o versionarlo.",
+    },
+    cargarJson: {
+      title: "Cargar JSON",
+      description: "📂 Vuelve a cargar un flujo existente seleccionando un archivo JSON guardado.",
+    },
+    pegarJson: {
+      title: "Pegar JSON validado",
       description:
-        "Usa el bloque de copypaste para reconstruir diagramas desde texto, o pega JSON validado con el flujo completo.",
+        "📋 Pegar JSON admite texto plano. Si viene de Gestiona: copia → pega como texto sin formato en Excel → vuelve a copiar aquí antes de importar.",
+    },
+    iaJson: {
+      title: "IA para crear procedimientos",
+      description:
+        "🤖 IA JSON abre un asistente externo que genera el esquema del flujo; solo pega el resultado aquí para importarlo.",
+    },
+    exportDocx: {
+      title: "Exportar DOCX",
+      description: "📄 Exportar resumen DOCX produce un documento de resumen para compartir el flujo.",
+    },
+    copypaste: {
+      title: "Copiar/pegar guiado",
+      description:
+        "Selecciona todo el bloque de texto, pégalo en el área Copypaste y reconstruye el diagrama con Importar diagrama desde texto.",
+    },
+    nodes: {
+      title: "Nodos disponibles",
+      description:
+        "Añade Formularios, Documentos, Decisiones, Circuitos, Operaciones externas, Notas y más. Crea uno y arrástralo por el lienzo antes de conectar.",
     },
     canvas: {
-      title: "Lienzo de flujo",
+      title: "Mover nodos en el lienzo",
       description:
-        "Arrastra nodos por el lienzo, usa la rueda para hacer zoom y conecta con los handles verdes en cada borde.",
+        "Con el nodo creado, arrástralo libremente y usa la rueda para zoom. Selecciónalo para ver propiedades a la derecha.",
     },
     handles: {
       title: "Handles y conexión de prueba",
       description:
-        "Crea nodos con el menú izquierdo y arrastra desde cualquier handle verde. Aquí se muestra una conexión de ejemplo.",
+        "Arrastra desde cualquier handle del nodo hacia otro para crear la arista. Observa el ejemplo con colores por defecto.",
     },
     conditions: {
       title: "Condiciones y estados",
       description:
-        "Selecciona una línea para editar condición/valor y arrastra campos del tesauro o estados hasta la conexión para etiquetarla.",
+        "Selecciona una conexión para editar condición/valor. Puedes arrastrar campos del tesauro o estados sobre la línea para etiquetarla.",
     },
     asignaciones: {
       title: "Asignaciones",
       description:
-        "Botón flotante para registrar grupos o usuarios globales y reutilizarlos en los nodos (campo \"Asignado a\").",
+        "📋 Abre el gestor flotante para registrar grupos/usuarios globales y reutilizarlos en el campo ‘Asignado a’ de cada nodo.",
     },
     estados: {
       title: "Cambios de estado",
       description:
-        "Define estados de expediente y arrástralos a las conexiones para documentar el avance del flujo.",
+        "🔄 Define estados de expediente y arrástralos a las conexiones para documentar el avance del flujo.",
     },
     tesauro: {
       title: "Tesauros laterales",
       description:
-        "Botón 📚 abre el panel lateral. Arrastra etiquetas al lienzo o a una conexión; también puedes crear, transformar o importar campos.",
+        "📚 Abre el panel lateral para arrastrar etiquetas sobre nodos o conexiones. También permite crear, transformar o importar campos.",
     },
     tesauroManager: {
       title: "Gestor completo de tesauros",
       description:
-        "Modal masivo para editar, referenciar, importar o exportar todos los tesauros del proyecto en bloque.",
+        "Modal masivo para importar, referenciar, crear filas, exportar y guardar en bloque todos los tesauros del proyecto.",
     },
   };
 
@@ -73,6 +114,7 @@
       exitBtn: null,
     },
     demoBoard: null,
+    managerAutoOpened: false,
   };
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -82,13 +124,6 @@
   });
 
   function createTriggers() {
-    const leftBtn = document.getElementById("btnGuiaVisual");
-    if (leftBtn) {
-      leftBtn.textContent = "📘 Recorrido visual";
-      leftBtn.classList.add("guide-left-trigger");
-      leftBtn.addEventListener("click", startGuide);
-    }
-
     let floating = document.getElementById("guideFloatingTrigger");
     if (!floating) {
       floating = document.createElement("button");
@@ -189,6 +224,10 @@
     state.elements.layer.classList.remove("active");
     resetOverlay();
     hideDemoBoard();
+    if (state.managerAutoOpened && window.TesauroManager && typeof TesauroManager.close === "function") {
+      TesauroManager.close();
+    }
+    state.managerAutoOpened = false;
   }
 
   function buildSteps() {
@@ -196,23 +235,115 @@
     const leftPanel = document.getElementById("leftPanel");
     const canvas = document.getElementById("canvasArea");
     const pasteBlock = document.getElementById("importFromTextBlock");
-    const jsonRow = document.querySelector(".json-buttons-row");
     const assignBtn = document.getElementById("btnAsignaciones");
     const cambiosBtn = document.getElementById("btnCambiosEstado");
 
+    const fichaBtn = document.getElementById("btnFichaProyecto");
+    const verCsvBtn = document.getElementById("btnVerCSV");
+    const exportFlujoBtn = document.getElementById("btnExportFlujo");
+    const exportTesauroBtn = document.getElementById("btnExportTesauro");
+    const exportDocxBtn = document.getElementById("btnExportDocx");
+    const guardarJsonBtn = document.getElementById("btnExportJSON");
+    const cargarJsonBtn = document.getElementById("btnImportJSON");
+    const pegarJsonBtn = document.getElementById("btnPasteJSON");
+    const iaJsonBtn = document.getElementById("btnIAJson");
+    const copypasteArea = pasteBlock || null;
+
+    const firstNodeBtn = document.querySelector("#leftPanel button[onclick*='createNode']");
+
     if (leftPanel) {
       steps.push({
-        title: messages.leftPanel.title,
-        description: messages.leftPanel.description,
+        title: messages.procedure.title,
+        description: messages.procedure.description,
         element: () => leftPanel,
       });
     }
 
-    if (jsonRow || pasteBlock) {
+    if (fichaBtn) {
       steps.push({
-        title: messages.paste.title,
-        description: messages.paste.description,
-        element: () => jsonRow || pasteBlock || leftPanel,
+        title: messages.ficha.title,
+        description: messages.ficha.description,
+        element: () => fichaBtn,
+      });
+    }
+
+    if (verCsvBtn) {
+      steps.push({
+        title: messages.verCsv.title,
+        description: messages.verCsv.description,
+        element: () => verCsvBtn,
+      });
+    }
+
+    if (exportFlujoBtn) {
+      steps.push({
+        title: messages.exportFlujo.title,
+        description: messages.exportFlujo.description,
+        element: () => exportFlujoBtn,
+      });
+    }
+
+    if (exportTesauroBtn) {
+      steps.push({
+        title: messages.exportTesauro.title,
+        description: messages.exportTesauro.description,
+        element: () => exportTesauroBtn,
+      });
+    }
+
+    if (guardarJsonBtn) {
+      steps.push({
+        title: messages.guardarJson.title,
+        description: messages.guardarJson.description,
+        element: () => guardarJsonBtn,
+      });
+    }
+
+    if (cargarJsonBtn) {
+      steps.push({
+        title: messages.cargarJson.title,
+        description: messages.cargarJson.description,
+        element: () => cargarJsonBtn,
+      });
+    }
+
+    if (pegarJsonBtn) {
+      steps.push({
+        title: messages.pegarJson.title,
+        description: messages.pegarJson.description,
+        element: () => pegarJsonBtn,
+      });
+    }
+
+    if (iaJsonBtn) {
+      steps.push({
+        title: messages.iaJson.title,
+        description: messages.iaJson.description,
+        element: () => iaJsonBtn,
+      });
+    }
+
+    if (exportDocxBtn) {
+      steps.push({
+        title: messages.exportDocx.title,
+        description: messages.exportDocx.description,
+        element: () => exportDocxBtn,
+      });
+    }
+
+    if (copypasteArea) {
+      steps.push({
+        title: messages.copypaste.title,
+        description: messages.copypaste.description,
+        element: () => copypasteArea,
+      });
+    }
+
+    if (firstNodeBtn) {
+      steps.push({
+        title: messages.nodes.title,
+        description: messages.nodes.description,
+        element: () => firstNodeBtn,
       });
     }
 
@@ -257,8 +388,8 @@
     const tesauroPanelStep = buildTesauroPanelStep();
     if (tesauroPanelStep) steps.push(tesauroPanelStep);
 
-    const tesauroManagerStep = buildTesauroManagerStep();
-    if (tesauroManagerStep) steps.push(tesauroManagerStep);
+    const tesauroManagerSteps = buildTesauroManagerSteps();
+    steps.push(...tesauroManagerSteps);
 
     return steps;
   }
@@ -456,21 +587,78 @@
     };
   }
 
-  function buildTesauroManagerStep() {
-    if (!window.TesauroManager || typeof TesauroManager.open !== "function") return null;
+  function buildTesauroManagerSteps() {
+    if (!window.TesauroManager || typeof TesauroManager.open !== "function") return [];
 
-    return {
-      title: messages.tesauroManager.title,
-      description: messages.tesauroManager.description,
-      element: () => document.getElementById("tesauroManagerModal") || document.getElementById("panelTesauro"),
-      onEnter: () => {
-        const modal = document.getElementById("tesauroManagerModal");
-        const wasOpen = modal?.style.display === "flex";
+    const ensureManagerOpen = () => {
+      const modal = document.getElementById("tesauroManagerModal");
+      const wasOpen = modal?.style.display === "flex";
+      if (!wasOpen) {
         TesauroManager.open();
-        return () => {
-          if (!wasOpen && TesauroManager.modal) TesauroManager.close();
-        };
-      },
+        state.managerAutoOpened = true;
+      }
+      return document.getElementById("tesauroManagerModal") || modal;
     };
+
+    const steps = [
+      {
+        title: messages.tesauroManager.title,
+        description: messages.tesauroManager.description,
+        element: () => ensureManagerOpen(),
+        onEnter: () => ensureManagerOpen(),
+      },
+    ];
+
+    const managerButtons = [
+      {
+        id: "tmExportTesauroAll",
+        title: "Exportar tesauros",
+        description: "Genera los CSV oficiales con los nombres de Entidad y Actividad configurados.",
+      },
+      {
+        id: "tmOpenPlainImport",
+        title: "Importar tesauros (texto)",
+        description: "Pega tesauros en texto plano para cargarlos masivamente en la tabla.",
+      },
+      {
+        id: "tmOpenMdImport",
+        title: "Importar desde Markdown",
+        description: "Detecta tesauros dentro de un Markdown y los añade al gestor sin perder formato.",
+      },
+      {
+        id: "tmOpenRefPopup",
+        title: "Referenciar tesauros",
+        description: "Crea referencias cruzadas entre tesauros existentes para reutilizarlos.",
+      },
+      {
+        id: "tmNewTesauro",
+        title: "Crear tesauro",
+        description: "Añade una fila nueva para definir un tesauro desde cero.",
+      },
+      {
+        id: "tmSave",
+        title: "Guardar cambios",
+        description: "Guarda en bloque todas las ediciones realizadas en la tabla.",
+      },
+      {
+        id: "tmClose",
+        title: "Cerrar gestor",
+        description: "Cierra el gestor y vuelve al editor manteniendo los cambios aplicados.",
+      },
+    ];
+
+    managerButtons.forEach((info) => {
+      steps.push({
+        title: info.title,
+        description: info.description,
+        element: () => {
+          const modal = ensureManagerOpen();
+          return modal ? modal.querySelector(`#${info.id}`) : null;
+        },
+        onEnter: () => ensureManagerOpen(),
+      });
+    });
+
+    return steps;
   }
 })();

@@ -706,12 +706,12 @@ body.panel-locked #canvasArea {
 
 .guide-demo-node {
     position: relative;
-    background: #0f172a;
-    color: #e2e8f0;
+    background: #ffffff;
+    color: #0f172a;
     border-radius: 12px;
     padding: 12px 12px 16px;
     min-height: 104px;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 12px 32px rgba(15, 23, 42, 0.25);
+    box-shadow: inset 0 0 0 1px #e2e8f0, 0 12px 32px rgba(15, 23, 42, 0.08);
 }
 
 .guide-demo-node .guide-node-title {
@@ -723,7 +723,7 @@ body.panel-locked #canvasArea {
 .guide-demo-node .guide-node-hint {
     margin: 0;
     font-size: 12px;
-    color: #cbd5e1;
+    color: #475569;
 }
 
 .guide-handle {
@@ -731,8 +731,8 @@ body.panel-locked #canvasArea {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.22);
+    background: #2563eb;
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.16);
     animation: handlePulse 1.8s infinite;
 }
 

@@ -14,7 +14,6 @@
     <!-- PANEL IZQUIERDO -->
     <div id="leftPanel">
         <h2>Procedimiento</h2>
-        <button class="btn" id="btnGuiaVisual">📘 Guía visual</button>
         <button class="btn" id="btnFichaProyecto">Ficha del proyecto</button>
         <button class="btn" id="btnVerCSV">📋 Ver procedimiento</button>
 
@@ -30,9 +29,9 @@
 
                      <!--  Cargar guardar -->
                      <hr>
-                     <button class="btn" onclick="Engine.exportToJSON()">💾 Guardar JSON</button>
+                     <button class="btn" id="btnExportJSON" onclick="Engine.exportToJSON()">💾 Guardar JSON</button>
                      <input type="file" id="fileLoader" accept=".json" style="display:none" onchange="loadJSONFile(event)">
-                     <button class="btn" onclick="document.getElementById('fileLoader').click()">📂 Cargar JSON</button>
+                     <button class="btn" id="btnImportJSON" onclick="document.getElementById('fileLoader').click()">📂 Cargar JSON</button>
                      <div class="json-buttons-row">
                         <button id="btnPasteJSON">📋 Pegar JSON</button>
                         <button id="btnIAJson" title="Abrir asistente IA JSON">
@@ -54,7 +53,7 @@
      <hr>
      <!-- Botón de Export WORD comentado para evitar uso de librerias de momento -->
      <button class="btn" id="btnExportDocx">📄 Exportar resumen DOCX</button>
-     <button class="btn" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
+     <button class="btn" id="btnExportFlujo" onclick="Engine.exportFlujoCSV()">📤 Exportar flujo normalizado</button>
      <button class="btn" id="btnExportTesauro">📤 Exportar tesauro CSV</button>
 
 <!-- Botón de importación -->
