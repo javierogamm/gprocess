@@ -665,12 +665,17 @@ addAsignacionGrupo(nodeId, grupo) {
     if (!nodo) return;
 
     if (!nodo.asignadosGrupos) nodo.asignadosGrupos = [];
+
+    // Siempre agregar al array (incluso si está vacío)
+    nodo.asignadosGrupos.push(grupo);
+
+    // Solo agregar al pool global si tiene valor
     const valor = grupo.trim();
-    if (valor && !nodo.asignadosGrupos.includes(valor)) {
-        nodo.asignadosGrupos.push(valor);
+    if (valor) {
         this.addGrupo(valor);
-        this.saveHistory();
     }
+
+    this.saveHistory();
 },
 
 removeAsignacionGrupo(nodeId, index) {
@@ -686,12 +691,17 @@ addAsignacionUsuario(nodeId, usuario) {
     if (!nodo) return;
 
     if (!nodo.asignadosUsuarios) nodo.asignadosUsuarios = [];
+
+    // Siempre agregar al array (incluso si está vacío)
+    nodo.asignadosUsuarios.push(usuario);
+
+    // Solo agregar al pool global si tiene valor
     const valor = usuario.trim();
-    if (valor && !nodo.asignadosUsuarios.includes(valor)) {
-        nodo.asignadosUsuarios.push(valor);
+    if (valor) {
         this.addUsuario(valor);
-        this.saveHistory();
     }
+
+    this.saveHistory();
 },
 
 removeAsignacionUsuario(nodeId, index) {

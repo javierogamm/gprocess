@@ -570,15 +570,11 @@ renderAsignacionesGrupos() {
         // Evento: actualizar valor al cambiar
         input.addEventListener("change", () => {
             const valor = input.value.trim();
+            grupos[index] = valor;
+            Engine.updateNode(this.currentNodeId, { asignadosGrupos: grupos });
             if (valor) {
-                grupos[index] = valor;
-                Engine.updateNode(this.currentNodeId, { asignadosGrupos: grupos });
                 Engine.addGrupo(valor);
                 this.updateAsignacionesList();
-            } else {
-                // Si se vacía, eliminarlo
-                Engine.removeAsignacionGrupo(this.currentNodeId, index);
-                this.renderAsignacionesGrupos();
             }
         });
 
@@ -659,15 +655,11 @@ renderAsignacionesUsuarios() {
         // Evento: actualizar valor al cambiar
         input.addEventListener("change", () => {
             const valor = input.value.trim();
+            usuarios[index] = valor;
+            Engine.updateNode(this.currentNodeId, { asignadosUsuarios: usuarios });
             if (valor) {
-                usuarios[index] = valor;
-                Engine.updateNode(this.currentNodeId, { asignadosUsuarios: usuarios });
                 Engine.addUsuario(valor);
                 this.updateAsignacionesList();
-            } else {
-                // Si se vacía, eliminarlo
-                Engine.removeAsignacionUsuario(this.currentNodeId, index);
-                this.renderAsignacionesUsuarios();
             }
         });
 
