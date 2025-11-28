@@ -189,11 +189,32 @@ const Asignaciones = {
     const conteoUsuarios = {};
 
     Engine.data.nodos.forEach(n => {
-        const g = n.asignadoA?.trim() || "Sin asignar";
-        const u = n.asignadoUsuario?.trim() || "Sin asignar";
+        // ⭐ Soportar arrays múltiples
+        const grupos = n.asignadosGrupos || [];
+        const usuarios = n.asignadosUsuarios || [];
 
-        conteoGrupos[g] = (conteoGrupos[g] || 0) + 1;
-        conteoUsuarios[u] = (conteoUsuarios[u] || 0) + 1;
+        // Si no tiene asignaciones, contar como "Sin asignar"
+        if (grupos.length === 0) {
+            conteoGrupos["Sin asignar"] = (conteoGrupos["Sin asignar"] || 0) + 1;
+        } else {
+            grupos.forEach(g => {
+                const nombre = g.trim();
+                if (nombre) {
+                    conteoGrupos[nombre] = (conteoGrupos[nombre] || 0) + 1;
+                }
+            });
+        }
+
+        if (usuarios.length === 0) {
+            conteoUsuarios["Sin asignar"] = (conteoUsuarios["Sin asignar"] || 0) + 1;
+        } else {
+            usuarios.forEach(u => {
+                const nombre = u.trim();
+                if (nombre) {
+                    conteoUsuarios[nombre] = (conteoUsuarios[nombre] || 0) + 1;
+                }
+            });
+        }
     });
 
     /* ============================================================
@@ -266,9 +287,26 @@ const Asignaciones = {
     ============================================================ */
     highlight(tipo, name) {
         Engine.data.nodos.forEach(n => {
-            const match =
-                (tipo === "grupo" && (n.asignadoA?.trim() || "Sin asignar") === name) ||
-                (tipo === "usuario" && (n.asignadoUsuario?.trim() || "Sin asignar") === name);
+            let match = false;
+
+            if (tipo === "grupo") {
+                const grupos = n.asignadosGrupos || [];
+                if (name === "Sin asignar" && grupos.length === 0) {
+                    match = true;
+                } else if (grupos.includes(name)) {
+                    match = true;
+                }
+            }
+
+            if (tipo === "usuario") {
+                const usuarios = n.asignadosUsuarios || [];
+                if (name === "Sin asignar" && usuarios.length === 0) {
+                    match = true;
+                } else if (usuarios.includes(name)) {
+                    match = true;
+                }
+            }
+
             if (match) {
                 const div = document.getElementById(n.id);
                 if (div) div.classList.add("node-highlight");

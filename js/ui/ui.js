@@ -61,57 +61,52 @@ const UI = {
             }
 
         /* ========================================================
-   RENOMBRAR EL CAMPO EXISTENTE → "Asignado a Grupo"
-   Y CREAR "Asignado a Usuario" (dinámico)
+   NUEVA UI: MÚLTIPLES ASIGNACIONES CON BOTONES +
 ======================================================== */
 (() => {
-    // 1) Renombrar la etiqueta anterior del input existente
-    const labelAsignadoA = this.inputAsignadoA ? this.inputAsignadoA.previousElementSibling : null;
-    if (labelAsignadoA && labelAsignadoA.tagName && labelAsignadoA.tagName.toLowerCase() === "label") {
-        labelAsignadoA.textContent = "Asignado a Grupo";
-    }
+    // Ocultar el input antiguo de asignadoA si existe
     if (this.inputAsignadoA) {
-        this.inputAsignadoA.placeholder = "Grupo / Unidad gestora…";
+        this.inputAsignadoA.style.display = "none";
+        const oldLabel = this.inputAsignadoA.previousElementSibling;
+        if (oldLabel && oldLabel.tagName && oldLabel.tagName.toLowerCase() === "label") {
+            oldLabel.style.display = "none";
+        }
     }
 
-    // 2) Crear dinámicamente el nuevo campo "Asignado a Usuario"
-    let labelUsuario = document.getElementById("lblAsignadoUsuario");
-    let inputUsuario = document.getElementById("propAsignadoUsuario");
+    // Crear contenedor para asignaciones de grupos
+    let containerGrupos = document.getElementById("containerAsignadosGrupos");
+    if (!containerGrupos) {
+        const labelGrupos = document.createElement("label");
+        labelGrupos.textContent = "Asignado a Grupos";
+        labelGrupos.style.fontWeight = "bold";
+        labelGrupos.style.marginTop = "10px";
 
-    if (!labelUsuario) {
-        labelUsuario = document.createElement("label");
-        labelUsuario.id = "lblAsignadoUsuario";
-        labelUsuario.textContent = "Asignado a Usuario";
-        this.propsEditor.appendChild(labelUsuario);
+        containerGrupos = document.createElement("div");
+        containerGrupos.id = "containerAsignadosGrupos";
+        containerGrupos.style.marginBottom = "10px";
+
+        this.propsEditor.appendChild(labelGrupos);
+        this.propsEditor.appendChild(containerGrupos);
     }
 
-    if (!inputUsuario) {
-        inputUsuario = document.createElement("input");
-        inputUsuario.type = "text";
-        inputUsuario.id = "propAsignadoUsuario";
-        inputUsuario.className = "input";
-        inputUsuario.placeholder = "Usuario (p. ej. jgomez)…";
-        inputUsuario.style.width = "100%";
-        inputUsuario.style.marginBottom = "10px";
-        this.propsEditor.appendChild(inputUsuario);
+    // Crear contenedor para asignaciones de usuarios
+    let containerUsuarios = document.getElementById("containerAsignadosUsuarios");
+    if (!containerUsuarios) {
+        const labelUsuarios = document.createElement("label");
+        labelUsuarios.textContent = "Asignado a Usuarios";
+        labelUsuarios.style.fontWeight = "bold";
+        labelUsuarios.style.marginTop = "10px";
+
+        containerUsuarios = document.createElement("div");
+        containerUsuarios.id = "containerAsignadosUsuarios";
+        containerUsuarios.style.marginBottom = "10px";
+
+        this.propsEditor.appendChild(labelUsuarios);
+        this.propsEditor.appendChild(containerUsuarios);
     }
 
-this.inputAsignadoUsuario = inputUsuario;
-
-// ⭐ Asignar datalist AHORA (aquí sí existe el input)
-this.inputAsignadoUsuario.setAttribute("list", "dlUsuarios");
-
-// ⭐ Guardar usuario en el nodo
-this.inputAsignadoUsuario.addEventListener("change", () => {
-    if (!this.currentNodeId) return;
-
-    const valor = this.inputAsignadoUsuario.value.trim();
-    Engine.updateNode(this.currentNodeId, { asignadoUsuario: valor });
-
-    if (valor) Engine.addUsuario(valor);   // añade al pool global
-    UI.updateAsignacionesList();           // refresca autocompletar
-});
-
+    this.containerAsignadosGrupos = containerGrupos;
+    this.containerAsignadosUsuarios = containerUsuarios;
 })();
 /* ========================================================
    CONTROL DE COLOR DE NODO 🎨
@@ -355,17 +350,9 @@ colorBtn.addEventListener("click", async () => {
         });
 
                 /* ========================================================
-        INPUT TEXTO — Asignado A
+        INPUT TEXTO — Asignado A (DESHABILITADO - ahora usamos UI dinámica)
         ======================================================== */
-            this.inputAsignadoA.addEventListener("change", () => {
-                if (!this.currentNodeId) return;
-                const valor = this.inputAsignadoA.value.trim();
-
-                Engine.updateNode(this.currentNodeId, { asignadoA: valor });
-
-                if (valor) Engine.addGrupo(valor);   // ⭐ añade al pool
-                UI.updateAsignacionesList();         // ⭐ refresca autocomplete
-            });   
+            // Ya no se usa - reemplazado por renderAsignacionesGrupos/Usuarios   
 
         /* ========================================================
            BOTONES DESHACER / REHACER
@@ -540,6 +527,176 @@ updateAsignacionesList() {
         .map(u => `<option value="${u}">`)
         .join("");
 },
+
+/* ========================================================
+   RENDERIZAR LISTA DINÁMICA DE ASIGNACIONES DE GRUPOS
+======================================================== */
+renderAsignacionesGrupos() {
+    if (!this.currentNodeId || !this.containerAsignadosGrupos) return;
+
+    const nodo = Engine.getNode(this.currentNodeId);
+    if (!nodo) return;
+
+    const grupos = nodo.asignadosGrupos || [];
+
+    // Limpiar contenedor
+    this.containerAsignadosGrupos.innerHTML = "";
+
+    // Renderizar cada grupo existente
+    grupos.forEach((grupo, index) => {
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.gap = "5px";
+        row.style.marginBottom = "5px";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "input";
+        input.value = grupo;
+        input.placeholder = "Grupo / Unidad gestora…";
+        input.setAttribute("list", "dlGrupos");
+        input.style.flex = "1";
+
+        const btnRemove = document.createElement("button");
+        btnRemove.textContent = "×";
+        btnRemove.className = "btn";
+        btnRemove.style.width = "30px";
+        btnRemove.style.padding = "0";
+        btnRemove.style.background = "#dc2626";
+        btnRemove.style.color = "white";
+        btnRemove.style.fontWeight = "bold";
+        btnRemove.title = "Eliminar esta asignación";
+
+        // Evento: actualizar valor al cambiar
+        input.addEventListener("change", () => {
+            const valor = input.value.trim();
+            grupos[index] = valor;
+            Engine.updateNode(this.currentNodeId, { asignadosGrupos: grupos });
+            if (valor) {
+                Engine.addGrupo(valor);
+                this.updateAsignacionesList();
+            }
+        });
+
+        // Evento: eliminar
+        btnRemove.addEventListener("click", () => {
+            Engine.removeAsignacionGrupo(this.currentNodeId, index);
+            this.renderAsignacionesGrupos();
+        });
+
+        row.appendChild(input);
+        row.appendChild(btnRemove);
+        this.containerAsignadosGrupos.appendChild(row);
+    });
+
+    // Botón "+" para agregar nuevo grupo
+    const btnAdd = document.createElement("button");
+    btnAdd.textContent = "+ Agregar grupo";
+    btnAdd.className = "btn";
+    btnAdd.style.width = "100%";
+    btnAdd.style.marginTop = "5px";
+    btnAdd.style.background = "#10b981";
+    btnAdd.style.color = "white";
+
+    btnAdd.addEventListener("click", () => {
+        Engine.addAsignacionGrupo(this.currentNodeId, "");
+        this.renderAsignacionesGrupos();
+        // Enfocar el nuevo input
+        setTimeout(() => {
+            const inputs = this.containerAsignadosGrupos.querySelectorAll("input");
+            if (inputs.length > 0) {
+                inputs[inputs.length - 1].focus();
+            }
+        }, 10);
+    });
+
+    this.containerAsignadosGrupos.appendChild(btnAdd);
+},
+
+/* ========================================================
+   RENDERIZAR LISTA DINÁMICA DE ASIGNACIONES DE USUARIOS
+======================================================== */
+renderAsignacionesUsuarios() {
+    if (!this.currentNodeId || !this.containerAsignadosUsuarios) return;
+
+    const nodo = Engine.getNode(this.currentNodeId);
+    if (!nodo) return;
+
+    const usuarios = nodo.asignadosUsuarios || [];
+
+    // Limpiar contenedor
+    this.containerAsignadosUsuarios.innerHTML = "";
+
+    // Renderizar cada usuario existente
+    usuarios.forEach((usuario, index) => {
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.gap = "5px";
+        row.style.marginBottom = "5px";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "input";
+        input.value = usuario;
+        input.placeholder = "Usuario (p. ej. jgomez)…";
+        input.setAttribute("list", "dlUsuarios");
+        input.style.flex = "1";
+
+        const btnRemove = document.createElement("button");
+        btnRemove.textContent = "×";
+        btnRemove.className = "btn";
+        btnRemove.style.width = "30px";
+        btnRemove.style.padding = "0";
+        btnRemove.style.background = "#dc2626";
+        btnRemove.style.color = "white";
+        btnRemove.style.fontWeight = "bold";
+        btnRemove.title = "Eliminar esta asignación";
+
+        // Evento: actualizar valor al cambiar
+        input.addEventListener("change", () => {
+            const valor = input.value.trim();
+            usuarios[index] = valor;
+            Engine.updateNode(this.currentNodeId, { asignadosUsuarios: usuarios });
+            if (valor) {
+                Engine.addUsuario(valor);
+                this.updateAsignacionesList();
+            }
+        });
+
+        // Evento: eliminar
+        btnRemove.addEventListener("click", () => {
+            Engine.removeAsignacionUsuario(this.currentNodeId, index);
+            this.renderAsignacionesUsuarios();
+        });
+
+        row.appendChild(input);
+        row.appendChild(btnRemove);
+        this.containerAsignadosUsuarios.appendChild(row);
+    });
+
+    // Botón "+" para agregar nuevo usuario
+    const btnAdd = document.createElement("button");
+    btnAdd.textContent = "+ Agregar usuario";
+    btnAdd.className = "btn";
+    btnAdd.style.width = "100%";
+    btnAdd.style.marginTop = "5px";
+    btnAdd.style.background = "#10b981";
+    btnAdd.style.color = "white";
+
+    btnAdd.addEventListener("click", () => {
+        Engine.addAsignacionUsuario(this.currentNodeId, "");
+        this.renderAsignacionesUsuarios();
+        // Enfocar el nuevo input
+        setTimeout(() => {
+            const inputs = this.containerAsignadosUsuarios.querySelectorAll("input");
+            if (inputs.length > 0) {
+                inputs[inputs.length - 1].focus();
+            }
+        }, 10);
+    });
+
+    this.containerAsignadosUsuarios.appendChild(btnAdd);
+},
     /* ========================================================
        PANEL PARA CONEXIONES — con botón Eliminar
     ======================================================== */
@@ -658,9 +815,11 @@ showNodeProperties(id) {
     if (descDiv) descDiv.innerHTML = nodo.descripcion || "";
 
     this.inputTareaManual.checked = !!nodo.tareaManual;
-    this.inputAsignadoA.value = nodo.asignadoA || "";
-    if (this.inputAsignadoUsuario)
-        this.inputAsignadoUsuario.value = nodo.asignadoUsuario || "";
+
+    // ⭐ Renderizar asignaciones dinámicas (múltiples grupos/usuarios)
+    this.renderAsignacionesGrupos();
+    this.renderAsignacionesUsuarios();
+
     if (this.inputColor)
         this.inputColor.value = nodo.color || getDefaultColorByType(nodo.tipo);
 

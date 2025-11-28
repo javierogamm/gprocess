@@ -173,11 +173,15 @@ Engine.exportFlujoCSV = function() {
         else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
         else tipoTarea = capitalizeFirst(tipoTarea);
     
-        const asignado = (n.asignadoA || "").trim();
-        const esUnidadGestora = asignado.toLowerCase() === "unidad gestora";
-        const asignadoGrupo = esUnidadGestora ? "" : asignado;
+        // ⭐ Concatenar múltiples asignaciones con " -- "
+        const grupos = n.asignadosGrupos || [];
+        const usuarios = n.asignadosUsuarios || [];
+
+        const asignadosTexto = grupos.join(" -- ");
+        const esUnidadGestora = grupos.some(g => g.toLowerCase() === "unidad gestora");
+        const asignadoGrupo = esUnidadGestora ? "" : asignadosTexto;
         const asignadoUG = esUnidadGestora ? "Sí" : "No";
-        const asignadoUsuario = (n.asignadoUsuario || "").trim();
+        const asignadoUsuario = usuarios.join(" -- ");
         const inicioManual = n.tareaManual ? "Sí" : "No";
     
         // 🧩 Reglas específicas por tipo
@@ -504,15 +508,22 @@ Engine.showCSVPreview = function() {
     // --- Generar las dos tablas como texto HTML ---
     const sortedNodes = [...this.data.nodos]
     .filter(n => n.tipo !== "decisionR")
-    .sort((a,b) => a.y - b.y || a.x - b.x);    const tareas = sortedNodes.map((n, i) => `
+    .sort((a,b) => a.y - b.y || a.x - b.x);    const tareas = sortedNodes.map((n, i) => {
+        // ⭐ Concatenar múltiples grupos y usuarios con " -- "
+        const grupos = (n.asignadosGrupos || []).join(" -- ") || "";
+        const usuarios = (n.asignadosUsuarios || []).join(" -- ") || "";
+        const asignados = [grupos, usuarios].filter(Boolean).join(" / ");
+
+        return `
         <tr>
             <td>${i+1}</td>
             <td>${n.tipo.charAt(0).toUpperCase() + n.tipo.slice(1).toLowerCase()}</td>
             <td>${n.titulo || ""}</td>
             <td>${n.tareaManual ? "Sí" : "No"}</td>
-            <td>${n.asignadoA || ""}</td>
+            <td>${asignados || "Sin asignar"}</td>
         </tr>
-    `).join("");
+    `;
+    }).join("");
 
     const conexiones = this.data.conexiones.map((c, i) => {
         const from = this.getNode(c.from);
@@ -577,12 +588,22 @@ Engine.showCSVPreview = function() {
 
 // === BLOQUES SEPARADOS: AGRUPACIÓN POR GRUPO Y USUARIO ===
 
-// 🟩 1️⃣ Agrupación por GRUPO
+// 🟩 1️⃣ Agrupación por GRUPO (soporta múltiples grupos)
 const agrupadoGrupo = {};
 this.data.nodos.forEach(n => {
-    const grupo = n.asignadoA?.trim() || "Sin asignar";
-    if (!agrupadoGrupo[grupo]) agrupadoGrupo[grupo] = [];
-    agrupadoGrupo[grupo].push(n.titulo || "(Sin título)");
+    const grupos = n.asignadosGrupos || [];
+    if (grupos.length === 0) {
+        if (!agrupadoGrupo["Sin asignar"]) agrupadoGrupo["Sin asignar"] = [];
+        agrupadoGrupo["Sin asignar"].push(n.titulo || "(Sin título)");
+    } else {
+        grupos.forEach(grupo => {
+            const g = grupo.trim();
+            if (g) {
+                if (!agrupadoGrupo[g]) agrupadoGrupo[g] = [];
+                agrupadoGrupo[g].push(n.titulo || "(Sin título)");
+            }
+        });
+    }
 });
 
 let htmlAsignadosGrupo = `
@@ -603,12 +624,22 @@ for (const [grupo, tareas] of Object.entries(agrupadoGrupo)) {
 }
 htmlAsignadosGrupo += `</tbody></table>`;
 
-// 🟦 2️⃣ Agrupación por USUARIO
+// 🟦 2️⃣ Agrupación por USUARIO (soporta múltiples usuarios)
 const agrupadoUsuario = {};
 this.data.nodos.forEach(n => {
-    const usuario = n.asignadoUsuario?.trim() || "Sin asignar";
-    if (!agrupadoUsuario[usuario]) agrupadoUsuario[usuario] = [];
-    agrupadoUsuario[usuario].push(n.titulo || "(Sin título)");
+    const usuarios = n.asignadosUsuarios || [];
+    if (usuarios.length === 0) {
+        if (!agrupadoUsuario["Sin asignar"]) agrupadoUsuario["Sin asignar"] = [];
+        agrupadoUsuario["Sin asignar"].push(n.titulo || "(Sin título)");
+    } else {
+        usuarios.forEach(usuario => {
+            const u = usuario.trim();
+            if (u) {
+                if (!agrupadoUsuario[u]) agrupadoUsuario[u] = [];
+                agrupadoUsuario[u].push(n.titulo || "(Sin título)");
+            }
+        });
+    }
 });
 
 let htmlAsignadosUsuario = `
@@ -746,17 +777,22 @@ const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
                 new TableCell({ children: [new Paragraph({ text: h, bold: true })] })
             )
         }),
-        ...sortedNodes.map((n, i) =>
-            new TableRow({
+        ...sortedNodes.map((n, i) => {
+            // ⭐ Concatenar múltiples grupos y usuarios
+            const grupos = (n.asignadosGrupos || []).join(" -- ") || "";
+            const usuarios = (n.asignadosUsuarios || []).join(" -- ") || "";
+            const asignados = [grupos, usuarios].filter(Boolean).join(" / ") || "Sin asignar";
+
+            return new TableRow({
                 children: [
                     new TableCell({ children: [new Paragraph(String(i + 1))] }),
                     new TableCell({ children: [new Paragraph(formatTipo(n.tipo))] }),
                     new TableCell({ children: [new Paragraph(n.titulo || "")] }),
                     new TableCell({ children: [new Paragraph(n.tareaManual ? "Sí" : "No")] }),
-                    new TableCell({ children: [new Paragraph(n.asignadoA || "")] })
+                    new TableCell({ children: [new Paragraph(asignados)] })
                 ]
-            })
-        )
+            });
+        })
     ];
 
     const connRows = [
@@ -877,11 +913,22 @@ new Paragraph({
     spacing: { before: 400, after: 200 }
 }),
 (() => {
+    // ⭐ Soportar múltiples grupos
     const agrupadoGrupo = {};
     this.data.nodos.forEach(n => {
-        const grupo = n.asignadoA?.trim() || "Sin asignar";
-        if (!agrupadoGrupo[grupo]) agrupadoGrupo[grupo] = [];
-        agrupadoGrupo[grupo].push(n.titulo || "(Sin título)");
+        const grupos = n.asignadosGrupos || [];
+        if (grupos.length === 0) {
+            if (!agrupadoGrupo["Sin asignar"]) agrupadoGrupo["Sin asignar"] = [];
+            agrupadoGrupo["Sin asignar"].push(n.titulo || "(Sin título)");
+        } else {
+            grupos.forEach(grupo => {
+                const g = grupo.trim();
+                if (g) {
+                    if (!agrupadoGrupo[g]) agrupadoGrupo[g] = [];
+                    agrupadoGrupo[g].push(n.titulo || "(Sin título)");
+                }
+            });
+        }
     });
 
     const filas = Object.entries(agrupadoGrupo).map(([grupo, tareas]) =>
@@ -913,11 +960,22 @@ new Paragraph({
     spacing: { before: 400, after: 200 }
 }),
 (() => {
+    // ⭐ Soportar múltiples usuarios
     const agrupadoUsuario = {};
     this.data.nodos.forEach(n => {
-        const usuario = n.asignadoUsuario?.trim() || "Sin asignar";
-        if (!agrupadoUsuario[usuario]) agrupadoUsuario[usuario] = [];
-        agrupadoUsuario[usuario].push(n.titulo || "(Sin título)");
+        const usuarios = n.asignadosUsuarios || [];
+        if (usuarios.length === 0) {
+            if (!agrupadoUsuario["Sin asignar"]) agrupadoUsuario["Sin asignar"] = [];
+            agrupadoUsuario["Sin asignar"].push(n.titulo || "(Sin título)");
+        } else {
+            usuarios.forEach(usuario => {
+                const u = usuario.trim();
+                if (u) {
+                    if (!agrupadoUsuario[u]) agrupadoUsuario[u] = [];
+                    agrupadoUsuario[u].push(n.titulo || "(Sin título)");
+                }
+            });
+        }
     });
 
     const filas = Object.entries(agrupadoUsuario).map(([usuario, tareas]) =>
