@@ -173,11 +173,15 @@ Engine.exportFlujoCSV = function() {
         else if (tipoTarea === "decisión" || tipoTarea === "decision") tipoTarea = "Formulario";
         else tipoTarea = capitalizeFirst(tipoTarea);
     
-        const asignado = (n.asignadoA || "").trim();
-        const esUnidadGestora = asignado.toLowerCase() === "unidad gestora";
-        const asignadoGrupo = esUnidadGestora ? "" : asignado;
+        // ⭐ Concatenar múltiples asignaciones con " -- "
+        const grupos = n.asignadosGrupos || [];
+        const usuarios = n.asignadosUsuarios || [];
+
+        const asignadosTexto = grupos.join(" -- ");
+        const esUnidadGestora = grupos.some(g => g.toLowerCase() === "unidad gestora");
+        const asignadoGrupo = esUnidadGestora ? "" : asignadosTexto;
         const asignadoUG = esUnidadGestora ? "Sí" : "No";
-        const asignadoUsuario = (n.asignadoUsuario || "").trim();
+        const asignadoUsuario = usuarios.join(" -- ");
         const inicioManual = n.tareaManual ? "Sí" : "No";
     
         // 🧩 Reglas específicas por tipo

@@ -88,14 +88,15 @@ asignaciones: {
         tipo,
         titulo: tipo.toUpperCase(),
         tareaManual: false,
-        asignadoA: "",
+        asignadosGrupos: [],      // ⭐ Ahora es un array
+        asignadosUsuarios: [],    // ⭐ Ahora es un array
         annex: "",
         pregunta: "",
         x,
         y,
         width: 144,
         height: 68,
-        
+
     };
 
     // 🎨 Personalización especial para algunos tipos
@@ -286,12 +287,35 @@ importFromJSON(jsonString) {
             );
         }
 
-        // 5B — Añadir asignaciones que vengan en los NODOS
+        // 5B — Migración automática de formato antiguo a nuevo
+        // Convertir asignadoA (string) → asignadosGrupos (array)
+        // Convertir asignadoUsuario (string) → asignadosUsuarios (array)
         this.data.nodos.forEach(n => {
-            const g = (n.asignadoA || "").trim();
-            const u = (n.asignadoUsuario || "").trim();
-            if (g) this.asignaciones.grupos.add(g);
-            if (u) this.asignaciones.usuarios.add(u);
+            // Migrar grupo (formato antiguo)
+            if (n.asignadoA !== undefined && !n.asignadosGrupos) {
+                const g = (n.asignadoA || "").trim();
+                n.asignadosGrupos = g ? [g] : [];
+                delete n.asignadoA; // Limpiar campo antiguo
+            }
+
+            // Migrar usuario (formato antiguo)
+            if (n.asignadoUsuario !== undefined && !n.asignadosUsuarios) {
+                const u = (n.asignadoUsuario || "").trim();
+                n.asignadosUsuarios = u ? [u] : [];
+                delete n.asignadoUsuario; // Limpiar campo antiguo
+            }
+
+            // Asegurar que existen los arrays (incluso si están vacíos)
+            if (!n.asignadosGrupos) n.asignadosGrupos = [];
+            if (!n.asignadosUsuarios) n.asignadosUsuarios = [];
+
+            // Añadir al pool global
+            n.asignadosGrupos.forEach(g => {
+                if (g.trim()) this.asignaciones.grupos.add(g.trim());
+            });
+            n.asignadosUsuarios.forEach(u => {
+                if (u.trim()) this.asignaciones.usuarios.add(u.trim());
+            });
         });
 
         // ------------------------------------------------------------
@@ -585,9 +609,9 @@ alignSelectedNodes() {
   updateNode(id, props) {
     const nodo = this.getNode(id);
     if (!nodo) return;
-    
+
     let requiereActualizarTexto = false;
-    
+
     if (props.titulo !== undefined) {
         nodo.titulo = props.titulo;
         requiereActualizarTexto = true;
@@ -602,19 +626,79 @@ alignSelectedNodes() {
         nodo.tareaManual = props.tareaManual;
     }
 
-    if (props.asignadoA !== undefined) {
-        nodo.asignadoA = props.asignadoA;
+    // ⭐ Manejo de arrays de asignaciones
+    if (props.asignadosGrupos !== undefined) {
+        nodo.asignadosGrupos = props.asignadosGrupos;
     }
 
-    // ⭐ AQUI EL FALLO — NO LO TENÍAS
+    if (props.asignadosUsuarios !== undefined) {
+        nodo.asignadosUsuarios = props.asignadosUsuarios;
+    }
+
+    // 🔄 Retrocompatibilidad: convertir campos antiguos si existen
+    if (props.asignadoA !== undefined) {
+        if (!nodo.asignadosGrupos) nodo.asignadosGrupos = [];
+        if (props.asignadoA && !nodo.asignadosGrupos.includes(props.asignadoA)) {
+            nodo.asignadosGrupos.push(props.asignadoA);
+        }
+    }
+
     if (props.asignadoUsuario !== undefined) {
-        nodo.asignadoUsuario = props.asignadoUsuario;
+        if (!nodo.asignadosUsuarios) nodo.asignadosUsuarios = [];
+        if (props.asignadoUsuario && !nodo.asignadosUsuarios.includes(props.asignadoUsuario)) {
+            nodo.asignadosUsuarios.push(props.asignadoUsuario);
+        }
     }
 
     if (requiereActualizarTexto) {
         Renderer.updateNodeLabel(id);
     }
 
+    this.saveHistory();
+},
+
+/* ============================================================
+   AGREGAR/REMOVER ASIGNACIONES INDIVIDUALES
+============================================================ */
+addAsignacionGrupo(nodeId, grupo) {
+    const nodo = this.getNode(nodeId);
+    if (!nodo) return;
+
+    if (!nodo.asignadosGrupos) nodo.asignadosGrupos = [];
+    const valor = grupo.trim();
+    if (valor && !nodo.asignadosGrupos.includes(valor)) {
+        nodo.asignadosGrupos.push(valor);
+        this.addGrupo(valor);
+        this.saveHistory();
+    }
+},
+
+removeAsignacionGrupo(nodeId, index) {
+    const nodo = this.getNode(nodeId);
+    if (!nodo || !nodo.asignadosGrupos) return;
+
+    nodo.asignadosGrupos.splice(index, 1);
+    this.saveHistory();
+},
+
+addAsignacionUsuario(nodeId, usuario) {
+    const nodo = this.getNode(nodeId);
+    if (!nodo) return;
+
+    if (!nodo.asignadosUsuarios) nodo.asignadosUsuarios = [];
+    const valor = usuario.trim();
+    if (valor && !nodo.asignadosUsuarios.includes(valor)) {
+        nodo.asignadosUsuarios.push(valor);
+        this.addUsuario(valor);
+        this.saveHistory();
+    }
+},
+
+removeAsignacionUsuario(nodeId, index) {
+    const nodo = this.getNode(nodeId);
+    if (!nodo || !nodo.asignadosUsuarios) return;
+
+    nodo.asignadosUsuarios.splice(index, 1);
     this.saveHistory();
 },
 
