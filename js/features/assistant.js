@@ -372,8 +372,8 @@ const Assistant = {
       tipo: "formulario",
       descripcion: "",
       tareaManual: false,
-      asignadoA: "",
-      asignadoUsuario: ""
+      asignadosGrupos: [],
+      asignadosUsuarios: []
     };
     this.currentStep = "tipo";
     this.renderStep();
@@ -550,12 +550,12 @@ const Assistant = {
       this.formArea.innerHTML = `
         <form class="assistant-form-step">
           <label>¿A qué grupo se asigna?</label>
-          <input list="assistantGruposList" id="assistantAsignGrupo" placeholder="Selecciona o escribe" />
+          <input list="assistantGruposList" id="assistantAsignGrupo" placeholder="Selecciona o escribe (coma para varios)" />
           <datalist id="assistantGruposList">
             ${grupos.map((g) => `<option value="${g}"></option>`).join("")}
           </datalist>
           <label>¿A qué usuario se asigna?</label>
-          <input list="assistantUsuariosList" id="assistantAsignUsuario" placeholder="Selecciona o escribe" />
+          <input list="assistantUsuariosList" id="assistantAsignUsuario" placeholder="Selecciona o escribe (coma para varios)" />
           <datalist id="assistantUsuariosList">
             ${usuarios.map((u) => `<option value="${u}"></option>`).join("")}
           </datalist>
@@ -568,8 +568,18 @@ const Assistant = {
 
       this.formArea.querySelector("form").addEventListener("submit", (e) => {
         e.preventDefault();
-        this.draft.asignadoA = this.formArea.querySelector("#assistantAsignGrupo")?.value.trim();
-        this.draft.asignadoUsuario = this.formArea.querySelector("#assistantAsignUsuario")?.value.trim();
+        const parseLista = (txt = "") =>
+          txt
+            .split(/[,;\n]+/)
+            .map((v) => v.trim())
+            .filter(Boolean);
+
+        this.draft.asignadosGrupos = parseLista(
+          this.formArea.querySelector("#assistantAsignGrupo")?.value || ""
+        );
+        this.draft.asignadosUsuarios = parseLista(
+          this.formArea.querySelector("#assistantAsignUsuario")?.value || ""
+        );
         this.finalizarNodo();
       });
 
@@ -589,12 +599,12 @@ const Assistant = {
       titulo: this.draft.titulo,
       descripcion: this.draft.descripcion,
       tareaManual: this.draft.tareaManual,
-      asignadoA: this.draft.asignadoA,
-      asignadoUsuario: this.draft.asignadoUsuario
+      asignadosGrupos: this.draft.asignadosGrupos,
+      asignadosUsuarios: this.draft.asignadosUsuarios
     });
 
-    if (this.draft.asignadoA) Engine.asignaciones.grupos.add(this.draft.asignadoA);
-    if (this.draft.asignadoUsuario) Engine.asignaciones.usuarios.add(this.draft.asignadoUsuario);
+    this.draft.asignadosGrupos.forEach((g) => Engine.asignaciones.grupos.add(g));
+    this.draft.asignadosUsuarios.forEach((u) => Engine.asignaciones.usuarios.add(u));
     if (window.UI && typeof UI.updateAsignacionesList === "function") {
       UI.updateAsignacionesList();
     }
