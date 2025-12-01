@@ -116,6 +116,7 @@ Engine.importFromCSV = async function(file) {
 
         // 5️⃣ Cargar en memoria
         this.data = { nodos, conexiones: conn };
+        this.asignaciones = { grupos: new Set(), usuarios: new Set() };
 
         // 6️⃣ Redibujar todo
         Renderer.clearAll();
@@ -395,6 +396,7 @@ Engine.importFlujoCSV = async function(files) {
         // 5️⃣ Reiniciar diagrama actual
         this.saveHistory();
         this.data = { nodos: [], conexiones: [] };
+        this.asignaciones = { grupos: new Set(), usuarios: new Set() };
         Renderer.clearAll();
 
         // 6️⃣ Crear NODOS (con limpieza del tipo)
@@ -404,10 +406,31 @@ Engine.importFlujoCSV = async function(files) {
         const stepY = 180;
         const stepX = 250;
 
+        const parseAsignaciones = (valor = "") => {
+            return valor
+                .split(/--/)
+                .map(v => v.trim())
+                .filter(Boolean);
+        };
+
+        const parseBoolean = (valor = "") => valor.trim().toLowerCase().startsWith("s");
+
         tareas.forEach((t, i) => {
             const rawTipo = (t["Tipo Tarea"] || "tarea").trim();
             const tipoSafe = rawTipo.toLowerCase().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
             const tipoVisible = rawTipo.charAt(0).toUpperCase() + rawTipo.slice(1).toLowerCase();
+
+            const gruposImportados = parseAsignaciones(t["Asignado a Grupo - Nombre"] || "");
+            const usuariosImportados = parseAsignaciones(t["Asignado a Usuario - Nombre"] || "");
+
+            const incluyeUG = (t["Asignado a unidad gestora"] || "")
+                .toLowerCase()
+                .startsWith("s");
+
+            if (incluyeUG && !gruposImportados.includes("Unidad gestora")) {
+                gruposImportados.push("Unidad gestora");
+            }
+
             const n = {
                 id: "n" + this.generateId(),
                 tipo: tipoSafe,
@@ -419,9 +442,15 @@ Engine.importFlujoCSV = async function(files) {
                 y: baseY + Math.floor(i / 3) * stepY,
                 width: 200,
                 height: 100,
-                                tareaManual: (t["¿Tarea Manual?"] || "").toLowerCase().startsWith("s"),
-                asignadoA: t["Asignado A"] || ""    // ✅ nuevo
+                tareaManual:
+                    parseBoolean(t["Inicio manual"] || "") ||
+                    parseBoolean(t["¿Tarea Manual?"] || ""),
+                asignadosGrupos: Array.from(new Set(gruposImportados)),
+                asignadosUsuarios: Array.from(new Set(usuariosImportados))
             };
+
+            n.asignadosGrupos.forEach(g => this.addGrupo(g));
+            n.asignadosUsuarios.forEach(u => this.addUsuario(u));
 
             this.data.nodos.push(n);
             nodosMap[n.titulo.trim()] = n.id;
@@ -431,20 +460,35 @@ Engine.importFlujoCSV = async function(files) {
         this.data.nodos.forEach(n => Renderer.renderNode(n));
 
         // 7️⃣ Crear CONEXIONES
-        condiciones.forEach((c, i) => {
+        const conexionesPorBloque = new Map();
+
+        condiciones.forEach((c) => {
             const origen = (c["Nombre Tarea"] || "").trim();
             const destino = (c["Estado/Tarea"] || "").trim();
             if (!origen || !destino) return;
 
             const fromId = nodosMap[origen];
             const toId = nodosMap[destino];
+            const nombreCond = c["Nombre tesauro"] || c["Condición"] || "";
+            const valorCond = c["Valor"] || "";
+
+            const bloqueKey = `${origen}|${(c["Id Bloque"] || "").trim()}|${(c["Bloque"] || "").trim()}`;
+            const accion = (c["Acción"] || "").toLowerCase();
+
+            if (accion.includes("cambiar estado")) {
+                const targetConn = conexionesPorBloque.get(bloqueKey);
+                if (targetConn) {
+                    targetConn.cambioEstado = destino;
+                } else {
+                    console.warn(`⚠️ No se encontró conexión para asignar el cambio de estado de ${origen}`);
+                }
+                return;
+            }
+
             if (!fromId || !toId) {
                 console.warn(`⚠️ No se encontró nodo para conexión ${origen} → ${destino}`);
                 return;
             }
-
-            const nombreCond = c["Nombre tesauro"] || c["Condición"] || "";
-            const valorCond = c["Valor"] || "";
 
             const conn = {
                 id: "c" + this.generateId(),
@@ -457,6 +501,7 @@ Engine.importFlujoCSV = async function(files) {
             };
 
             this.data.conexiones.push(conn);
+            conexionesPorBloque.set(bloqueKey, conn);
         });
 
         // 8️⃣ Dibujar conexiones

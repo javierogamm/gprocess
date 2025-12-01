@@ -24,6 +24,11 @@
       title: "Exportar flujo normalizado",
       description: "📤 Genera el CSV oficial del flujo listo para compartir o validar.",
     },
+    importFlujo: {
+      title: "Importar flujo normalizado",
+      description:
+        "📥 Recupera un flujo exportado seleccionando Tareas.csv y Condiciones.csv para reconstruir nodos y conexiones.",
+    },
     exportTesauro: {
       title: "Exportar tesauro",
       description: "📤 Exporta el tesauro actual en CSV para revisar o migrar las etiquetas.",
@@ -255,6 +260,7 @@
     const fichaBtn = document.getElementById("btnFichaProyecto");
     const verCsvBtn = document.getElementById("btnVerCSV");
     const exportFlujoBtn = document.getElementById("btnExportFlujo");
+    const importFlujoBtn = document.getElementById("btnImportFlujo");
     const exportTesauroBtn = document.getElementById("btnExportTesauro");
     const exportDocxBtn = document.getElementById("btnExportDocx");
     const guardarJsonBtn = document.getElementById("btnExportJSON");
@@ -343,6 +349,14 @@
         title: messages.exportFlujo.title,
         description: messages.exportFlujo.description,
         element: () => exportFlujoBtn,
+      });
+    }
+
+    if (importFlujoBtn) {
+      steps.push({
+        title: messages.importFlujo.title,
+        description: messages.importFlujo.description,
+        element: () => importFlujoBtn,
       });
     }
 

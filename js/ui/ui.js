@@ -22,6 +22,10 @@ const UI = {
     currentNodeId: null,
     currentConnId: null,
     inputAsignadoUsuario: null, // **NUEVO** segundo campo (usuario)
+    bulkAsignLabelGrupos: null,
+    bulkAsignInputGrupos: null,
+    bulkAsignLabelUsuarios: null,
+    bulkAsignInputUsuarios: null,
     /* ========================================================
        INICIALIZACIÓN
     ======================================================== */
@@ -697,6 +701,67 @@ renderAsignacionesUsuarios() {
 
     this.containerAsignadosUsuarios.appendChild(btnAdd);
 },
+
+ensureBulkAsignacionesControls() {
+    if (!this.bulkAsignLabelGrupos) {
+        const lbl = document.createElement("label");
+        lbl.id = "lblBulkAsignadosGrupos";
+        lbl.textContent = "Asignado a Grupos (aplica a todos)";
+        lbl.style.fontWeight = "bold";
+        lbl.style.marginTop = "10px";
+        lbl.style.display = "none";
+
+        const txt = document.createElement("textarea");
+        txt.id = "inputBulkAsignadosGrupos";
+        txt.className = "input";
+        txt.rows = 3;
+        txt.placeholder = "Un grupo por línea o separados por coma…";
+        txt.style.width = "100%";
+        txt.style.marginBottom = "10px";
+        txt.style.display = "none";
+
+        this.propsEditor.appendChild(lbl);
+        this.propsEditor.appendChild(txt);
+
+        this.bulkAsignLabelGrupos = lbl;
+        this.bulkAsignInputGrupos = txt;
+    }
+
+    if (!this.bulkAsignLabelUsuarios) {
+        const lbl = document.createElement("label");
+        lbl.id = "lblBulkAsignadosUsuarios";
+        lbl.textContent = "Asignado a Usuarios (aplica a todos)";
+        lbl.style.fontWeight = "bold";
+        lbl.style.marginTop = "10px";
+        lbl.style.display = "none";
+
+        const txt = document.createElement("textarea");
+        txt.id = "inputBulkAsignadosUsuarios";
+        txt.className = "input";
+        txt.rows = 3;
+        txt.placeholder = "Un usuario por línea o separados por coma…";
+        txt.style.width = "100%";
+        txt.style.marginBottom = "10px";
+        txt.style.display = "none";
+
+        this.propsEditor.appendChild(lbl);
+        this.propsEditor.appendChild(txt);
+
+        this.bulkAsignLabelUsuarios = lbl;
+        this.bulkAsignInputUsuarios = txt;
+    }
+},
+
+hideBulkAsignaciones() {
+    [
+        this.bulkAsignLabelGrupos,
+        this.bulkAsignInputGrupos,
+        this.bulkAsignLabelUsuarios,
+        this.bulkAsignInputUsuarios
+    ].forEach(el => {
+        if (el) el.style.display = "none";
+    });
+},
     /* ========================================================
        PANEL PARA CONEXIONES — con botón Eliminar
     ======================================================== */
@@ -771,11 +836,8 @@ showNodeProperties(id) {
     const nodo = Engine.getNode(id);
     UI.updateAsignacionesList();
     if (!nodo) return;
-    // Ocultar campo AsignadoA (grupo)
-    const labelAsignadoGroup = document.getElementById("lblAsignadoGroup");
-    const inputAsignadoGroup = document.getElementById("inputAsignadoGroup");
-    if (labelAsignadoGroup) labelAsignadoGroup.style.display = "none";
-    if (inputAsignadoGroup) inputAsignadoGroup.style.display = "none";
+    // Ocultar controles masivos de asignación
+    this.hideBulkAsignaciones();
     // 🔁 NUEVO: salir explícitamente del modo "grupo"
     if (this.propsEditor) {
         const allChildren = Array.from(this.propsEditor.children);
@@ -913,78 +975,87 @@ showGroupProperties() {
         }
     }
   /* ========================================================
-       CAMPO "Asignado A" PARA SELECCIÓN MÚLTIPLE
+       ASIGNACIONES MASIVAS (N grupos / N usuarios)
     ======================================================== */
 
-    // Crear si no existe
-    let labelAsignadoGroup = document.getElementById("lblAsignadoGroup");
-    let inputAsignadoGroup = document.getElementById("inputAsignadoGroup");
+    this.ensureBulkAsignacionesControls();
 
-    if (!labelAsignadoGroup) {
-        labelAsignadoGroup = document.createElement("label");
-        labelAsignadoGroup.id = "lblAsignadoGroup";
-        labelAsignadoGroup.textContent = "Asignado a Grupo (grupo)";            
-        this.propsEditor.appendChild(labelAsignadoGroup);
-    }
+    const selectedNodes = Array.from(Interactions.selectedNodes || [])
+        .map(id => Engine.getNode(id))
+        .filter(Boolean);
 
-    if (!inputAsignadoGroup) {
-        inputAsignadoGroup = document.createElement("input");
-        inputAsignadoGroup.type = "text";
-        inputAsignadoGroup.id = "inputAsignadoGroup";
-        inputAsignadoGroup.className = "input";
-        inputAsignadoGroup.placeholder = "Asignado…";
-        inputAsignadoGroup.style.width = "100%";
-        inputAsignadoGroup.style.marginBottom = "10px";
+    const normalize = (arr = []) => arr.map(v => v.trim()).filter(Boolean);
+    const arraysEqual = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+    const parseLines = (txt = "") => txt
+        .split(/[,;\n]+/)
+        .map(v => v.trim())
+        .filter(Boolean);
 
-        // Evento → aplicar a todos
-        inputAsignadoGroup.addEventListener("input", () => {
-            const nuevo = inputAsignadoGroup.value.trim();
-            Interactions.selectedNodes.forEach(id => {
-                const nodo = Engine.getNode(id);
-                if (nodo) {
-                    nodo.asignadoA = nuevo;
-                }
-            });
-            Engine.saveHistory();
+    const setSharedValue = (input, listas) => {
+        if (!input) return;
+        if (listas.length === 0) {
+            input.value = "";
+            return;
+        }
+
+        const primera = normalize(listas[0]);
+        const iguales = listas.every(l => arraysEqual(normalize(l), primera));
+        input.value = iguales ? primera.join("\n") : "";
+    };
+
+    [
+        this.bulkAsignLabelGrupos,
+        this.bulkAsignInputGrupos,
+        this.bulkAsignLabelUsuarios,
+        this.bulkAsignInputUsuarios
+    ].forEach(el => {
+        if (el) el.style.display = "block";
+    });
+
+    setSharedValue(
+        this.bulkAsignInputGrupos,
+        selectedNodes.map(n => n.asignadosGrupos || [])
+    );
+    setSharedValue(
+        this.bulkAsignInputUsuarios,
+        selectedNodes.map(n => n.asignadosUsuarios || [])
+    );
+
+    const applyBulk = (campo, valores) => {
+        const currentSelection = Array.from(Interactions.selectedNodes || [])
+            .map(id => Engine.getNode(id))
+            .filter(Boolean);
+
+        if (currentSelection.length === 0) return;
+
+        currentSelection.forEach(n => {
+            Engine.updateNode(n.id, { [campo]: [...valores] });
         });
 
-        this.propsEditor.appendChild(inputAsignadoGroup);
+        if (campo === "asignadosGrupos") valores.forEach(v => Engine.addGrupo(v));
+        if (campo === "asignadosUsuarios") valores.forEach(v => Engine.addUsuario(v));
+
+        this.updateAsignacionesList();
+    };
+
+    if (this.bulkAsignInputGrupos) {
+        this.bulkAsignInputGrupos.oninput = () => {
+            const valores = parseLines(this.bulkAsignInputGrupos.value);
+            applyBulk("asignadosGrupos", valores);
+        };
     }
 
-    // Mostrar ambos en modo grupo
-    labelAsignadoGroup.style.display = "block";
-    inputAsignadoGroup.style.display = "block";
+    if (this.bulkAsignInputUsuarios) {
+        this.bulkAsignInputUsuarios.oninput = () => {
+            const valores = parseLines(this.bulkAsignInputUsuarios.value);
+            applyBulk("asignadosUsuarios", valores);
+        };
+    }
     // 🎨 Mostrar color del nodo
     if (this.inputColor) {
         this.inputColor.style.display = "block";
         const labelColor = this.inputColor.previousElementSibling;
         if (labelColor) labelColor.style.display = "block";
-    }
-
-        // ============================================================
-    // MOSTRAR VALOR SI TODOS LOS NODOS COINCIDEN
-    // ============================================================
-    if (Interactions.selectedNodes.size > 0) {
-
-        let primerValor = null;
-        let todosIguales = true;
-
-        Interactions.selectedNodes.forEach(id => {
-            const nodo = Engine.getNode(id);
-            if (!nodo) return;
-
-            if (primerValor === null) {
-                primerValor = nodo.asignadoA || "";
-            } else {
-                if ((nodo.asignadoA || "") !== primerValor) {
-                    todosIguales = false;
-                }
-            }
-        });
-
-        // Si todos tienen el mismo valor → mostrarlo
-        // Si no → dejar campo vacío
-        inputAsignadoGroup.value = todosIguales ? (primerValor || "") : "";
     }
 
     // 📏 Mostrar slider de tamaño y fijar baseline actual
@@ -1153,10 +1224,7 @@ showConnectionProperties(connId) {
         this.propsEditor.style.display = "none";
         this.propsConn.style.display = "none";
         if (this.inputResize) this.inputResize.value = "100";
-        const labelAsignadoGroup = document.getElementById("lblAsignadoGroup");
-        const inputAsignadoGroup = document.getElementById("inputAsignadoGroup");
-        if (labelAsignadoGroup) labelAsignadoGroup.style.display = "none";
-        if (inputAsignadoGroup) inputAsignadoGroup.style.display = "none";
+        this.hideBulkAsignaciones();
     }
 };
 /* ============================================================
