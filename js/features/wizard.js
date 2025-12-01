@@ -334,7 +334,8 @@ const Wizard = {
                         tipo: "documento",
                         titulo: "Requerimiento de subsanación",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 520,
@@ -348,7 +349,8 @@ const Wizard = {
                         tipo: "plazo",
                         titulo: "Plazo de subsanación",
                         tareaManual: false,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 700,
@@ -362,7 +364,8 @@ const Wizard = {
                         tipo: "formulario",
                         titulo: "Revisión de la subsanación",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 700,
@@ -376,7 +379,8 @@ const Wizard = {
                         tipo: "circuito",
                         titulo: "Resolución de desistimiento",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 940,
@@ -430,7 +434,8 @@ const Wizard = {
                         tipo: "formulario",
                         titulo: "Revisión de la solicitud",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 580,
@@ -444,7 +449,8 @@ const Wizard = {
                         tipo: "documento",
                         titulo: "Requerimiento de subsanación",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 840,
@@ -458,7 +464,8 @@ const Wizard = {
                         tipo: "plazo",
                         titulo: "Plazo de subsanación",
                         tareaManual: false,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 860,
@@ -472,7 +479,8 @@ const Wizard = {
                         tipo: "formulario",
                         titulo: "Revisión de la subsanación",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 840,
@@ -486,7 +494,8 @@ const Wizard = {
                         tipo: "circuito",
                         titulo: "Resolución de desistimiento",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 1040,
@@ -500,7 +509,8 @@ const Wizard = {
                         tipo: "documento",
                         titulo: "Informe Técnico",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 580,
@@ -514,7 +524,8 @@ const Wizard = {
                         tipo: "circuito",
                         titulo: "Resolución de concesión",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 380,
@@ -528,7 +539,8 @@ const Wizard = {
                         tipo: "circuito",
                         titulo: "Resolución de denegación",
                         tareaManual: true,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 740,
@@ -632,7 +644,8 @@ const Wizard = {
                         tipo: "circuito",
                         titulo: "Resolución con alegaciones (Provisional)",
                         tareaManual: false,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 732,
@@ -646,7 +659,8 @@ const Wizard = {
                         tipo: "plazo",
                         titulo: "Plazo de alegaciones",
                         tareaManual: false,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 757,
@@ -660,7 +674,8 @@ const Wizard = {
                         tipo: "documento",
                         titulo: "Certificado de alegaciones presentadas",
                         tareaManual: false,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 740,
@@ -674,7 +689,8 @@ const Wizard = {
                         tipo: "circuito",
                         titulo: "Resolución definitiva",
                         tareaManual: false,
-                        asignadoA: "",
+                        asignadosGrupos: [],
+                        asignadosUsuarios: [],
                         annex: "",
                         pregunta: "",
                         x: 726,
@@ -793,13 +809,25 @@ const Wizard = {
                 creados.push(Engine.getNode(n.id) || n);
             }
 
+            const gruposTemplate = Array.isArray(tNodo.asignadosGrupos)
+                ? tNodo.asignadosGrupos
+                : (tNodo.asignadoA ? [tNodo.asignadoA] : []);
+
+            const usuariosTemplate = Array.isArray(tNodo.asignadosUsuarios)
+                ? tNodo.asignadosUsuarios
+                : (tNodo.asignadoUsuario ? [tNodo.asignadoUsuario] : []);
+
             // Actualizar el objeto lógico en Engine
             Engine.updateNode(n.id, {
-                titulo:      tNodo.titulo,
-                descripcion: tNodo.descripcion || "",
-                tareaManual: !!tNodo.tareaManual,
-                asignadoA:   tNodo.asignadoA || ""
+                titulo:            tNodo.titulo,
+                descripcion:       tNodo.descripcion || "",
+                tareaManual:       !!tNodo.tareaManual,
+                asignadosGrupos:   gruposTemplate,
+                asignadosUsuarios: usuariosTemplate
             });
+
+            gruposTemplate.forEach(g => Engine.addGrupo(g));
+            usuariosTemplate.forEach(u => Engine.addUsuario(u));
         });
 
         // ============================================================

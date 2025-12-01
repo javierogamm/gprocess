@@ -116,6 +116,7 @@ Engine.importFromCSV = async function(file) {
 
         // 5️⃣ Cargar en memoria
         this.data = { nodos, conexiones: conn };
+        this.asignaciones = { grupos: new Set(), usuarios: new Set() };
 
         // 6️⃣ Redibujar todo
         Renderer.clearAll();
@@ -395,6 +396,7 @@ Engine.importFlujoCSV = async function(files) {
         // 5️⃣ Reiniciar diagrama actual
         this.saveHistory();
         this.data = { nodos: [], conexiones: [] };
+        this.asignaciones = { grupos: new Set(), usuarios: new Set() };
         Renderer.clearAll();
 
         // 6️⃣ Crear NODOS (con limpieza del tipo)
@@ -404,10 +406,29 @@ Engine.importFlujoCSV = async function(files) {
         const stepY = 180;
         const stepX = 250;
 
+        const parseAsignaciones = (valor = "") => {
+            return valor
+                .split(/--/)
+                .map(v => v.trim())
+                .filter(Boolean);
+        };
+
         tareas.forEach((t, i) => {
             const rawTipo = (t["Tipo Tarea"] || "tarea").trim();
             const tipoSafe = rawTipo.toLowerCase().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
             const tipoVisible = rawTipo.charAt(0).toUpperCase() + rawTipo.slice(1).toLowerCase();
+
+            const gruposImportados = parseAsignaciones(t["Asignado a Grupo - Nombre"] || "");
+            const usuariosImportados = parseAsignaciones(t["Asignado a Usuario - Nombre"] || "");
+
+            const incluyeUG = (t["Asignado a unidad gestora"] || "")
+                .toLowerCase()
+                .startsWith("s");
+
+            if (incluyeUG && !gruposImportados.includes("Unidad gestora")) {
+                gruposImportados.push("Unidad gestora");
+            }
+
             const n = {
                 id: "n" + this.generateId(),
                 tipo: tipoSafe,
@@ -420,8 +441,12 @@ Engine.importFlujoCSV = async function(files) {
                 width: 200,
                 height: 100,
                                 tareaManual: (t["¿Tarea Manual?"] || "").toLowerCase().startsWith("s"),
-                asignadoA: t["Asignado A"] || ""    // ✅ nuevo
+                asignadosGrupos: Array.from(new Set(gruposImportados)),
+                asignadosUsuarios: Array.from(new Set(usuariosImportados))
             };
+
+            n.asignadosGrupos.forEach(g => this.addGrupo(g));
+            n.asignadosUsuarios.forEach(u => this.addUsuario(u));
 
             this.data.nodos.push(n);
             nodosMap[n.titulo.trim()] = n.id;

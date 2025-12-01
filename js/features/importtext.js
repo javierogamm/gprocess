@@ -147,7 +147,11 @@ import(texto) {
         const nodoReal = Engine.getNode(nodo.id);
         if (nodoReal) {
             nodoReal.titulo    = titulo;
-            nodoReal.asignadoA = asignado;
+            nodoReal.asignadosGrupos = asignado ? [asignado] : [];
+
+            if (asignado) {
+                Engine.addGrupo(asignado);
+            }
 
             if (nodeDiv) {
                 const titleDiv = nodeDiv.querySelector(".node-title");
