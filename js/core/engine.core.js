@@ -37,19 +37,6 @@ asignaciones: {
     selectedNodeId: null,
     selectedConnectionId: null,
     resizeSelectionBaseline: new Map(),
-    connectionPalette: [
-        "#ef4444",
-        "#f97316",
-        "#f59e0b",
-        "#84cc16",
-        "#22c55e",
-        "#14b8a6",
-        "#0ea5e9",
-        "#6366f1",
-        "#8b5cf6",
-        "#ec4899"
-    ],
-    connectionPaletteIndex: 0,
 
     /* -------------------------------------------
        GENERADOR DE IDS
@@ -58,15 +45,6 @@ asignaciones: {
         return Math.random().toString(36).substring(2, 9);
     },
 
-    assignConnectionColor(conn) {
-        if (!conn) return;
-        if (conn.lineColor) return;
-        const palette = this.connectionPalette || [];
-        if (!palette.length) return;
-        const color = palette[this.connectionPaletteIndex % palette.length];
-        this.connectionPaletteIndex = (this.connectionPaletteIndex + 1) % palette.length;
-        conn.lineColor = color;
-    },
 
     /* ============================================================
        CREAR UN NODO
@@ -524,8 +502,6 @@ alignSelectedNodes() {
         const conn = this.getConnection(connId);
         if (!conn) return;
 
-        this.assignConnectionColor(conn);
-      
         // ======================================================
         // ✨ ILUMINAR LÍNEA Y NODOS CONECTADOS
         // ======================================================

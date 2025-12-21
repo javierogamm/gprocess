@@ -16,3 +16,6 @@
 
 ## v1.1.2
 - Ajustado el color base de las conexiones para que el selector pinte la línea incluso sin selección.
+
+## v1.1.3
+- Ajustado el selector de color para respetar el color base por defecto y solo aplicar cambios cuando el usuario elige un color.

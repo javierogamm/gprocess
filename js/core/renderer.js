@@ -604,9 +604,6 @@ highlightConnectionsForNode(nodeIds) {
     Engine.data.conexiones.forEach(conn => {
         if (ids.includes(conn.from) || ids.includes(conn.to)) {
             const path = document.getElementById(conn.id) || document.querySelector(`.conn-path[data-conn-id="${conn.id}"]`);
-            if (Engine?.assignConnectionColor) {
-                Engine.assignConnectionColor(conn);
-            }
             if (path) {
                 Renderer.applyConnectionColorStyles(path, conn);
                 path.classList.add("highlighted-conn");
@@ -637,9 +634,6 @@ highlightConnectionFull(connId) {
 
     // ✨ 3️⃣ Iluminar la línea
     const el = document.getElementById(conn.id);
-    if (Engine?.assignConnectionColor) {
-        Engine.assignConnectionColor(conn);
-    }
     if (el) {
         Renderer.applyConnectionColorStyles(el, conn);
         el.classList.add("highlighted-conn", "selected-conn");

@@ -1203,7 +1203,7 @@ showConnectionProperties(connId) {
     // Rellenar los campos existentes
     this.inputCondNombre.value = conn.condicionNombre || "";
     this.inputCondValor.value  = conn.condicionValor  || "";
-    this.inputConnColor.value = conn.lineColor || "#50a1a2";
+    this.inputConnColor.value = conn.lineColor || "#4a7f84";
 
     // 🧹 Elimina posibles duplicados del campo “Nuevo estado”
     const oldLbl = this.propsConn.querySelector("label[data-type='lblCambio']");
