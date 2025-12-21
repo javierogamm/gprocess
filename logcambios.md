@@ -9,3 +9,7 @@
 - Asignados colores persistentes a las conexiones seleccionadas y sus resaltados para mejorar la lectura visual.
 - Guardadas las posiciones manuales de tramos para que las conexiones no se reinicien al mover nodos.
 - Habilitado el arrastre de etiquetas de condición a lo largo de cada línea para reubicarlas con precisión.
+
+## v1.1.1
+- Revertida la persistencia del movimiento manual de tramos en conexiones.
+- Añadido selector de color en el panel lateral para cambiar el color de la conexión seleccionada y su highlight.

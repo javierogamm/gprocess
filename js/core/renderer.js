@@ -712,42 +712,7 @@ getDefaultLabelAnchor(d) {
     return { x: midX, y: baseY, isHorizontal };
 },
 
-pointsToPath(pts) {
-    if (!pts || pts.length < 2) return "";
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) {
-        d += ` L ${pts[i].x} ${pts[i].y}`;
-    }
-    return d;
-},
-
-normalizeManualPoints(conn, start, end) {
-    const manual = (conn?.manualPoints || []).map(p => ({ x: p.x, y: p.y }));
-    if (manual.length < 2) return null;
-
-    const original = (conn?.manualPoints || []).map(p => ({ x: p.x, y: p.y }));
-    manual[0] = { x: start.x, y: start.y };
-    manual[manual.length - 1] = { x: end.x, y: end.y };
-
-    if (manual.length > 2 && original.length > 2) {
-        const firstHorizontal = Math.abs(original[0].y - original[1].y) < Math.abs(original[0].x - original[1].x);
-        if (firstHorizontal) {
-            manual[1].y = manual[0].y;
-        } else {
-            manual[1].x = manual[0].x;
-        }
-
-        const lastIdx = manual.length - 1;
-        const lastHorizontal = Math.abs(original[lastIdx].y - original[lastIdx - 1].y) < Math.abs(original[lastIdx].x - original[lastIdx - 1].x);
-        if (lastHorizontal) {
-            manual[lastIdx - 1].y = manual[lastIdx].y;
-        } else {
-            manual[lastIdx - 1].x = manual[lastIdx].x;
-        }
-    }
-
-    return manual;
-},
+    
 
 updateLabelTspans(label, x, y) {
     const tspans = label.querySelectorAll("tspan");
@@ -994,13 +959,7 @@ redrawConnectionsDynamic(conn, fixedX, fixedY, mx, my, movingEnd) {
         // =============================
         // 📐 Path principal (línea)
         // =============================
-        let d = "";
-        const manualPoints = this.normalizeManualPoints(conn, from, adjustedTo);
-        if (manualPoints && manualPoints.length >= 2) {
-            d = this.pointsToPath(manualPoints);
-        } else {
-            d = this.generateOrthogonalPath(from, adjustedTo, conn.fromPos, conn.toPos);
-        }
+    const d = this.generateOrthogonalPath(from, adjustedTo, conn.fromPos, conn.toPos);
     
         // =============================
         // 🎯 Crear marcador de flecha (una sola vez)
@@ -1576,8 +1535,6 @@ this.updateHandles(pts);        };
             window.removeEventListener("mousemove", onMove);
             window.removeEventListener("mouseup", onUp);
 
-            const finalPts = this._extractPoints(pathEl.getAttribute("d"));
-            conn.manualPoints = finalPts.map(p => ({ x: p.x, y: p.y }));
             Engine.saveHistory();
             Renderer.LineEditor.show(conn); // 🔄 refrescar handles después del movimiento
         };

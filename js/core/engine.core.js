@@ -629,6 +629,16 @@ alignSelectedNodes() {
         Renderer.redrawConnections();
         this.saveHistory();
     },
+    updateConnectionColor(connId, color) {
+        const conn = this.getConnection(connId);
+        if (!conn) return;
+        conn.lineColor = color;
+        Renderer.redrawConnections();
+        this.saveHistory();
+        if (Renderer?.highlightConnectionFull) {
+            Renderer.highlightConnectionFull(connId);
+        }
+    },
     updateConnectionCambioEstado(connId, nuevoEstado) {
         const conn = this.getConnection(connId);
         if (!conn) return;
