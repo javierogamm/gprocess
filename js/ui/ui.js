@@ -780,6 +780,17 @@ hideBulkAsignaciones() {
             <label>Valor</label>
             <input id="propCondValor" />
 
+            <label>Color de línea</label>
+            <input id="propConnColor" type="color" style="
+                width: 100%;
+                height: 36px;
+                margin-top: 4px;
+                margin-bottom: 10px;
+                cursor: pointer;
+                border-radius: 6px;
+                border: 1px solid #ccc;
+            "/>
+
             <button id="btnDeleteConnection" class="btn" style="
                 background:#dc2626;
                 color:white;
@@ -792,6 +803,7 @@ hideBulkAsignaciones() {
         this.propsConn = connDiv;
         this.inputCondNombre = connDiv.querySelector("#propCondNombre");
         this.inputCondValor  = connDiv.querySelector("#propCondValor");
+        this.inputConnColor  = connDiv.querySelector("#propConnColor");
 
         /* Eventos */
         this.inputCondNombre.addEventListener("input", () => {
@@ -811,6 +823,12 @@ hideBulkAsignaciones() {
                     this.inputCondNombre.value,
                     this.inputCondValor.value
                 );
+            }
+        });
+
+        this.inputConnColor.addEventListener("input", () => {
+            if (this.currentConnId) {
+                Engine.updateConnectionColor(this.currentConnId, this.inputConnColor.value);
             }
         });
 
@@ -1185,6 +1203,7 @@ showConnectionProperties(connId) {
     // Rellenar los campos existentes
     this.inputCondNombre.value = conn.condicionNombre || "";
     this.inputCondValor.value  = conn.condicionValor  || "";
+    this.inputConnColor.value = conn.lineColor || "#4a7f84";
 
     // 🧹 Elimina posibles duplicados del campo “Nuevo estado”
     const oldLbl = this.propsConn.querySelector("label[data-type='lblCambio']");

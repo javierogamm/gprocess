@@ -604,7 +604,10 @@ highlightConnectionsForNode(nodeIds) {
     Engine.data.conexiones.forEach(conn => {
         if (ids.includes(conn.from) || ids.includes(conn.to)) {
             const path = document.getElementById(conn.id) || document.querySelector(`.conn-path[data-conn-id="${conn.id}"]`);
-            if (path) path.classList.add("highlighted-conn");
+            if (path) {
+                Renderer.applyConnectionColorStyles(path, conn);
+                path.classList.add("highlighted-conn");
+            }
         }
     });
 },
@@ -631,13 +634,179 @@ highlightConnectionFull(connId) {
 
     // ✨ 3️⃣ Iluminar la línea
     const el = document.getElementById(conn.id);
-    if (el) el.classList.add("highlighted-conn", "selected-conn");
+    if (el) {
+        Renderer.applyConnectionColorStyles(el, conn);
+        el.classList.add("highlighted-conn", "selected-conn");
+    }
 
     // ✨ 4️⃣ Iluminar los nodos conectados
     const n1 = document.getElementById(conn.from);
     const n2 = document.getElementById(conn.to);
     if (n1) n1.classList.add("highlighted-node");
     if (n2) n2.classList.add("highlighted-node");
+},
+
+applyConnectionColorStyles(path, conn) {
+    if (!path) return;
+    const baseColor = conn?.lineColor || "#4a7f84";
+    path.style.setProperty("--conn-base", baseColor);
+    if (conn?.lineColor) {
+        path.style.setProperty("--conn-select-color", conn.lineColor);
+        path.style.setProperty("--conn-glow", Renderer.toGlowColor(conn.lineColor, 0.8));
+    } else {
+        path.style.removeProperty("--conn-select-color");
+        path.style.removeProperty("--conn-glow");
+    }
+},
+
+toGlowColor(color, alpha = 0.8) {
+    if (!color) return `rgba(0,180,216,${alpha})`;
+    if (color.startsWith("rgb")) {
+        const match = color.match(/rgba?\(([^)]+)\)/);
+        if (!match) return color;
+        const parts = match[1].split(",").map(v => parseFloat(v.trim()));
+        const [r, g, b] = parts;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    const hex = color.replace("#", "").trim();
+    if (hex.length === 3) {
+        const r = parseInt(hex[0] + hex[0], 16);
+        const g = parseInt(hex[1] + hex[1], 16);
+        const b = parseInt(hex[2] + hex[2], 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    if (hex.length >= 6) {
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    return `rgba(0,180,216,${alpha})`;
+},
+
+getDefaultLabelAnchor(d) {
+    const pts = Renderer.parsePoints(d);
+    const segs = Renderer._toSegments(pts);
+    if (!segs.length) return null;
+
+    const elbows = Math.max(0, segs.length - 1);
+    let seg;
+    if (elbows === 0) {
+        seg = segs[0];
+    } else if (elbows === 1) {
+        seg = segs[segs.length - 1];
+    } else {
+        seg = segs[1];
+    }
+
+    const midX = (seg.p1.x + seg.p2.x) / 2;
+    const midY = (seg.p1.y + seg.p2.y) / 2;
+    const isHorizontal = Math.abs(seg.p1.y - seg.p2.y) < Math.abs(seg.p1.x - seg.p2.x);
+    const baseY = isHorizontal ? (midY - 6) : midY;
+    return { x: midX, y: baseY, isHorizontal };
+},
+
+    
+
+updateLabelTspans(label, x, y) {
+    const tspans = label.querySelectorAll("tspan");
+    tspans.forEach((tspan, idx) => {
+        tspan.setAttribute("x", x);
+        if (idx === 0) {
+            tspan.setAttribute("y", y);
+            tspan.removeAttribute("dy");
+        } else {
+            tspan.setAttribute("dy", "1.2em");
+        }
+    });
+},
+
+placeLabelOnPath(label, path, conn, fallbackAnchor) {
+    if (!label || !path) return;
+    const length = path.getTotalLength();
+    if (!length) return;
+
+    let anchor = fallbackAnchor;
+    if (typeof conn?.labelPosition === "number") {
+        const clamped = Math.min(1, Math.max(0, conn.labelPosition));
+        const targetLength = clamped * length;
+        const point = path.getPointAtLength(targetLength);
+        const neighbor = path.getPointAtLength(Math.min(length, targetLength + 1));
+        const isHorizontal = Math.abs(neighbor.y - point.y) < Math.abs(neighbor.x - point.x);
+        const baseY = isHorizontal ? (point.y - 6) : point.y;
+        anchor = { x: point.x, y: baseY, isHorizontal };
+    }
+
+    if (!anchor) return;
+    Renderer.updateLabelTspans(label, anchor.x, anchor.y);
+},
+
+getSvgPointerPosition(e) {
+    const contRect = Renderer.container.getBoundingClientRect();
+    return {
+        x: e.clientX - contRect.left,
+        y: e.clientY - contRect.top
+    };
+},
+
+closestPointOnPath(path, x, y) {
+    const length = path.getTotalLength();
+    if (!length) return { length: 0, point: { x: 0, y: 0 }, distance: Infinity };
+    const step = Math.max(8, length / 60);
+    let best = { length: 0, point: path.getPointAtLength(0), distance: Infinity };
+
+    for (let l = 0; l <= length; l += step) {
+        const p = path.getPointAtLength(l);
+        const dist = Math.hypot(p.x - x, p.y - y);
+        if (dist < best.distance) {
+            best = { length: l, point: p, distance: dist };
+        }
+    }
+
+    const refineStart = Math.max(0, best.length - step);
+    const refineEnd = Math.min(length, best.length + step);
+    const refineStep = Math.max(2, step / 4);
+    for (let l = refineStart; l <= refineEnd; l += refineStep) {
+        const p = path.getPointAtLength(l);
+        const dist = Math.hypot(p.x - x, p.y - y);
+        if (dist < best.distance) {
+            best = { length: l, point: p, distance: dist };
+        }
+    }
+
+    return best;
+},
+
+bindLabelDrag(label, path, conn) {
+    if (label.__dragBound) return;
+    label.__dragBound = true;
+
+    label.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (Engine?.selectConnection) {
+            Engine.selectConnection(conn.id);
+        }
+        label.classList.add("dragging");
+
+        const onMove = (ev) => {
+            const pos = Renderer.getSvgPointerPosition(ev);
+            const nearest = Renderer.closestPointOnPath(path, pos.x, pos.y);
+            if (!nearest || !path.getTotalLength()) return;
+            conn.labelPosition = nearest.length / path.getTotalLength();
+            Renderer.placeLabelOnPath(label, path, conn, null);
+        };
+
+        const onUp = () => {
+            label.classList.remove("dragging");
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+            Engine.saveHistory?.();
+        };
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+    });
 },
 
 
@@ -724,6 +893,7 @@ redrawConnectionsDynamic(conn, fixedX, fixedY, mx, my, movingEnd) {
             path.setAttribute("stroke", "#4a7f84");
             path.setAttribute("stroke-width", "2");
 
+            this.applyConnectionColorStyles(path, c);
             this.svg.appendChild(path);
         } else {
             this.drawConnection(c);
@@ -783,7 +953,7 @@ redrawConnectionsDynamic(conn, fixedX, fixedY, mx, my, movingEnd) {
         // =============================
         // 📐 Path principal (línea)
         // =============================
-        const d = this.generateOrthogonalPath(from, adjustedTo, conn.fromPos, conn.toPos);
+    const d = this.generateOrthogonalPath(from, adjustedTo, conn.fromPos, conn.toPos);
     
         // =============================
         // 🎯 Crear marcador de flecha (una sola vez)
@@ -802,7 +972,7 @@ redrawConnectionsDynamic(conn, fixedX, fixedY, mx, my, movingEnd) {
     
             const arrowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
             arrowPath.setAttribute("d", "M0,0 L10,3.5 L0,7 Z");
-            arrowPath.setAttribute("fill", "#4a7f84");    
+            arrowPath.setAttribute("fill", "context-stroke");    
             marker.appendChild(arrowPath);
             defs.appendChild(marker);
             this.svg.appendChild(defs);
@@ -821,6 +991,7 @@ this.svg.appendChild(path);  // ⚠️ primero el visible
 path.setAttribute("data-conn-id", conn.id);
 path.classList.add("conn-path");
 path.style.pointerEvents = "stroke"; // permite soltar encima del trazo
+this.applyConnectionColorStyles(path, conn);
 
 if (!path.__dndBound) {
   path.addEventListener("dragover", (e) => {
@@ -912,27 +1083,8 @@ if (conn.condicionNombre || conn.condicionValor) {
     if (!texto) return;
 
     // 2️⃣ Puntos del path y tramos "reales"
-    const pts  = Renderer.parsePoints(d);
-    const segs = Renderer._toSegments(pts); // [{p1,p2}, ...]
-    if (!segs.length) return;
-
-    // 3️⃣ Elegir tramo según nº de codos
-    const elbows = Math.max(0, segs.length - 1);
-    let seg;
-    if (elbows === 0) {
-        // 0 codos → tramo único
-        seg = segs[0];
-    } else if (elbows === 1) {
-        // 1 codo → tramo final (más cercano al destino)
-        seg = segs[segs.length - 1];
-    } else {
-        // 2+ codos → tramo entre los dos primeros codos
-        seg = segs[1];
-    }
-
-    // 4️⃣ Punto medio del tramo elegido
-    const midX = (seg.p1.x + seg.p2.x) / 2;
-    const midY = (seg.p1.y + seg.p2.y) / 2;
+    const anchor = Renderer.getDefaultLabelAnchor(d);
+    if (!anchor) return;
 
     // 5️⃣ Partir el texto en varias líneas cortas
     const maxCharsPerLine = 22;      // 🔧 ajusta a tu gusto
@@ -971,21 +1123,17 @@ if (conn.condicionNombre || conn.condicionValor) {
     label.setAttribute("stroke-width", "2");
     label.setAttribute("paint-order", "stroke fill");
 
-    // Pequeño ajuste vertical según orientación del tramo
-    const isHorizontal = Math.abs(seg.p1.y - seg.p2.y) < Math.abs(seg.p1.x - seg.p2.x);
-    const baseY = isHorizontal ? (midY - 6) : midY;
-
     lines.forEach((line, idx) => {
         const tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
         tspan.textContent = line;
 
         // Primera línea: x/y absolutos
         if (idx === 0) {
-            tspan.setAttribute("x", midX);
-            tspan.setAttribute("y", baseY);
+            tspan.setAttribute("x", anchor.x);
+            tspan.setAttribute("y", anchor.y);
         } else {
             // Siguientes → mismo x, desplazadas con dy
-            tspan.setAttribute("x", midX);
+            tspan.setAttribute("x", anchor.x);
             tspan.setAttribute("dy", "1.2em");
         }
 
@@ -993,6 +1141,8 @@ if (conn.condicionNombre || conn.condicionValor) {
     });
 
     this.svg.appendChild(label);
+    Renderer.placeLabelOnPath(label, path, conn, anchor);
+    Renderer.bindLabelDrag(label, path, conn);
 }
 
 
@@ -1366,10 +1516,8 @@ Renderer.LineEditor = {
             // 🏷️ Mover también la etiqueta correcta (solo la de esta conexión)
             const label = Renderer.svg.querySelector(`text.connection-label[data-conn-id="${conn.id}"]`);
             if (label) {
-                const pathLength = pathEl.getTotalLength();
-                const mid = pathEl.getPointAtLength(pathLength / 2);
-                label.setAttribute("x", mid.x + 8);
-                label.setAttribute("y", mid.y - 4);
+                const anchor = Renderer.getDefaultLabelAnchor(d);
+                Renderer.placeLabelOnPath(label, pathEl, conn, anchor);
             }
 
 // Actualizar posición de los handles
@@ -1380,7 +1528,7 @@ this.updateHandles(pts);        };
             this.dragIndex = null;
             window.removeEventListener("mousemove", onMove);
             window.removeEventListener("mouseup", onUp);
-    
+
             Engine.saveHistory();
             Renderer.LineEditor.show(conn); // 🔄 refrescar handles después del movimiento
         };
@@ -1432,7 +1580,7 @@ this.updateHandles(pts);        };
     updateHandles(pts) {
         this.handles.forEach((h) => {
             const i = parseInt(h.dataset.index);
-            if (i >= pts.length - 1) retuhiglightrn;
+            if (i >= pts.length - 1) return;
             const p1 = pts[i];
             const p2 = pts[i + 1];
             const cx = (p1.x + p2.x) / 2;
@@ -1465,7 +1613,7 @@ document.addEventListener("click", (e) => {
   const clickedNode   = e.target.closest(".node");
   const clickedLine   = e.target.closest(".connection-line") || e.target.closest(".conn-path");
   const clickedHit    = e.target.closest(".connection-hit");
-  const clickedLabel  = e.target.classList.contains("connection-label");
+  const clickedLabel  = e.target.closest?.(".connection-label");
 
   const cleanAll = () => {
     Renderer.highlightConnectionFull(null);

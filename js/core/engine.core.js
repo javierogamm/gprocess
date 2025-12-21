@@ -45,6 +45,7 @@ asignaciones: {
         return Math.random().toString(36).substring(2, 9);
     },
 
+
     /* ============================================================
        CREAR UN NODO
     ============================================================ */
@@ -500,7 +501,7 @@ alignSelectedNodes() {
         // 🔹 Obtener conexión
         const conn = this.getConnection(connId);
         if (!conn) return;
-      
+
         // ======================================================
         // ✨ ILUMINAR LÍNEA Y NODOS CONECTADOS
         // ======================================================
@@ -516,7 +517,12 @@ alignSelectedNodes() {
         }
       
         // 3️⃣ Resaltar la línea seleccionada
-        if (path) path.classList.add("selected-conn");
+        if (path) {
+          if (Renderer?.applyConnectionColorStyles) {
+            Renderer.applyConnectionColorStyles(path, conn);
+          }
+          path.classList.add("selected-conn");
+        }
       
         // 4️⃣ Resaltar nodos origen y destino
         const fromNode = document.getElementById(conn.from);
@@ -598,6 +604,16 @@ alignSelectedNodes() {
         conn.condicionValor = valor;
         Renderer.redrawConnections();
         this.saveHistory();
+    },
+    updateConnectionColor(connId, color) {
+        const conn = this.getConnection(connId);
+        if (!conn) return;
+        conn.lineColor = color;
+        Renderer.redrawConnections();
+        this.saveHistory();
+        if (Renderer?.highlightConnectionFull) {
+            Renderer.highlightConnectionFull(connId);
+        }
     },
     updateConnectionCambioEstado(connId, nuevoEstado) {
         const conn = this.getConnection(connId);
