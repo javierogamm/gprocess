@@ -102,7 +102,7 @@ body.panel-locked #canvasArea {
 }
 
 .connection-line {
-  stroke: #4a7f84;
+  stroke: var(--conn-base, #4a7f84);
   stroke-width: 2;
   fill: none;
   cursor: pointer;
@@ -113,9 +113,9 @@ body.panel-locked #canvasArea {
 /* 🔹 Solo efecto de selección, sin hover */
 .connection-line.selected,
 .connection-line.highlighted-conn {
-  stroke: #50a1a2 !important;
+  stroke: var(--conn-select-color, #50a1a2) !important;
   stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(4, 200, 144, 0.821));
+  filter: drop-shadow(0 0 6px var(--conn-glow, rgba(4, 200, 144, 0.821)));
 }
 
 .connection-hit {
@@ -133,9 +133,9 @@ body.panel-locked #canvasArea {
 
 /* 🔹 Línea seleccionada (ya coherente con tu gama) */
 .connection-line.selected-conn {
-  stroke: #00b4d8 !important;
+  stroke: var(--conn-select-color, #00b4d8) !important;
   stroke-width: 4px !important;
-  filter: drop-shadow(0 0 6px rgba(0,180,216,0.8));
+  filter: drop-shadow(0 0 6px var(--conn-glow, rgba(0,180,216,0.8)));
   transition: stroke 0.2s ease, filter 0.2s ease;
 }
 
