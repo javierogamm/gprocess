@@ -654,7 +654,7 @@ highlightConnectionFull(connId) {
 
 applyConnectionColorStyles(path, conn) {
     if (!path) return;
-    const baseColor = "#4a7f84";
+    const baseColor = conn?.lineColor || "#4a7f84";
     path.style.setProperty("--conn-base", baseColor);
     if (conn?.lineColor) {
         path.style.setProperty("--conn-select-color", conn.lineColor);

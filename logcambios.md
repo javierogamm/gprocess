@@ -13,3 +13,6 @@
 ## v1.1.1
 - Revertida la persistencia del movimiento manual de tramos en conexiones.
 - Añadido selector de color en el panel lateral para cambiar el color de la conexión seleccionada y su highlight.
+
+## v1.1.2
+- Ajustado el color base de las conexiones para que el selector pinte la línea incluso sin selección.
