@@ -19,3 +19,6 @@
 
 ## v1.1.3
 - Ajustado el selector de color para respetar el color base por defecto y solo aplicar cambios cuando el usuario elige un color.
+
+## v1.1.4
+- Actualizada la importación de copypaste para aceptar la nueva columna de tipo de tarea y mantener la compatibilidad con el formato anterior.
