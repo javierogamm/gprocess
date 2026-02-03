@@ -955,6 +955,13 @@ importTesauroFromCSV(mainCSV, valCSV = null) {
       return lines.map(l => l.split(";").map(c => c.trim()));
     };
 
+    const findColumn = (header, label, fallbackIndex) => {
+      const idx = header.findIndex(h => h.toLowerCase() === label.toLowerCase());
+      return idx >= 0 ? idx : fallbackIndex;
+    };
+
+    const normalizeText = (value) => (value || "").toString().trim();
+
     console.log("====== 📥 IMPORT TESAURO ======");
 
   // -----------------------------
@@ -966,16 +973,22 @@ if (rows1.length <= 1) {
   throw new Error("Tesauro.csv vacío o inválido");
 }
 
+const header1 = rows1[0].map(c => c.trim());
+const idxRef = findColumn(header1, "Referencia", 4);
+const idxNombre = findColumn(header1, "Nombre Castellano", 5);
+const idxTipo = findColumn(header1, "Tipo de campo", 25);
+const idxProp1 = findColumn(header1, "Propiedad del tipo de campo 1", 26);
+
 const campos = [];
 
 for (let i = 1; i < rows1.length; i++) {
   const cols = rows1[i];
-  if (!cols[4]) continue; // referencia necesaria
+  const ref = normalizeText(cols[idxRef]);
+  if (!ref) continue; // referencia necesaria
 
-  const ref    = cols[4];
-  const nombre = cols[5] || ref;
-  const tipoRaw = (cols[25] || cols[24] || "").toLowerCase();
-  const prop1   = (cols[26] || "").toLowerCase();
+  const nombre = normalizeText(cols[idxNombre]) || ref;
+  const tipoRaw = normalizeText(cols[idxTipo]).toLowerCase();
+  const prop1   = normalizeText(cols[idxProp1]).toLowerCase();
 
   // 🧠 Detección extendida de tipos
   let tipo = "texto";
@@ -1019,13 +1032,17 @@ for (let i = 1; i < rows1.length; i++) {
         console.log("📄 Procesando Tesauro_Valores.csv…");
 
         const rows2 = parse(valCSV);
+        const header2 = rows2[0] ? rows2[0].map(c => c.trim()) : [];
+        const idxRefTes = findColumn(header2, "Referencia Tesauro", 0);
+        const idxRefOpt = findColumn(header2, "Referencia I18N", 1);
+        const idxValor = findColumn(header2, "Valor", 3);
 
         for (let i = 1; i < rows2.length; i++) {
           const v = rows2[i];
 
-          const refTes = v[0];
-          const refOpt = v[1];
-          const valor  = v[3];
+          const refTes = normalizeText(v[idxRefTes]);
+          const refOpt = normalizeText(v[idxRefOpt]);
+          const valor  = normalizeText(v[idxValor]);
 
           const campo = campos.find(c => c.ref === refTes && c.tipo === "selector");
 
@@ -1079,12 +1096,6 @@ this.sync();
 this.render();
 
 alert(`✅ Tesauro importado correctamente (${nuevosUnicos.length} nuevos o actualizados).`);
-    // 4️⃣ GUARDAR Y REFRESCAR
-    if (window.Engine) Engine.tesauro = [...this.campos];
-    this.sync();
-    this.render();
-
-    alert(`✅ Tesauro importado correctamente (${nuevosUnicos.length} campos nuevos)`);
 
   } catch (err) {
     console.error("❌ Error al importar Tesauro:", err);
