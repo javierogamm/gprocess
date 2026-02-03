@@ -468,7 +468,14 @@ let pendingImportText = "";
 
 function resetImportModal() {
     if (importTextarea) importTextarea.value = "";
-    if (importSummary) importSummary.innerHTML = "";
+    if (importSummary) {
+        importSummary.innerHTML = Engine.buildCSVPreviewHTML(
+            { nodos: [], conexiones: [] },
+            {
+                procedimiento: Engine.fichaProyecto?.procedimiento || "Sin nombre de procedimiento"
+            }
+        );
+    }
     if (importValidateBtn) importValidateBtn.disabled = true;
     pendingImportText = "";
 }
