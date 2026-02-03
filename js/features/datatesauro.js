@@ -182,6 +182,107 @@ const DataTesauro = {
     return camel;
   },
 
+  /* ============================================================
+     TRANSFORMAR CONDICIONES A TESAUROS (desde conexiones)
+  ============================================================ */
+  transformarCondicionesDesdeConexiones(conexiones, options = {}) {
+    const { mostrarAlertas = true } = options;
+
+    if (!Array.isArray(conexiones)) {
+      if (mostrarAlertas) {
+        alert("❌ El JSON no contiene un array válido de conexiones.");
+      }
+      return { totalDetectados: 0, creados: 0 };
+    }
+
+    const mapa = {};
+    for (const conn of conexiones) {
+      const nombre = (conn?.condicionNombre || "").trim();
+      const valor = (conn?.condicionValor || "").trim();
+      if (!nombre) continue;
+
+      if (!mapa[nombre]) mapa[nombre] = new Set();
+      if (valor) mapa[nombre].add(valor);
+    }
+
+    const nuevos = [];
+
+    for (const [nombre, valoresSet] of Object.entries(mapa)) {
+      const valores = Array.from(valoresSet);
+      if (valores.length === 0) continue;
+
+      const refCond = this.generarReferenciaDesdeNombre(nombre);
+      const lowerVals = valores.map(v => v.toLowerCase());
+
+      const normalizados = [...new Set(
+        lowerVals.map(v =>
+          (v || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim()
+        )
+      )];
+
+      if (normalizados.includes("si") || normalizados.includes("no")) {
+        nuevos.push({
+          id: this.generateId(),
+          ref: refCond,
+          nombre,
+          tipo: "si_no",
+          opciones: []
+        });
+      } else if (valores.length > 1) {
+        const opts = valores.map(v => ({
+          id: this.generateId(),
+          ref: this.generarReferenciaDesdeNombre(v),
+          valor: v
+        }));
+        nuevos.push({
+          id: this.generateId(),
+          ref: refCond,
+          nombre,
+          tipo: "selector",
+          opciones: opts
+        });
+      } else {
+        nuevos.push({
+          id: this.generateId(),
+          ref: refCond,
+          nombre,
+          tipo: "texto",
+          opciones: []
+        });
+      }
+    }
+
+    if (!nuevos.length) {
+      if (mostrarAlertas) {
+        alert("⚠️ No se detectaron condiciones válidas en las conexiones del JSON.");
+      }
+      return { totalDetectados: 0, creados: 0 };
+    }
+
+    const refsExistentes = new Set(this.campos.map(c => c.ref));
+    const nuevosUnicos = nuevos.filter(c => !refsExistentes.has(c.ref));
+
+    if (nuevosUnicos.length) {
+      this.campos.push(...nuevosUnicos);
+      console.log(`🧩 ${nuevosUnicos.length} nuevos tesauros añadidos desde JSON.`);
+    } else {
+      console.log("ℹ️ Todos los tesauros del JSON ya existían, no se añadieron duplicados.");
+    }
+
+    this.sync();
+    this.render();
+
+    if (mostrarAlertas) {
+      alert(`✅ Tesauros añadidos correctamente (${nuevosUnicos.length} nuevos).`);
+    }
+
+    return { totalDetectados: nuevos.length, creados: nuevosUnicos.length };
+  },
+
 /* ============================================================
    RENDERIZAR LISTA DE CAMPOS AGRUPADOS POR TIPO (colapsables)
    ✅ Con autogeneración de referencia y descolapso automático
@@ -378,99 +479,8 @@ if (btnTransform && inputTransform) {
       const jsonText = await file.text();
       const data = JSON.parse(jsonText);
 
-      if (!Array.isArray(data.conexiones)) {
-        alert("❌ El JSON no contiene un array válido de conexiones.");
-        return;
-      }
-
-      // 🧠 Agrupar condiciones por nombre
-      const mapa = {};
-      for (const conn of data.conexiones) {
-        const nombre = (conn.condicionNombre || "").trim();
-        const valor = (conn.condicionValor || "").trim();
-        if (!nombre) continue;
-
-        if (!mapa[nombre]) mapa[nombre] = new Set();
-        if (valor) mapa[nombre].add(valor);
-      }
-
-      const nuevos = [];
-
-      for (const [nombre, valoresSet] of Object.entries(mapa)) {
-        const valores = Array.from(valoresSet);
-        if (valores.length === 0) continue;
-
-        // ✅ Usa la misma función del DataTesauro
-        const refCond = this.generarReferenciaDesdeNombre(nombre);
-        const lowerVals = valores.map(v => v.toLowerCase());
-
-        // 🧠 Detección robusta de tipo Sí/No aunque solo aparezca una de las dos opciones
-const normalizados = [...new Set(
-  lowerVals.map(v =>
-    (v || "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // elimina tildes
-      .toLowerCase()
-      .trim()
-  )
-)];
-
-if (normalizados.includes("si") || normalizados.includes("no")) {
-  // 🟢 Tipo Sí/No (con o sin tilde, aunque solo haya uno de los valores)
-  nuevos.push({
-    id: this.generateId(),
-    ref: refCond,
-    nombre,
-    tipo: "si_no",
-    opciones: []
-  });
-}
- else if (valores.length > 1) {
-          // 🟣 Selector (varios valores)
-          const opts = valores.map(v => ({
-            id: this.generateId(),
-            ref: this.generarReferenciaDesdeNombre(v),
-            valor: v
-          }));
-          nuevos.push({
-            id: this.generateId(),
-            ref: refCond,
-            nombre,
-            tipo: "selector",
-            opciones: opts
-          });
-        } else {
-          // 🔵 Texto simple
-          nuevos.push({
-            id: this.generateId(),
-            ref: refCond,
-            nombre,
-            tipo: "texto",
-            opciones: []
-          });
-        }
-      }
-
-      if (!nuevos.length) {
-        alert("⚠️ No se detectaron condiciones válidas en las conexiones del JSON.");
-        return;
-      }
-
-      // 🧩 MEZCLAR SIN DUPLICAR (JSON)
-      const refsExistentes = new Set(this.campos.map(c => c.ref));
-      const nuevosUnicos = nuevos.filter(c => !refsExistentes.has(c.ref));
-
-      if (nuevosUnicos.length) {
-        this.campos.push(...nuevosUnicos);
-        console.log(`🧩 ${nuevosUnicos.length} nuevos tesauros añadidos desde JSON.`);
-      } else {
-        console.log("ℹ️ Todos los tesauros del JSON ya existían, no se añadieron duplicados.");
-      }
-
-      this.sync();
-      this.render();
-
-      alert(`✅ Tesauros añadidos correctamente (${nuevosUnicos.length} nuevos).`);    } catch (err) {
+      this.transformarCondicionesDesdeConexiones(data.conexiones, { mostrarAlertas: true });
+    } catch (err) {
       console.error(err);
       alert("❌ Error al procesar el JSON: " + err.message);
     }
