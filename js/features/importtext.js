@@ -96,7 +96,9 @@ import(texto) {
     // ----------------------------------------------------
     function parseCols(linea, minCols = 5) {
         let cols = linea.split(/\t/g);
-        if (cols.length < minCols) cols = linea.split(/\s{2,}/g);
+        if (cols.length === 1) {
+            cols = linea.split(/\s{2,}/g);
+        }
         while (cols.length < minCols) cols.push("");
         return cols;
     }
@@ -114,13 +116,26 @@ import(texto) {
         );
     }
 
+    function isActionText(texto) {
+        return (
+            /^Sólo si/i.test(texto) ||
+            /^Lanzar tarea/i.test(texto) ||
+            /^Cambiar estado/i.test(texto)
+        );
+    }
+
+    function isNodeLine(rawLine, columnas) {
+        if (!rawLine.trim()) return false;
+        const linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+        const cols = parseCols(linea, columnas);
+        if (isHeaderRow(cols)) return false;
+        return matchesTipoCol(cols[0]) && (cols[1] || "").trim();
+    }
+
     function detectTipoColumn(lines) {
         for (const rawLine of lines) {
             if (!rawLine.trim()) continue;
-            const esAccion =
-                rawLine.startsWith("\t") ||
-                rawLine.startsWith("    ");
-            if (esAccion) continue;
+            if (isActionText(rawLine.trim())) continue;
             const cols = parseCols(rawLine.replace(/^\t+/, "").replace(/^ {4}/, ""), 7);
             if (isHeaderRow(cols)) return true;
             if (matchesTipoCol(cols[0]) && (cols[1] || "").trim()) return true;
@@ -140,30 +155,46 @@ import(texto) {
         return "";
     }
 
+    function findAssignedFromBlock(lines, startIndex, columnas) {
+        for (let i = startIndex + 1; i < lines.length; i++) {
+            const rawLine = lines[i];
+            if (!rawLine.trim()) continue;
+            if (isNodeLine(rawLine, columnas)) break;
+            const candidato = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "").trim();
+            if (!candidato) continue;
+            if (isActionText(candidato)) continue;
+            if (/^editar\b/i.test(candidato)) continue;
+            if (/^acciones\b/i.test(candidato)) continue;
+            if (/ALC\d+/i.test(candidato) || /unidad gestora/i.test(candidato)) {
+                return candidato;
+            }
+        }
+        return "";
+    }
+
     const usaTipoCol = detectTipoColumn(lineas);
     const columnasMin = usaTipoCol ? 7 : 5;
 
     // ============================================================
     // PRIMERA PASADA: CREAR NODOS (sólo líneas NO indentadas)
     // ============================================================
-    lineas.forEach(rawLine => {
+    lineas.forEach((rawLine, index) => {
 
         if (!rawLine.trim()) return;
 
-        const esAccion =
-            rawLine.startsWith("\t") ||
-            rawLine.startsWith("    ");
+        const lineaRecortada = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+        if (!isNodeLine(lineaRecortada, columnasMin)) return;
 
-        if (esAccion) return; // las acciones no crean nodo
-
-        let linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+        let linea = lineaRecortada;
         const partes = parseCols(linea, columnasMin);
         if (isHeaderRow(partes)) return;
 
         const tipoCol  = usaTipoCol ? (partes[0] || "").trim() : "";
         const titulo   = (usaTipoCol ? partes[1] : partes[0] || "").trim();
         const condTxt  = (usaTipoCol ? partes[2] : partes[1] || "").trim();
-        const asignado = (usaTipoCol ? partes[3] : partes[2] || "").trim();
+        const asignadoLinea = (usaTipoCol ? partes[3] : partes[2] || "").trim();
+        const asignadoExtra = asignadoLinea ? "" : findAssignedFromBlock(lineas, index, columnasMin);
+        const asignado = asignadoLinea || asignadoExtra;
 
         if (!titulo) return;
 
@@ -236,14 +267,10 @@ import(texto) {
     lineas.forEach(rawLine => {
         if (!rawLine.trim()) return;
 
-        const esAccion =
-            rawLine.startsWith("\t") ||
-            rawLine.startsWith("    ");
-
         let linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
 
         // ---------------- LÍNEA DE ASUNTO (no indentada) ----------------
-        if (!esAccion) {
+        if (isNodeLine(rawLine, columnasMin)) {
             const partes = parseCols(linea, columnasMin);
             if (isHeaderRow(partes)) return;
             const titulo   = (usaTipoCol ? partes[1] : partes[0] || "").trim();
@@ -268,15 +295,7 @@ import(texto) {
         if (!nodoActualId) return;
 
         const txt = linea.trim();
-// ❌ Ignorar cualquier línea indentada que NO sea acción real
-// (parche: ignoramos segundas asignaciones, nombres, unidades, basura)
-if (
-    !/^Sólo si/i.test(txt) &&
-    !/^Lanzar tarea/i.test(txt) &&
-    !/^Cambiar estado/i.test(txt)
-) {
-    return; // ignorar completamente la línea
-}
+        if (!isActionText(txt)) return;
         // 1) Condición
         if (/^Sólo si/i.test(txt)) {
             const match = txt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
