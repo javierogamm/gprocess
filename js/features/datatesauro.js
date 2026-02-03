@@ -994,8 +994,9 @@ openPasteImportModal() {
       <h2 style="margin:0; text-align:center;">📋 Importar Tesauros (copypaste)</h2>
 
       <p style="margin:0; color:#475569; font-size:14px;">
-        Pega aquí la tabla copiada (Excel / app). Se usará la columna B como referencia,
-        la columna C como nombre y la columna D como tipo.
+        Pega aquí la tabla copiada (Excel / app). Se aceptan dos formatos:
+        (1) B=Referencia, C=Nombre, D=Tipo; (2) A=Momento, B=Agrupación, C=Referencia,
+        D=Nombre, E=Tipo.
       </p>
 
       <textarea id="tesauroPasteInput" style="
@@ -1070,25 +1071,47 @@ parsePasteTesauros(rawText) {
     const cols = line.split("\t").map(c => c.trim());
     if (cols.length < 3) return;
 
-    const ref = (cols[1] || "").trim();
-    const nombre = (cols[2] || "").trim();
-    const tipoRaw = (cols[3] || "").trim();
+    const parsed = this.parsePasteColumns(cols);
+    if (!parsed) return;
 
-    if (!ref || !nombre) return;
+    if (!parsed.ref || !parsed.nombre) return;
 
-    const normalized = this.mapPasteTipo(tipoRaw);
+    const normalized = this.mapPasteTipo(parsed.tipoRaw);
 
     resultados.push({
       id: this.generateId(),
-      ref,
-      nombre,
+      ref: parsed.ref,
+      nombre: parsed.nombre,
       tipo: normalized.tipo,
       opciones: [],
-      needsI18nConfig: normalized.needsI18nConfig
+      needsI18nConfig: normalized.needsI18nConfig,
+      momento: parsed.momento,
+      agrupacion: parsed.agrupacion
     });
   });
 
   return resultados;
+},
+
+parsePasteColumns(cols) {
+  const hasExtendedFormat = cols.length >= 5 && (cols[2] || cols[3] || cols[4]);
+  if (hasExtendedFormat) {
+    return {
+      momento: (cols[0] || "").trim(),
+      agrupacion: (cols[1] || "").trim(),
+      ref: (cols[2] || "").trim(),
+      nombre: (cols[3] || "").trim(),
+      tipoRaw: (cols[4] || "").trim()
+    };
+  }
+
+  return {
+    momento: "",
+    agrupacion: "",
+    ref: (cols[1] || "").trim(),
+    nombre: (cols[2] || "").trim(),
+    tipoRaw: (cols[3] || "").trim()
+  };
 },
 
 isPasteNoiseLine(line) {
@@ -1320,6 +1343,8 @@ applyPasteImport() {
     if (existing) {
       existing.nombre = item.nombre;
       existing.tipo = item.tipo;
+      if (item.momento) existing.momento = item.momento;
+      if (item.agrupacion) existing.agrupacion = item.agrupacion;
 
       if (item.tipo === "selector") {
         if (Array.isArray(opciones)) {
@@ -1340,7 +1365,9 @@ applyPasteImport() {
       ref: item.ref,
       nombre: item.nombre,
       tipo: item.tipo,
-      opciones: []
+      opciones: [],
+      momento: item.momento,
+      agrupacion: item.agrupacion
     };
 
     if (item.tipo === "selector") {

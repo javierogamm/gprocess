@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## v1.1.14
+- Actualizado el copypaste de tesauros para aceptar el formato con momento/agrupación/referencia/nombre/tipo y mantener compatibilidad con el formato anterior.
+- Propagados momento y agrupación al actualizar o crear tesauros importados.
+
 ## v1.1.13
 - Añadida la importación de tesauros por copypaste con modal dedicado y configuración guiada de selectores I18N.
 - Ajustada la paleta de botones de tesauro para mantener el rojo corporativo en paneles y modales.
