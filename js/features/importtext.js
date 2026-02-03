@@ -361,6 +361,12 @@ if (/^Lanzar tarea\s+/i.test(txt)) {
         }
     });
 
+    if (window.DataTesauro?.transformarCondicionesDesdeConexiones) {
+        DataTesauro.transformarCondicionesDesdeConexiones(Engine.data.conexiones, {
+            mostrarAlertas: false
+        });
+    }
+
     // -----------------------------------------------------------
     // LAYOUT POR NIVELES (vertical por profundidad; horizontal por “primos”)
     // -----------------------------------------------------------
