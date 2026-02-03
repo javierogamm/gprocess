@@ -22,3 +22,7 @@
 
 ## v1.1.4
 - Actualizada la importación de copypaste para aceptar la nueva columna de tipo de tarea y mantener la compatibilidad con el formato anterior.
+
+## v1.1.5
+- Ajustada la importación de copypaste para detectar bloques copiados desde la app sin pasar por Excel, preservando asignaciones y condiciones.
+- Actualizada la guía del copypaste para indicar que se acepta texto desde la app o Excel.
