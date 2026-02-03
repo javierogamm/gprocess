@@ -96,7 +96,9 @@ import(texto) {
     // ----------------------------------------------------
     function parseCols(linea, minCols = 5) {
         let cols = linea.split(/\t/g);
-        if (cols.length < minCols) cols = linea.split(/\s{2,}/g);
+        if (cols.length === 1) {
+            cols = linea.split(/\s{2,}/g);
+        }
         while (cols.length < minCols) cols.push("");
         return cols;
     }

@@ -26,3 +26,6 @@
 ## v1.1.5
 - Ajustada la importación de copypaste para detectar bloques copiados desde la app sin pasar por Excel, preservando asignaciones y condiciones.
 - Actualizada la guía del copypaste para indicar que se acepta texto desde la app o Excel.
+
+## v1.1.6
+- Corregida la detección de columnas en el copypaste para mantener separadores con tabulaciones aunque falten columnas, asegurando compatibilidad con el formato de la app externa.
