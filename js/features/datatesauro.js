@@ -994,8 +994,9 @@ openPasteImportModal() {
       <h2 style="margin:0; text-align:center;">📋 Importar Tesauros (copypaste)</h2>
 
       <p style="margin:0; color:#475569; font-size:14px;">
-        Pega aquí la tabla copiada (Excel / app). Se usará la columna B como referencia,
-        la columna C como nombre y la columna D como tipo.
+        Pega aquí la tabla copiada (Excel / app). Se aceptan dos formatos:
+        (1) B=Referencia, C=Nombre, D=Tipo; (2) A=Momento, B=Agrupación, C=Referencia,
+        D=Nombre, E=Tipo.
       </p>
 
       <textarea id="tesauroPasteInput" style="
@@ -1070,25 +1071,47 @@ parsePasteTesauros(rawText) {
     const cols = line.split("\t").map(c => c.trim());
     if (cols.length < 3) return;
 
-    const ref = (cols[1] || "").trim();
-    const nombre = (cols[2] || "").trim();
-    const tipoRaw = (cols[3] || "").trim();
+    const parsed = this.parsePasteColumns(cols);
+    if (!parsed) return;
 
-    if (!ref || !nombre) return;
+    if (!parsed.ref || !parsed.nombre) return;
 
-    const normalized = this.mapPasteTipo(tipoRaw);
+    const normalized = this.mapPasteTipo(parsed.tipoRaw);
 
     resultados.push({
       id: this.generateId(),
-      ref,
-      nombre,
+      ref: parsed.ref,
+      nombre: parsed.nombre,
       tipo: normalized.tipo,
       opciones: [],
-      needsI18nConfig: normalized.needsI18nConfig
+      needsI18nConfig: normalized.needsI18nConfig,
+      momento: parsed.momento,
+      agrupacion: parsed.agrupacion
     });
   });
 
   return resultados;
+},
+
+parsePasteColumns(cols) {
+  const hasExtendedFormat = cols.length >= 5 && (cols[2] || cols[3] || cols[4]);
+  if (hasExtendedFormat) {
+    return {
+      momento: (cols[0] || "").trim(),
+      agrupacion: (cols[1] || "").trim(),
+      ref: (cols[2] || "").trim(),
+      nombre: (cols[3] || "").trim(),
+      tipoRaw: (cols[4] || "").trim()
+    };
+  }
+
+  return {
+    momento: "",
+    agrupacion: "",
+    ref: (cols[1] || "").trim(),
+    nombre: (cols[2] || "").trim(),
+    tipoRaw: (cols[3] || "").trim()
+  };
 },
 
 isPasteNoiseLine(line) {
@@ -1175,7 +1198,8 @@ openSelectorConfigModal() {
       </h2>
 
       <p style="margin:0; color:#475569; font-size:14px;">
-        Pega la tabla de referencias para este selector. Se usará la columna A como referencia.
+        Pega la tabla de referencias para este selector. Se detectan referencias y valores,
+        ignorando las etiquetas de idioma.
       </p>
 
       <textarea id="selectorPasteInput" style="
@@ -1226,11 +1250,12 @@ openSelectorConfigModal() {
           </tr>
         </thead>
         <tbody>
-          ${refs.map(ref => `
+          ${refs.map(({ ref, valor }) => `
             <tr>
               <td style="padding:6px; border:1px solid #cbd5e1;">${this.escapeAttr(ref)}</td>
               <td style="padding:6px; border:1px solid #cbd5e1;">
                 <input data-ref="${this.escapeAttr(ref)}" class="selector-valor-input"
+                  value="${this.escapeAttr(valor || "")}"
                   style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" />
               </td>
             </tr>
@@ -1288,19 +1313,60 @@ parseSelectorRefs(rawText) {
     .map(l => l.trim())
     .filter(l => l.length > 0);
 
-  const refs = [];
-  const seen = new Set();
-
+  const tokens = [];
   lines.forEach(line => {
     if (this.isPasteNoiseLine(line)) return;
-    const cols = line.split("\t").map(c => c.trim());
-    const ref = (cols[0] || "").trim();
-    if (!ref || ref.toLowerCase() === "referencia") return;
-    if (!seen.has(ref)) {
-      seen.add(ref);
-      refs.push(ref);
-    }
+    line
+      .split(/\t+/)
+      .map(c => c.trim())
+      .filter(Boolean)
+      .forEach(token => tokens.push(token));
   });
+
+  const refs = [];
+  const seen = new Set();
+  const isLanguageLabel = (value) => {
+    const normalized = (value || "")
+      .toString()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+    return [
+      "castellano",
+      "catalan",
+      "valenciano",
+      "gallego",
+      "euskera",
+      "balear",
+      "ingles",
+      "frances",
+      "aleman",
+      "italiano"
+    ].includes(normalized);
+  };
+
+  let i = 0;
+  while (i < tokens.length) {
+    const candidateRef = tokens[i];
+    if (!candidateRef || isLanguageLabel(candidateRef) || candidateRef.toLowerCase() === "referencia") {
+      i += 1;
+      continue;
+    }
+
+    let j = i + 1;
+    while (j < tokens.length && isLanguageLabel(tokens[j])) {
+      j += 1;
+    }
+    const valor = j < tokens.length ? tokens[j] : "";
+
+    if (!seen.has(candidateRef)) {
+      seen.add(candidateRef);
+      refs.push({ ref: candidateRef, valor });
+    }
+
+    i = j + 1;
+  }
 
   return refs;
 },
@@ -1320,6 +1386,8 @@ applyPasteImport() {
     if (existing) {
       existing.nombre = item.nombre;
       existing.tipo = item.tipo;
+      if (item.momento) existing.momento = item.momento;
+      if (item.agrupacion) existing.agrupacion = item.agrupacion;
 
       if (item.tipo === "selector") {
         if (Array.isArray(opciones)) {
@@ -1340,7 +1408,9 @@ applyPasteImport() {
       ref: item.ref,
       nombre: item.nombre,
       tipo: item.tipo,
-      opciones: []
+      opciones: [],
+      momento: item.momento,
+      agrupacion: item.agrupacion
     };
 
     if (item.tipo === "selector") {
