@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## v1.1.11
+- El modal de importación desde Gestiona muestra desde el inicio las tablas del resumen vacías, listas para rellenarse tras Cargar y permitir Validar.
+
+## v1.1.10
+- Sustituido el copypaste por un modal de importación desde Gestiona con área de pegado, botón Cargar y validación posterior tras revisar el resumen.
+- Añadida una vista resumen previa idéntica a "Ver procedimiento" antes de validar la importación.
+
 ## v1.1.9
 - Actualizado el copypaste para transformar automáticamente las condiciones importadas en tesauros, reutilizando la lógica del botón de transformación.
 

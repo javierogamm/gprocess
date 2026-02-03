@@ -53,7 +53,7 @@
     copypaste: {
       title: "Copiar/pegar guiado",
       description:
-        "Selecciona todo el bloque de texto (desde Excel o desde la app), pégalo en el área Copypaste y reconstruye el diagrama con Importar diagrama desde texto.",
+        "Selecciona todo el bloque de texto (desde Excel o desde la app), abre Importar diagrama desde Gestiona y usa Cargar para revisar el resumen antes de Validar.",
     },
     nodes: {
       title: "Nodos disponibles",

@@ -61,16 +61,10 @@
 <!-- Botón ver copypaste -->
 
 <div id="importFromTextBlock" style="margin-top:20px; padding:10px; border-top:1px solid #ccc;">
-    <h3 style="margin-top:0;">Copypaste</h3>
-
-    <textarea id="txtImportar"
-        placeholder="Pega aquí la definición de tareas…"
-        style="width:100%; height:150px; margin-bottom:10px; box-sizing:border-box;"></textarea>
-
     <button id="btnImportarTexto"
         class="btn"
         style="width:100%; background:#2563eb; color:white;">
-        Importar diagrama desde texto
+        Importar diagrama desde Gestiona
     </button>
 </div>
 <!-- Input oculto para seleccionar los dos archivos -->
@@ -181,6 +175,27 @@
 
     </div>
 </div>   
+
+<!-- =========================
+    MODAL IMPORTAR DIAGRAMA DESDE GESTIONA
+========================= -->
+<div id="importTextModal" class="modal hidden">
+    <div class="modal-content modal-content--wide">
+        <div class="csv-modal-header import-text-header">
+            <h2>Importar diagrama desde Gestiona</h2>
+            <div class="import-text-actions">
+                <button id="btnValidarImportText" class="btn btn-import-validate" disabled>VALIDAR</button>
+                <button id="importTextClose" class="csv-close-btn" aria-label="Cerrar">&times;</button>
+            </div>
+        </div>
+        <div class="import-text-body">
+            <label for="importTextTextarea">Pega aquí la definición del flujo desde Gestiona</label>
+            <textarea id="importTextTextarea" placeholder="Pega aquí la definición de tareas…"></textarea>
+            <button id="importTextLoad" class="btn btn-import-load">Cargar</button>
+            <div id="importTextSummary" class="csv-content import-text-summary"></div>
+        </div>
+    </div>
+</div>
 
 <!-- ============================================================
      LISTAS AUTOCOMPLETAR (Grupos / Usuarios)
