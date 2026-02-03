@@ -1,5 +1,8 @@
 # Historial de cambios
 
+## v1.1.12
+- Ajustada la importación de tesauros desde CSV para leer las columnas exportadas y reconstruir tipos, nombres, referencias y valores de selectores sin usar la tabla de vinculación.
+
 ## v1.1.11
 - El modal de importación desde Gestiona muestra desde el inicio las tablas del resumen vacías, listas para rellenarse tras Cargar y permitir Validar.
 
