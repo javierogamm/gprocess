@@ -946,6 +946,22 @@ input {
   border-bottom: 2px solid #cbd5e1;
   padding-bottom: 6px;
 }
+.tesauro-panel button,
+#tesauroManagerModal button,
+#tmRefModal button,
+#tesauroPasteModal button,
+#tesauroSelectorModal button {
+  background: #E34850;
+  color: white;
+  border: none;
+}
+.tesauro-panel button:hover,
+#tesauroManagerModal button:hover,
+#tmRefModal button:hover,
+#tesauroPasteModal button:hover,
+#tesauroSelectorModal button:hover {
+  background: #c63c45;
+}
 .tesauro-item {
   background: #fff;
   border: 1px solid #e2e8f0;
