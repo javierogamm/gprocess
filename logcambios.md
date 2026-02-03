@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## v1.1.13
+- Añadida la importación de tesauros por copypaste con modal dedicado y configuración guiada de selectores I18N.
+- Ajustada la paleta de botones de tesauro para mantener el rojo corporativo en paneles y modales.
+
 ## v1.1.12
 - Ajustada la importación de tesauros desde CSV para leer las columnas exportadas y reconstruir tipos, nombres, referencias y valores de selectores sin usar la tabla de vinculación.
 
