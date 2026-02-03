@@ -33,3 +33,6 @@
 ## v1.1.7
 - Evitada la propagación visual de asignaciones entre nodos al clonar arrays de asignación por nodo.
 - Ajustadas las ediciones y eliminaciones de asignaciones para no compartir referencias entre nodos.
+
+## v1.1.8
+- Ocultado el campo legacy de "Asignado a" en el panel lateral para mostrar solo asignaciones por grupo y usuario.
