@@ -29,3 +29,7 @@
 
 ## v1.1.6
 - Corregida la detección de columnas en el copypaste para mantener separadores con tabulaciones aunque falten columnas, asegurando compatibilidad con el formato de la app externa.
+
+## v1.1.7
+- Evitada la propagación visual de asignaciones entre nodos al clonar arrays de asignación por nodo.
+- Ajustadas las ediciones y eliminaciones de asignaciones para no compartir referencias entre nodos.
