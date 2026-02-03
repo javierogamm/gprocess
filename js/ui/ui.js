@@ -454,22 +454,79 @@ if (btnFpGuardar) {
         });
 
 // ========================================================
-// IMPORTAR DIAGRAMA DESDE TEXTO
+// IMPORTAR DIAGRAMA DESDE GESTIONA (MODAL)
 // ========================================================
 const btnImportar = document.getElementById("btnImportarTexto");
-const txtImportar = document.getElementById("txtImportar");
+const importModal = document.getElementById("importTextModal");
+const importTextarea = document.getElementById("importTextTextarea");
+const importLoadBtn = document.getElementById("importTextLoad");
+const importValidateBtn = document.getElementById("btnValidarImportText");
+const importCloseBtn = document.getElementById("importTextClose");
+const importSummary = document.getElementById("importTextSummary");
 
-if (btnImportar && txtImportar) {
+let pendingImportText = "";
+
+function resetImportModal() {
+    if (importTextarea) importTextarea.value = "";
+    if (importSummary) importSummary.innerHTML = "";
+    if (importValidateBtn) importValidateBtn.disabled = true;
+    pendingImportText = "";
+}
+
+if (btnImportar && importModal) {
     btnImportar.addEventListener("click", () => {
-        const texto = txtImportar.value.trim();
+        resetImportModal();
+        importModal.classList.remove("hidden");
+        if (importTextarea) importTextarea.focus();
+    });
+}
+
+if (importCloseBtn && importModal) {
+    importCloseBtn.addEventListener("click", () => {
+        importModal.classList.add("hidden");
+    });
+}
+
+if (importModal) {
+    importModal.addEventListener("click", (e) => {
+        if (e.target === importModal) {
+            importModal.classList.add("hidden");
+        }
+    });
+}
+
+if (importLoadBtn && importTextarea && importSummary) {
+    importLoadBtn.addEventListener("click", () => {
+        const texto = importTextarea.value.trim();
         if (!texto) {
             alert("Pega antes el texto del flujo.");
             return;
         }
 
-        ImportText.import(texto);
-        txtImportar.value = "";
+        const previewData = ImportText.parsePreview(texto);
+        if (!previewData.nodos.length) {
+            alert("No se detectaron tareas válidas en el texto.");
+            return;
+        }
 
+        importSummary.innerHTML = Engine.buildCSVPreviewHTML(previewData, {
+            procedimiento: Engine.fichaProyecto?.procedimiento || "Sin nombre de procedimiento"
+        });
+        pendingImportText = texto;
+        if (importValidateBtn) importValidateBtn.disabled = false;
+    });
+}
+
+if (importValidateBtn && importModal) {
+    importValidateBtn.addEventListener("click", () => {
+        if (!pendingImportText) {
+            alert("Primero carga el texto para validar.");
+            return;
+        }
+
+        ImportText.import(pendingImportText);
+        pendingImportText = "";
+        importModal.classList.add("hidden");
         alert("Diagrama importado correctamente.");
     });
 }

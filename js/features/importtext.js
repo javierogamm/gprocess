@@ -45,6 +45,241 @@ const ImportText = {
     },
 
 /* ------------------------------------------
+   PREVISUALIZAR TEXTO (SIN MODIFICAR MOTOR)
+------------------------------------------ */
+parsePreview(texto) {
+    const lineas = texto.split(/\r?\n/).map(l => l.trimEnd());
+    const mapaNodos = new Map();
+    const nodos = [];
+    const conexiones = [];
+
+    let previewIndex = 0;
+
+    function parseCols(linea, minCols = 5) {
+        let cols = linea.split(/\t/g);
+        if (cols.length === 1) {
+            cols = linea.split(/\s{2,}/g);
+        }
+        while (cols.length < minCols) cols.push("");
+        return cols;
+    }
+
+    function matchesTipoCol(value) {
+        return /^(formulario|documento|libre|plazo|circuito)/i.test((value || "").trim());
+    }
+
+    function isHeaderRow(cols) {
+        const first = (cols[0] || "").trim().toLowerCase();
+        const second = (cols[1] || "").trim().toLowerCase();
+        return (
+            (first === "tipo" && second === "asunto") ||
+            (first === "asunto" && second === "al finalizar")
+        );
+    }
+
+    function isActionText(textoLinea) {
+        return (
+            /^Sólo si/i.test(textoLinea) ||
+            /^Lanzar tarea/i.test(textoLinea) ||
+            /^Cambiar estado/i.test(textoLinea)
+        );
+    }
+
+    function isNodeLine(rawLine, columnas) {
+        if (!rawLine.trim()) return false;
+        const linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+        const cols = parseCols(linea, columnas);
+        if (isHeaderRow(cols)) return false;
+        return matchesTipoCol(cols[0]) && (cols[1] || "").trim();
+    }
+
+    function detectTipoColumn(lines) {
+        for (const rawLine of lines) {
+            if (!rawLine.trim()) continue;
+            if (isActionText(rawLine.trim())) continue;
+            const cols = parseCols(rawLine.replace(/^\t+/, "").replace(/^ {4}/, ""), 7);
+            if (isHeaderRow(cols)) return true;
+            if (matchesTipoCol(cols[0]) && (cols[1] || "").trim()) return true;
+            return false;
+        }
+        return false;
+    }
+
+    function normalizeTipo(tipoRaw) {
+        const t = (tipoRaw || "").toLowerCase().trim();
+        if (!t) return "";
+        if (t.includes("formulario")) return "formulario";
+        if (t.includes("documento")) return "documento";
+        if (t.includes("libre")) return "libre";
+        if (t.includes("plazo")) return "plazo";
+        if (t.includes("circuito")) return "circuito";
+        return "";
+    }
+
+    function findAssignedFromBlock(lines, startIndex, columnas) {
+        for (let i = startIndex + 1; i < lines.length; i++) {
+            const rawLine = lines[i];
+            if (!rawLine.trim()) continue;
+            if (isNodeLine(rawLine, columnas)) break;
+            const candidato = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "").trim();
+            if (!candidato) continue;
+            if (isActionText(candidato)) continue;
+            if (/^editar\b/i.test(candidato)) continue;
+            if (/^acciones\b/i.test(candidato)) continue;
+            if (/ALC\d+/i.test(candidato) || /unidad gestora/i.test(candidato)) {
+                return candidato;
+            }
+        }
+        return "";
+    }
+
+    function extractTaskTitleFromAction(txt) {
+        let rest = txt.replace(/^Lanzar tarea\s+/i, "").trim();
+        const pairs = { "'": "'", '"': '"', "“": "”", "‘": "’" };
+        const qStart = rest.charAt(0);
+        const qEnd = pairs[qStart];
+        if (qEnd && rest.endsWith(qEnd)) {
+            rest = rest.slice(1, -1);
+        }
+        return rest.trim();
+    }
+
+    const usaTipoCol = detectTipoColumn(lineas);
+    const columnasMin = usaTipoCol ? 7 : 5;
+
+    lineas.forEach((rawLine, index) => {
+        if (!rawLine.trim()) return;
+
+        const lineaRecortada = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+        if (!isNodeLine(lineaRecortada, columnasMin)) return;
+
+        const partes = parseCols(lineaRecortada, columnasMin);
+        if (isHeaderRow(partes)) return;
+
+        const tipoCol = usaTipoCol ? (partes[0] || "").trim() : "";
+        const titulo = (usaTipoCol ? partes[1] : partes[0] || "").trim();
+        const asignadoLinea = (usaTipoCol ? partes[3] : partes[2] || "").trim();
+        const asignadoExtra = asignadoLinea ? "" : findAssignedFromBlock(lineas, index, columnasMin);
+        const asignado = asignadoLinea || asignadoExtra;
+
+        if (!titulo) return;
+
+        const tipoDetectado = normalizeTipo(tipoCol) || this.inferTipo(titulo);
+        const nodeId = `preview-node-${previewIndex + 1}`;
+        const grupoAsignado = asignado ? [asignado] : [];
+
+        const nodo = {
+            id: nodeId,
+            tipo: tipoDetectado,
+            titulo,
+            tareaManual: false,
+            asignadosGrupos: grupoAsignado,
+            asignadosUsuarios: [],
+            __order: previewIndex
+        };
+
+        nodos.push(nodo);
+        mapaNodos.set(titulo, nodeId);
+        previewIndex += 1;
+    });
+
+    let nodoActualId = null;
+    let condicionesPendientes = [];
+    let ultimaConexionId = null;
+    let branchIndex = 0;
+
+    lineas.forEach(rawLine => {
+        if (!rawLine.trim()) return;
+
+        const linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
+
+        if (isNodeLine(rawLine, columnasMin)) {
+            const partes = parseCols(linea, columnasMin);
+            if (isHeaderRow(partes)) return;
+            const titulo = (usaTipoCol ? partes[1] : partes[0] || "").trim();
+            const condTxt = (usaTipoCol ? partes[2] : partes[1] || "").trim();
+            nodoActualId = mapaNodos.get(titulo) || null;
+            condicionesPendientes = [];
+            ultimaConexionId = null;
+            branchIndex = 0;
+
+            if (condTxt && /^Sólo si/i.test(condTxt)) {
+                const match = condTxt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
+                if (match) {
+                    condicionesPendientes.push({ campo: match[1], valor: match[2] });
+                } else {
+                    condicionesPendientes.push({ textoLibre: condTxt });
+                }
+            }
+            return;
+        }
+
+        if (!nodoActualId) return;
+
+        const txt = linea.trim();
+        if (!isActionText(txt)) return;
+
+        if (/^Sólo si/i.test(txt)) {
+            const match = txt.match(/^Sólo si\s+'([^']+)'\s+es igual a\s+'([^']+)'/i);
+            if (match) {
+                condicionesPendientes.push({ campo: match[1], valor: match[2] });
+            } else {
+                condicionesPendientes.push({ textoLibre: txt });
+            }
+            return;
+        }
+
+        if (/^Lanzar tarea\s+/i.test(txt)) {
+            const destinoTitulo = extractTaskTitleFromAction(txt);
+            const destinoId = mapaNodos.get(destinoTitulo);
+            if (!destinoId) return;
+
+            let fromPos = "bottom";
+            let toPos = "top";
+
+            if (condicionesPendientes.length > 0) {
+                if (branchIndex === 0) fromPos = "right";
+                else if (branchIndex === 1) fromPos = "left";
+                else fromPos = "bottom";
+                branchIndex += 1;
+            }
+
+            const connId = `preview-conn-${conexiones.length + 1}`;
+            const conn = {
+                id: connId,
+                from: nodoActualId,
+                to: destinoId,
+                fromPos,
+                toPos,
+                condicionNombre: "",
+                condicionValor: "",
+                cambioEstado: ""
+            };
+
+            if (condicionesPendientes.length > 0) {
+                condicionesPendientes.forEach(cond => {
+                    conn.condicionNombre = cond.campo || "";
+                    conn.condicionValor = cond.valor || cond.textoLibre || "";
+                });
+            }
+
+            conexiones.push(conn);
+            ultimaConexionId = connId;
+            condicionesPendientes = [];
+            return;
+        }
+
+        const cambiarMatch = txt.match(/^Cambiar estado del expediente a\s+'([^']+)'/i);
+        if (cambiarMatch && ultimaConexionId) {
+            const conn = conexiones.find(c => c.id === ultimaConexionId);
+            if (conn) conn.cambioEstado = cambiarMatch[1];
+        }
+    });
+
+    return { nodos, conexiones };
+},
+
+/* ------------------------------------------
    IMPORTAR TEXTO (REEMPLAZO COMPLETO)
 ------------------------------------------ */
 import(texto) {

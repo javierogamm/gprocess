@@ -483,6 +483,11 @@ input {
     overflow: auto;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
   }
+  .modal-content--wide {
+    width: 95%;
+    max-width: 1280px;
+    max-height: 90vh;
+  }
   .csv-content table {
     border-collapse: collapse;
     width: 100%;
@@ -497,6 +502,57 @@ input {
   .csv-content th {
     background: #f0f0f0;
     font-weight: bold;
+  }
+
+  .import-text-header {
+    gap: 12px;
+  }
+
+  .import-text-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .import-text-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #importTextTextarea {
+    width: 100%;
+    min-height: 200px;
+    resize: vertical;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-family: "Calibri", sans-serif;
+    box-sizing: border-box;
+  }
+
+  .btn-import-load {
+    align-self: flex-start;
+    background: #2563eb;
+    color: #fff;
+  }
+
+  .btn-import-validate {
+    background: #16a34a;
+    color: #fff;
+  }
+
+  .btn-import-validate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .import-text-summary {
+    max-height: 45vh;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    background: #f8fafc;
   }
   /* ============================================================
    NODOS DE TIPO "NOTAS"

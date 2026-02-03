@@ -525,23 +525,30 @@ document.getElementById("btnVerCSV").addEventListener("click", () => {
     Engine.showCSVPreview();
 });
 
-Engine.showCSVPreview = function() {
+Engine.buildCSVPreviewHTML = function(data, options = {}) {
+    const nodos = data?.nodos || [];
+    const conexionesData = data?.conexiones || [];
+    const nodeMap = new Map(nodos.map(n => [n.id, n]));
+    const orderValue = (n, fallback) =>
+        typeof n.__order === "number" ? n.__order : (fallback ?? 0);
 
-    const modal = document.getElementById("csvModal");
-    const content = document.getElementById("csvContent");
+    const sortedNodes = [...nodos]
+        .filter(n => n.tipo !== "decisionR")
+        .sort((a, b) => {
+            const ay = orderValue(a, a.y || 0);
+            const by = orderValue(b, b.y || 0);
+            if (ay !== by) return ay - by;
+            return (a.x || 0) - (b.x || 0);
+        });
 
-    // --- Generar las dos tablas como texto HTML ---
-    const sortedNodes = [...this.data.nodos]
-    .filter(n => n.tipo !== "decisionR")
-    .sort((a,b) => a.y - b.y || a.x - b.x);    const tareas = sortedNodes.map((n, i) => {
-        // ⭐ Concatenar múltiples grupos y usuarios con " -- "
+    const tareas = sortedNodes.map((n, i) => {
         const grupos = (n.asignadosGrupos || []).join(" -- ") || "";
         const usuarios = (n.asignadosUsuarios || []).join(" -- ") || "";
         const asignados = [grupos, usuarios].filter(Boolean).join(" / ");
 
         return `
         <tr>
-            <td>${i+1}</td>
+            <td>${i + 1}</td>
             <td>${n.tipo.charAt(0).toUpperCase() + n.tipo.slice(1).toLowerCase()}</td>
             <td>${n.titulo || ""}</td>
             <td>${n.tareaManual ? "Sí" : "No"}</td>
@@ -550,9 +557,9 @@ Engine.showCSVPreview = function() {
     `;
     }).join("");
 
-    const conexiones = this.data.conexiones.map((c, i) => {
-        const from = this.getNode(c.from);
-        const to = this.getNode(c.to);
+    const conexiones = conexionesData.map((c) => {
+        const from = nodeMap.get(c.from);
+        const to = nodeMap.get(c.to);
         return `
             <tr>
                 <td>${from?.titulo || ""}</td>
@@ -564,14 +571,12 @@ Engine.showCSVPreview = function() {
         `;
     }).join("");
 
-    
-
-    content.innerHTML = `
+    let html = `
     <h2 style="margin-top:0; text-align:center;">
-        🧾 ${this.fichaProyecto.procedimiento || "Sin nombre de procedimiento"}
+        🧾 ${options.procedimiento || "Sin nombre de procedimiento"}
     </h2>
 
-    <h3>📋 Tareas</h3>        
+    <h3>📋 Tareas</h3>
     <table>
         <thead>
             <tr><th>#</th><th>Tipo</th><th>Nombre</th><th>Manual</th><th>Asignado A</th></tr>
@@ -593,10 +598,10 @@ Engine.showCSVPreview = function() {
             <tr><th>Tarea Origen</th><th>Condición</th><th>Estado adquirido</th></tr>
         </thead>
         <tbody>
-            ${this.data.conexiones
+            ${conexionesData
                 .filter(c => c.cambioEstado && c.cambioEstado.trim() !== "")
                 .map(c => {
-                    const from = this.getNode(c.from);
+                    const from = nodeMap.get(c.from);
                     const condTxt = [c.condicionNombre, c.condicionValor]
                         .filter(Boolean).join(" ");
                     return `
@@ -611,27 +616,24 @@ Engine.showCSVPreview = function() {
     </table>
 `;
 
-// === BLOQUES SEPARADOS: AGRUPACIÓN POR GRUPO Y USUARIO ===
+    const agrupadoGrupo = {};
+    nodos.forEach(n => {
+        const grupos = n.asignadosGrupos || [];
+        if (grupos.length === 0) {
+            if (!agrupadoGrupo["Sin asignar"]) agrupadoGrupo["Sin asignar"] = [];
+            agrupadoGrupo["Sin asignar"].push(n.titulo || "(Sin título)");
+        } else {
+            grupos.forEach(grupo => {
+                const g = grupo.trim();
+                if (g) {
+                    if (!agrupadoGrupo[g]) agrupadoGrupo[g] = [];
+                    agrupadoGrupo[g].push(n.titulo || "(Sin título)");
+                }
+            });
+        }
+    });
 
-// 🟩 1️⃣ Agrupación por GRUPO (soporta múltiples grupos)
-const agrupadoGrupo = {};
-this.data.nodos.forEach(n => {
-    const grupos = n.asignadosGrupos || [];
-    if (grupos.length === 0) {
-        if (!agrupadoGrupo["Sin asignar"]) agrupadoGrupo["Sin asignar"] = [];
-        agrupadoGrupo["Sin asignar"].push(n.titulo || "(Sin título)");
-    } else {
-        grupos.forEach(grupo => {
-            const g = grupo.trim();
-            if (g) {
-                if (!agrupadoGrupo[g]) agrupadoGrupo[g] = [];
-                agrupadoGrupo[g].push(n.titulo || "(Sin título)");
-            }
-        });
-    }
-});
-
-let htmlAsignadosGrupo = `
+    let htmlAsignadosGrupo = `
     <h3>👥 Asignaciones a grupo</h3>
     <table>
         <thead>
@@ -639,35 +641,34 @@ let htmlAsignadosGrupo = `
         </thead>
         <tbody>
 `;
-for (const [grupo, tareas] of Object.entries(agrupadoGrupo)) {
-    htmlAsignadosGrupo += `
+    for (const [grupo, tareas] of Object.entries(agrupadoGrupo)) {
+        htmlAsignadosGrupo += `
         <tr>
             <td><strong>${grupo}</strong> (${tareas.length})</td>
             <td>${tareas.join("<br>")}</td>
         </tr>
     `;
-}
-htmlAsignadosGrupo += `</tbody></table>`;
-
-// 🟦 2️⃣ Agrupación por USUARIO (soporta múltiples usuarios)
-const agrupadoUsuario = {};
-this.data.nodos.forEach(n => {
-    const usuarios = n.asignadosUsuarios || [];
-    if (usuarios.length === 0) {
-        if (!agrupadoUsuario["Sin asignar"]) agrupadoUsuario["Sin asignar"] = [];
-        agrupadoUsuario["Sin asignar"].push(n.titulo || "(Sin título)");
-    } else {
-        usuarios.forEach(usuario => {
-            const u = usuario.trim();
-            if (u) {
-                if (!agrupadoUsuario[u]) agrupadoUsuario[u] = [];
-                agrupadoUsuario[u].push(n.titulo || "(Sin título)");
-            }
-        });
     }
-});
+    htmlAsignadosGrupo += `</tbody></table>`;
 
-let htmlAsignadosUsuario = `
+    const agrupadoUsuario = {};
+    nodos.forEach(n => {
+        const usuarios = n.asignadosUsuarios || [];
+        if (usuarios.length === 0) {
+            if (!agrupadoUsuario["Sin asignar"]) agrupadoUsuario["Sin asignar"] = [];
+            agrupadoUsuario["Sin asignar"].push(n.titulo || "(Sin título)");
+        } else {
+            usuarios.forEach(usuario => {
+                const u = usuario.trim();
+                if (u) {
+                    if (!agrupadoUsuario[u]) agrupadoUsuario[u] = [];
+                    agrupadoUsuario[u].push(n.titulo || "(Sin título)");
+                }
+            });
+        }
+    });
+
+    let htmlAsignadosUsuario = `
     <h3>🙋‍♂️ Asignaciones a usuario</h3>
     <table>
         <thead>
@@ -675,21 +676,30 @@ let htmlAsignadosUsuario = `
         </thead>
         <tbody>
 `;
-for (const [usuario, tareas] of Object.entries(agrupadoUsuario)) {
-    htmlAsignadosUsuario += `
+    for (const [usuario, tareas] of Object.entries(agrupadoUsuario)) {
+        htmlAsignadosUsuario += `
         <tr>
             <td><strong>${usuario}</strong> (${tareas.length})</td>
             <td>${tareas.join("<br>")}</td>
         </tr>
     `;
-}
-htmlAsignadosUsuario += `</tbody></table>`;
+    }
+    htmlAsignadosUsuario += `</tbody></table>`;
 
-// ➕ Añadir ambos al contenido
-content.innerHTML += htmlAsignadosGrupo + htmlAsignadosUsuario;
+    html += htmlAsignadosGrupo + htmlAsignadosUsuario;
+    return html;
+};
 
-// 👇 Esto queda igual que antes
-modal.classList.remove("hidden");
+Engine.showCSVPreview = function() {
+
+    const modal = document.getElementById("csvModal");
+    const content = document.getElementById("csvContent");
+
+    content.innerHTML = this.buildCSVPreviewHTML(this.data, {
+        procedimiento: this.fichaProyecto.procedimiento || "Sin nombre de procedimiento"
+    });
+
+    modal.classList.remove("hidden");
 
 };
 
