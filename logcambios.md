@@ -1,5 +1,8 @@
 # Historial de cambios
 
+## v1.1.15
+- Actualizada la importación de valores de selectores para detectar referencias/valores pegados y omitir etiquetas de idioma.
+
 ## v1.1.14
 - Actualizado el copypaste de tesauros para aceptar el formato con momento/agrupación/referencia/nombre/tipo y mantener compatibilidad con el formato anterior.
 - Propagados momento y agrupación al actualizar o crear tesauros importados.
