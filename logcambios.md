@@ -1,5 +1,8 @@
 # Historial de cambios
 
+## v1.1.16
+- Ajustada la importación de tesauros por copypaste para aceptar el pegado directo desde la app, manteniendo compatibilidad con el formato anterior.
+
 ## v1.1.15
 - Actualizada la importación de valores de selectores para detectar referencias/valores pegados y omitir etiquetas de idioma.
 

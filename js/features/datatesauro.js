@@ -1068,7 +1068,7 @@ parsePasteTesauros(rawText) {
   lines.forEach(line => {
     if (this.isPasteNoiseLine(line)) return;
 
-    const cols = line.split("\t").map(c => c.trim());
+    const cols = this.normalizePasteColumns(this.splitPasteColumns(line));
     if (cols.length < 3) return;
 
     const parsed = this.parsePasteColumns(cols);
@@ -1091,6 +1091,23 @@ parsePasteTesauros(rawText) {
   });
 
   return resultados;
+},
+
+splitPasteColumns(line) {
+  let cols = line.split("\t");
+  if (cols.length === 1) {
+    cols = line.split(/\s{2,}/g);
+  }
+  return cols.map(c => c.trim());
+},
+
+normalizePasteColumns(cols) {
+  const normalized = [...cols];
+  const last = normalized[normalized.length - 1];
+  if (last && last.toLowerCase() === "borrar") {
+    normalized.pop();
+  }
+  return normalized;
 },
 
 parsePasteColumns(cols) {
