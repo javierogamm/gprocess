@@ -644,11 +644,15 @@ alignSelectedNodes() {
 
     // ⭐ Manejo de arrays de asignaciones
     if (props.asignadosGrupos !== undefined) {
-        nodo.asignadosGrupos = props.asignadosGrupos;
+        nodo.asignadosGrupos = Array.isArray(props.asignadosGrupos)
+            ? [...props.asignadosGrupos]
+            : [];
     }
 
     if (props.asignadosUsuarios !== undefined) {
-        nodo.asignadosUsuarios = props.asignadosUsuarios;
+        nodo.asignadosUsuarios = Array.isArray(props.asignadosUsuarios)
+            ? [...props.asignadosUsuarios]
+            : [];
     }
 
     // 🔄 Retrocompatibilidad: convertir campos antiguos si existen
@@ -683,7 +687,7 @@ addAsignacionGrupo(nodeId, grupo) {
     if (!nodo.asignadosGrupos) nodo.asignadosGrupos = [];
 
     // Siempre agregar al array (incluso si está vacío)
-    nodo.asignadosGrupos.push(grupo);
+    nodo.asignadosGrupos = [...nodo.asignadosGrupos, grupo];
 
     // Solo agregar al pool global si tiene valor
     const valor = grupo.trim();
@@ -698,7 +702,9 @@ removeAsignacionGrupo(nodeId, index) {
     const nodo = this.getNode(nodeId);
     if (!nodo || !nodo.asignadosGrupos) return;
 
-    nodo.asignadosGrupos.splice(index, 1);
+    const grupos = [...nodo.asignadosGrupos];
+    grupos.splice(index, 1);
+    nodo.asignadosGrupos = grupos;
     this.saveHistory();
 },
 
@@ -709,7 +715,7 @@ addAsignacionUsuario(nodeId, usuario) {
     if (!nodo.asignadosUsuarios) nodo.asignadosUsuarios = [];
 
     // Siempre agregar al array (incluso si está vacío)
-    nodo.asignadosUsuarios.push(usuario);
+    nodo.asignadosUsuarios = [...nodo.asignadosUsuarios, usuario];
 
     // Solo agregar al pool global si tiene valor
     const valor = usuario.trim();
@@ -724,7 +730,9 @@ removeAsignacionUsuario(nodeId, index) {
     const nodo = this.getNode(nodeId);
     if (!nodo || !nodo.asignadosUsuarios) return;
 
-    nodo.asignadosUsuarios.splice(index, 1);
+    const usuarios = [...nodo.asignadosUsuarios];
+    usuarios.splice(index, 1);
+    nodo.asignadosUsuarios = usuarios;
     this.saveHistory();
 },
 

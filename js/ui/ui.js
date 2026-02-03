@@ -541,7 +541,9 @@ renderAsignacionesGrupos() {
     const nodo = Engine.getNode(this.currentNodeId);
     if (!nodo) return;
 
-    const grupos = nodo.asignadosGrupos || [];
+    const grupos = Array.isArray(nodo.asignadosGrupos)
+        ? [...nodo.asignadosGrupos]
+        : [];
 
     // Limpiar contenedor
     this.containerAsignadosGrupos.innerHTML = "";
@@ -575,7 +577,7 @@ renderAsignacionesGrupos() {
         input.addEventListener("change", () => {
             const valor = input.value.trim();
             grupos[index] = valor;
-            Engine.updateNode(this.currentNodeId, { asignadosGrupos: grupos });
+            Engine.updateNode(this.currentNodeId, { asignadosGrupos: [...grupos] });
             if (valor) {
                 Engine.addGrupo(valor);
                 this.updateAsignacionesList();
@@ -626,7 +628,9 @@ renderAsignacionesUsuarios() {
     const nodo = Engine.getNode(this.currentNodeId);
     if (!nodo) return;
 
-    const usuarios = nodo.asignadosUsuarios || [];
+    const usuarios = Array.isArray(nodo.asignadosUsuarios)
+        ? [...nodo.asignadosUsuarios]
+        : [];
 
     // Limpiar contenedor
     this.containerAsignadosUsuarios.innerHTML = "";
@@ -660,7 +664,7 @@ renderAsignacionesUsuarios() {
         input.addEventListener("change", () => {
             const valor = input.value.trim();
             usuarios[index] = valor;
-            Engine.updateNode(this.currentNodeId, { asignadosUsuarios: usuarios });
+            Engine.updateNode(this.currentNodeId, { asignadosUsuarios: [...usuarios] });
             if (valor) {
                 Engine.addUsuario(valor);
                 this.updateAsignacionesList();
