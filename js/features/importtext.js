@@ -94,12 +94,54 @@ import(texto) {
     // ----------------------------------------------------
     // Función robusta para dividir columnas del copypaste
     // ----------------------------------------------------
-    function parseCols(linea) {
+    function parseCols(linea, minCols = 5) {
         let cols = linea.split(/\t/g);
-        if (cols.length < 5) cols = linea.split(/\s{2,}/g);
-        while (cols.length < 5) cols.push("");
+        if (cols.length < minCols) cols = linea.split(/\s{2,}/g);
+        while (cols.length < minCols) cols.push("");
         return cols;
     }
+
+    function matchesTipoCol(value) {
+        return /^(formulario|documento|libre|plazo|circuito)/i.test((value || "").trim());
+    }
+
+    function isHeaderRow(cols) {
+        const first = (cols[0] || "").trim().toLowerCase();
+        const second = (cols[1] || "").trim().toLowerCase();
+        return (
+            (first === "tipo" && second === "asunto") ||
+            (first === "asunto" && second === "al finalizar")
+        );
+    }
+
+    function detectTipoColumn(lines) {
+        for (const rawLine of lines) {
+            if (!rawLine.trim()) continue;
+            const esAccion =
+                rawLine.startsWith("\t") ||
+                rawLine.startsWith("    ");
+            if (esAccion) continue;
+            const cols = parseCols(rawLine.replace(/^\t+/, "").replace(/^ {4}/, ""), 7);
+            if (isHeaderRow(cols)) return true;
+            if (matchesTipoCol(cols[0]) && (cols[1] || "").trim()) return true;
+            return false;
+        }
+        return false;
+    }
+
+    function normalizeTipo(tipoRaw) {
+        const t = (tipoRaw || "").toLowerCase().trim();
+        if (!t) return "";
+        if (t.includes("formulario")) return "formulario";
+        if (t.includes("documento")) return "documento";
+        if (t.includes("libre")) return "libre";
+        if (t.includes("plazo")) return "plazo";
+        if (t.includes("circuito")) return "circuito";
+        return "";
+    }
+
+    const usaTipoCol = detectTipoColumn(lineas);
+    const columnasMin = usaTipoCol ? 7 : 5;
 
     // ============================================================
     // PRIMERA PASADA: CREAR NODOS (sólo líneas NO indentadas)
@@ -115,15 +157,17 @@ import(texto) {
         if (esAccion) return; // las acciones no crean nodo
 
         let linea = rawLine.replace(/^\t+/, "").replace(/^ {4}/, "");
-        const partes = parseCols(linea);
+        const partes = parseCols(linea, columnasMin);
+        if (isHeaderRow(partes)) return;
 
-        const titulo   = (partes[0] || "").trim();
-        const condTxt  = (partes[1] || "").trim();
-        const asignado = (partes[2] || "").trim();
+        const tipoCol  = usaTipoCol ? (partes[0] || "").trim() : "";
+        const titulo   = (usaTipoCol ? partes[1] : partes[0] || "").trim();
+        const condTxt  = (usaTipoCol ? partes[2] : partes[1] || "").trim();
+        const asignado = (usaTipoCol ? partes[3] : partes[2] || "").trim();
 
         if (!titulo) return;
 
-        const tipoDetectado = this.inferTipo(titulo);
+        const tipoDetectado = normalizeTipo(tipoCol) || this.inferTipo(titulo);
 
         // Posición semilla en grid
         let x = baseX + col * saltoX;
@@ -200,9 +244,10 @@ import(texto) {
 
         // ---------------- LÍNEA DE ASUNTO (no indentada) ----------------
         if (!esAccion) {
-            const partes = parseCols(linea);
-            const titulo   = (partes[0] || "").trim();
-            const condTxt  = (partes[1] || "").trim();
+            const partes = parseCols(linea, columnasMin);
+            if (isHeaderRow(partes)) return;
+            const titulo   = (usaTipoCol ? partes[1] : partes[0] || "").trim();
+            const condTxt  = (usaTipoCol ? partes[2] : partes[1] || "").trim();
             nodoActualId = mapaNodos.get(titulo) || null;
             condicionesPendientes = [];
             ultimaConexionId = null;
