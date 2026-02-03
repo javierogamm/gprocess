@@ -1,5 +1,9 @@
 # Historial de cambios
 
+## v1.1.12
+- Ajustada la carga del asistente IA JSON para normalizar modelos QdeCAC (incluyendo "QdeCAC Hibrido ESET") y evitar fallos por mayúsculas o espacios.
+- Consolidada la configuración del modelo en el botón IA JSON para apuntar a los modelos QdeCAC.
+
 ## v1.1.11
 - El modal de importación desde Gestiona muestra desde el inicio las tablas del resumen vacías, listas para rellenarse tras Cargar y permitir Validar.
 

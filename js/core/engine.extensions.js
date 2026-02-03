@@ -1134,12 +1134,33 @@ document.getElementById("btnPasteJSON").addEventListener("click", async () => {
 /* ============================================================
    ABRIR ASISTENTE EXTERNO IA JSON
 ============================================================ */
-document.getElementById("btnIAJson").addEventListener("click", () => {
-    window.open(
-        "https://chatgpt.com/g/g-6918f6f366d081918def86bc27f3c2b4-creador-json-gestiona-process",
-        "_blank"
+const IA_JSON_MODELOS = ["QdeCAC", "QdeCAC Hibrido ESET"];
+
+const normalizeIaJsonModelo = (valor) =>
+    (valor || "").toString().toLowerCase().replace(/\s+/g, "");
+
+const resolveIaJsonModelo = (valor) => {
+    const normalizado = normalizeIaJsonModelo(valor);
+    if (!normalizado) return IA_JSON_MODELOS[0];
+    const match = IA_JSON_MODELOS.find(
+        (modelo) => normalizeIaJsonModelo(modelo) === normalizado
     );
-});
+    return match || (valor || "").trim();
+};
+
+const btnIAJson = document.getElementById("btnIAJson");
+if (btnIAJson) {
+    btnIAJson.addEventListener("click", () => {
+        const primary = btnIAJson.dataset.model || "";
+        const fallback = btnIAJson.dataset.modelAlt || "";
+        const modelo = resolveIaJsonModelo(primary || fallback || IA_JSON_MODELOS[0]);
+        const url = new URL(
+            "https://chatgpt.com/g/g-6918f6f366d081918def86bc27f3c2b4-gestiona-flow-process"
+        );
+        url.searchParams.set("modelo", modelo);
+        window.open(url.toString(), "_blank");
+    });
+}
 /* ============================================================
    PAN CON BOTÓN DERECHO / RUEDA / CTRL + CLICK IZQUIERDO
 ============================================================ */

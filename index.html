@@ -34,7 +34,7 @@
                      <button class="btn" id="btnImportJSON" onclick="document.getElementById('fileLoader').click()">📂 Cargar JSON</button>
                      <div class="json-buttons-row">
                         <button id="btnPasteJSON">📋 Pegar JSON</button>
-                        <button id="btnIAJson" title="Abrir asistente IA JSON">
+                        <button id="btnIAJson" title="Abrir asistente IA JSON" data-model="QdeCAC" data-model-alt="QdeCAC Hibrido ESET">
                             🤖 IA JSON
                         </button>
                     </div>     
@@ -231,16 +231,6 @@
 <script src="js/features/wizard.js"></script>
 <script src="js/interactions/resizepanels.js"></script>
 <script src="js/features/assistant.js"></script>
-<script>
-  // 🧠 Botón para abrir el GPT personalizado
-  document.getElementById("btnIAJson").addEventListener("click", () => {
-    window.open(
-      "https://chatgpt.com/g/g-6918f6f366d081918def86bc27f3c2b4-gestiona-flow-process",
-      "_blank"
-    );
-  });
-</script>
-
 <!-- 3️⃣ Comprobación -->
 <script>
 window.addEventListener("load", () => {
